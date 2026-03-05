@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox spacing="10" xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="ch.supsi.dti.frontend.Controller"
+      style="-fx-padding: 14;">
+
+    <Label text="Inserisci del testo..." style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+    <TextArea fx:id="textArea" prefRowCount="12"/>
+
+    <HBox spacing="10">
+        <Button text="Salva" onAction="#onSaveClicked"/>
+        <Label fx:id="statusLabel"/>
+    </HBox>
+
+</VBox>
