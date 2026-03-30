@@ -1,0 +1,56 @@
+package ch.supsi.dti.backend.model;
+
+import ch.supsi.dti.backend.model.Hand;
+import ch.supsi.dti.backend.model.Rank;
+import ch.supsi.dti.backend.model.Suit;
+
+public class Player {
+    private final String name;
+    private int balance;
+    private final Hand hand;
+    private int currentBet;
+
+    public Player(String name, int balance) {
+        this.name = name;
+        this.balance = balance;
+        this.hand = new Hand();
+        this.currentBet = 0;
+    }
+
+
+    void placeBet(int amount) {
+        if (amount <= 0 || amount > balance) {
+            throw new IllegalArgumentException("Bet not valid");
+        }
+        currentBet = amount;
+        balance -= amount;
+    }
+
+    void win(double multiplier) {
+        balance += currentBet + (int)(currentBet * multiplier);
+    }
+
+    void push(){
+        balance += currentBet;
+    }
+
+    void resetBet(){
+        currentBet = 0;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getBalance() {
+        return balance;
+    }
+
+    public Hand getHand() {
+        return hand;
+    }
+
+    public int getCurrentBet() {
+        return currentBet;
+    }
+}
