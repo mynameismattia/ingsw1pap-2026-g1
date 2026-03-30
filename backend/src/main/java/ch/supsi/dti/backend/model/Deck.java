@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Deck {
 
-    private List<Card> cards;
+    private final List<Card> cards;
     private static final int NUM_DECKS = 6;
     private static final double RESHUFFLE_THRESHOLD = 0.75;  // 75%
 
