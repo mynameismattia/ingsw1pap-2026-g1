@@ -18,7 +18,7 @@ public class Player {
     }
 
 
-    void placeBet(int amount) {
+    public void placeBet(int amount) {
         if (amount <= 0 || amount > balance) {
             throw new IllegalArgumentException("Bet not valid");
         }
@@ -26,15 +26,15 @@ public class Player {
         balance -= amount;
     }
 
-    void win(double multiplier) {
+    public void win(double multiplier) {
         balance += currentBet + (int)(currentBet * multiplier);
     }
 
-    void push(){
+    public void push(){
         balance += currentBet;
     }
 
-    void resetBet(){
+    public void resetBet(){
         currentBet = 0;
     }
 

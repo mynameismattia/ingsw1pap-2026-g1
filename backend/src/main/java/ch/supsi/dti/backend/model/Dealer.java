@@ -10,14 +10,14 @@ public class Dealer {
         this.handRevealed = false;
     }
 
-    boolean shouldHit(){
+    public boolean shouldHit(){
         if ( hand.getScore() < 17 || (hand.getScore() == 17 && hand.isSoft())) {
             return true;
         }
         return false;
     }
 
-    Card getVisibleCard(){
+    public Card getVisibleCard(){
         return hand.getCards().getFirst();
     }
 
