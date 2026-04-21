@@ -1,9 +1,5 @@
 package ch.supsi.dti.backend.model;
 
-import ch.supsi.dti.backend.model.Hand;
-import ch.supsi.dti.backend.model.Rank;
-import ch.supsi.dti.backend.model.Suit;
-
 public class Player {
     private final String name;
     private int balance;
