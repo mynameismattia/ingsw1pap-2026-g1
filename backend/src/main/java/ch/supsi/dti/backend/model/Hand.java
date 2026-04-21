@@ -12,11 +12,11 @@ public class Hand {
         this.cards = new ArrayList<Card>();
     }
 
-    void addCard(Card card) {
+    public void addCard(Card card) {
         cards.add(card);
     }
 
-    int getScore(){
+    public int getScore(){
         int score = 0;
         int aces = 0;
         for (Card card : cards) {
@@ -32,18 +32,18 @@ public class Hand {
         return score;
     }
 
-    boolean isBusted(){
+    public boolean isBusted(){
         return getScore() > 21;
     }
 
-    boolean isBlackJack(){
+    public boolean isBlackJack(){
         if(cards.size() == 2 && getScore() == 21){
             return true;
         }
         return false;
     }
 
-    boolean isSoft(){
+    public boolean isSoft(){
         int score = 0;
         int aces = 0;
         for (Card card : cards) {
@@ -59,11 +59,11 @@ public class Hand {
         return aces > 0;
     }
 
-    List<Card> getCards() {
+    public List<Card> getCards() {
         return Collections.unmodifiableList(cards); //piu' sicuro non si sa mai
     }
 
-    void clear(){
+    public void clear(){
         cards.clear();
     }
 }
