@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="ch.supsi.dti.frontend.controller.LicenseController"
+           styleClass="root-pane"
+           stylesheets="@license.css">
+
+    <VBox styleClass="card" maxWidth="420" maxHeight="-Infinity" spacing="0">
+
+        <VBox styleClass="card-header" alignment="CENTER" spacing="10">
+            <padding><Insets top="28" right="28" bottom="22" left="28"/></padding>
+
+            <ImageView fitWidth="96" fitHeight="96" preserveRatio="true" smooth="true" styleClass="app-icon">
+                <image><Image url="@icon.png"/></image>
+            </ImageView>
+
+            <Label text="Blackjack" styleClass="app-title"/>
+            <Label text="Inserisci il codice licenza per continuare" styleClass="app-subtitle" wrapText="true"/>
+        </VBox>
+
+        <Region styleClass="divider"/>
+
+        <VBox styleClass="card-body" spacing="14">
+            <padding><Insets top="22" right="28" bottom="24" left="28"/></padding>
+
+            <Label text="CODICE LICENZA" styleClass="field-label"/>
+
+            <HBox styleClass="input-wrap" alignment="CENTER_LEFT" spacing="8">
+                <Label text="🔑" styleClass="input-icon"/>
+                <TextField fx:id="licenseField"
+                           promptText="XXXXX-XXXXX-XXXXX-XXXXX"
+                           styleClass="license-input"
+                           HBox.hgrow="ALWAYS"/>
+            </HBox>
+
+            <Label text="Formato: XXXXX-XXXXX-XXXXX-XXXXX" styleClass="field-hint"/>
+
+            <HBox fx:id="statusBox" styleClass="status-row, status-neutral" alignment="CENTER_LEFT" spacing="8">
+                <Label fx:id="statusIcon" text="○" styleClass="status-icon"/>
+                <Label fx:id="statusLabel" text="Inserisci un codice per continuare" styleClass="status-text"/>
+            </HBox>
+
+            <CheckBox fx:id="rememberCheck" text="Ricorda licenza" styleClass="remember-check"/>
+
+            <Button fx:id="activateButton"
+                    text="Attiva"
+                    onAction="#onActivate"
+                    disable="true"
+                    maxWidth="Infinity"
+                    styleClass="activate-button"/>
+        </VBox>
+
+    </VBox>
+
+</StackPane>
