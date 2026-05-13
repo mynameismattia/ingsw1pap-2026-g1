@@ -1,4 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -9,4 +9,50 @@
     </parent>
 
     <artifactId>backend</artifactId>
+
+    <properties>
+        <native.dir>${project.basedir}/src/main/c</native.dir>
+        <output.dir>${project.build.directory}</output.dir>
+    </properties>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.1</version>
+                <configuration>
+                    <fork>true</fork>
+                    <compilerArgs>
+                        <arg>-h</arg>
+                        <arg>${native.dir}</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>build-native-windows</id>
+                        <phase>package</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>gcc</executable>
+                            <arguments>
+                                <argument>-shared</argument>
+                                <argument>-o</argument>
+                                <argument>${output.dir}/licensechecker.dll</argument>
+                                <argument>${native.dir}/LicenseChecker.c</argument>
+                                <argument>-I${env.JAVA_HOME}/include</argument>
+                                <argument>-I${env.JAVA_HOME}/include/win32</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

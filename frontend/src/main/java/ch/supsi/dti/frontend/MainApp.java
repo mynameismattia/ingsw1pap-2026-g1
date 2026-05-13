@@ -1,11 +1,21 @@
 package ch.supsi.dti.frontend;
 
+import ch.supsi.dti.backend.license.LicenseChecker;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class MainApp extends Application {
+
+    @Override
+    public void init() {
+        LicenseChecker checker = new LicenseChecker();
+        if (!checker.checkLicense("AAAA-AAAA-AAAA-sAAK")) {
+            System.err.println("Licenza non valida - chiusura applicazione.");
+            System.exit(1);
+        }
+    }
 
     @Override
     public void start(Stage stage) throws Exception {
