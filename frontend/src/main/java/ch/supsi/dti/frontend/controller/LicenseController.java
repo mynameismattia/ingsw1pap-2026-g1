@@ -1,4 +1,5 @@
 package ch.supsi.dti.frontend.controller;
+import ch.supsi.dti.backend.i18n.MessageService;
 
 import ch.supsi.dti.backend.license.LicenseChecker;
 import javafx.animation.Interpolator;
@@ -200,9 +201,11 @@ public class LicenseController {
     private void launchGame() {
         try {
             Stage stage = (Stage) licenseField.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/main.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/game.fxml"));
+            loader.setResources(MessageService.getInstance().getBundle());
             Scene scene = new Scene(loader.load(), 1280, 720);
             stage.setScene(scene);
+            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
             stage.setResizable(true);
             stage.centerOnScreen();
         } catch (IOException e) {
