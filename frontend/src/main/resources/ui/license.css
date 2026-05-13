@@ -1,0 +1,199 @@
+.root-pane {
+    -fx-background-color: #0d0d10;
+    -fx-padding: 24;
+}
+
+.card {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 14;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(140,160,220,0.08), 40, 0.2, 0, 0);
+}
+
+.card-header {
+    -fx-background-color: transparent;
+}
+
+.app-icon {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 22, 0.25, 0, 6);
+}
+
+.app-title {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.app-subtitle {
+    -fx-text-fill: #8a909c;
+    -fx-font-size: 12.5px;
+}
+
+.divider {
+    -fx-min-height: 1;
+    -fx-pref-height: 1;
+    -fx-background-color: #2a2e38;
+}
+
+.card-body {
+    -fx-background-color: transparent;
+}
+
+.field-label {
+    -fx-text-fill: #6b707a;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+}
+
+.input-wrap {
+    -fx-background-color: #252934;
+    -fx-background-radius: 9;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+    -fx-padding: 4 12 4 12;
+}
+
+.input-wrap:focused-within {
+    -fx-border-color: #4a8bff;
+    -fx-effect: dropshadow(gaussian, rgba(74,139,255,0.25), 8, 0, 0, 0);
+}
+
+.input-icon {
+    -fx-text-fill: #d4a64a;
+    -fx-font-size: 14px;
+}
+
+.license-input {
+    -fx-background-color: transparent;
+    -fx-text-fill: #f3f4f7;
+    -fx-prompt-text-fill: #4d525d;
+    -fx-font-family: "Consolas", "Menlo", monospace;
+    -fx-font-size: 13.5px;
+    -fx-padding: 8 0 8 0;
+    -fx-border-width: 0;
+}
+
+.license-input:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+
+.field-hint {
+    -fx-text-fill: #5a606b;
+    -fx-font-size: 11px;
+}
+
+.status-row {
+    -fx-background-color: #252934;
+    -fx-background-radius: 9;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+    -fx-padding: 10 12 10 12;
+}
+
+.status-neutral .status-icon { -fx-text-fill: #6b707a; }
+.status-neutral .status-text { -fx-text-fill: #8a909c; }
+
+.status-error {
+    -fx-border-color: #a93a3a;
+    -fx-background-color: #2a1f22;
+}
+.status-error .status-icon { -fx-text-fill: #ff6b6b; }
+.status-error .status-text { -fx-text-fill: #ff9a9a; }
+
+.status-ok {
+    -fx-border-color: #3a8a55;
+    -fx-background-color: #1f2a23;
+}
+.status-ok .status-icon { -fx-text-fill: #4ade80; }
+.status-ok .status-text { -fx-text-fill: #a7e9bf; }
+
+.status-icon { -fx-font-size: 13px; }
+.status-text { -fx-font-size: 12px; }
+
+.remember-check {
+    -fx-text-fill: #8a909c;
+    -fx-font-size: 12px;
+}
+.remember-check .box {
+    -fx-background-color: #252934;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+.remember-check:selected .box {
+    -fx-background-color: #4a8bff;
+    -fx-border-color: #4a8bff;
+}
+.remember-check:selected .mark {
+    -fx-background-color: white;
+}
+
+.activate-button {
+    -fx-background-color: linear-gradient(to bottom, #5b9bff, #3b82f6);
+    -fx-background-radius: 9;
+    -fx-text-fill: white;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 16 12 16;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 10;
+}
+
+.activate-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #6ba6ff, #4a8bff);
+}
+
+.activate-button:pressed {
+    -fx-background-color: linear-gradient(to bottom, #3b82f6, #2563eb);
+}
+
+.activate-button:disabled {
+    -fx-background-color: #2f3441;
+    -fx-text-fill: #5a606b;
+    -fx-opacity: 1;
+}
+
+.activate-button.loading,
+.activate-button.loading:disabled {
+    -fx-background-color: linear-gradient(to bottom, #4a8bff, #2563eb);
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.activate-button.success,
+.activate-button.success:disabled {
+    -fx-background-color: linear-gradient(to bottom, #22c55e, #16a34a);
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.activate-button.error,
+.activate-button.error:disabled {
+    -fx-background-color: linear-gradient(to bottom, #ef4444, #b91c1c);
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.btn-icon {
+    -fx-text-fill: white;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: bold;
+}
+
+.activate-button.success .btn-icon,
+.activate-button.error .btn-icon,
+.activate-button.loading .btn-icon {
+    -fx-text-fill: white;
+}
+
+.spinner-arc {
+    -fx-stroke: white;
+    -fx-stroke-width: 2.2;
+    -fx-fill: transparent;
+    -fx-stroke-line-cap: round;
+}
