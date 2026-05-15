@@ -9,6 +9,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -76,16 +77,67 @@ public class MenuController {
 
     @FXML
     private void onProfile() {
-        // TODO: navigazione alla schermata profilo (PR futura)
+        try {
+            Stage stage = (Stage) startBtn.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/profile.fxml"));
+            loader.setResources(MessageService.getInstance().getBundle());
+            Scene scene = new Scene(loader.load(), 1100, 680);
+            stage.setScene(scene);
+            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
+            stage.setResizable(true);
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
     private void onLeaderboard() {
-        // TODO: navigazione alla classifica (PR futura)
+        try {
+            Stage stage = (Stage) startBtn.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/leaderboard.fxml"));
+            loader.setResources(MessageService.getInstance().getBundle());
+            Scene scene = new Scene(loader.load(), 1100, 680);
+            stage.setScene(scene);
+            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
+            stage.setResizable(true);
+            stage.centerOnScreen();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML
     private void onSettings() {
-        // TODO: apertura dialog impostazioni (PR futura)
+        try {
+            Stage dialog = new Stage();
+            dialog.initOwner(startBtn.getScene().getWindow());
+            dialog.initModality(Modality.WINDOW_MODAL);
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/settings.fxml"));
+            loader.setResources(MessageService.getInstance().getBundle());
+            Scene scene = new Scene(loader.load(), 480, 320);
+            dialog.setScene(scene);
+            dialog.setTitle("Impostazioni");
+            dialog.setResizable(false);
+
+            SettingsController ctrl = loader.getController();
+            ctrl.setDialogStage(dialog);
+            ctrl.setOnApply(this::reloadMenu);
+
+            dialog.showAndWait();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void reloadMenu() {
+        try {
+            Stage stage = (Stage) startBtn.getScene().getWindow();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/menu.fxml"));
+            loader.setResources(MessageService.getInstance().getBundle());
+            stage.setScene(new Scene(loader.load(), 1100, 680));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

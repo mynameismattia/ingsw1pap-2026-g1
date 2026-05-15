@@ -273,3 +273,182 @@
 .secondary-button:hover {
     -fx-background-color: #2c313d;
 }
+
+/* ── Settings dialog ─────────────────────────────────────────── */
+
+.settings-radio {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+.settings-radio .radio {
+    -fx-background-color: #252934;
+    -fx-border-color: #353a47;
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+.settings-radio:selected .radio {
+    -fx-border-color: #3b82f6;
+}
+.settings-radio:selected .dot {
+    -fx-background-color: #3b82f6;
+    -fx-background-radius: 4;
+}
+
+/* ── Profile screen ──────────────────────────────────────────── */
+
+.avatar-circle {
+    -fx-background-color: #3b82f6;
+    -fx-background-radius: 50;
+    -fx-min-width:  80; -fx-pref-width:  80; -fx-max-width:  80;
+    -fx-min-height: 80; -fx-pref-height: 80; -fx-max-height: 80;
+}
+.avatar-initial {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+.profile-name {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+.profile-date {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 11px;
+}
+.badge-pro {
+    -fx-background-color: #3b82f6;
+    -fx-background-radius: 6;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 8 2 8;
+}
+.badge-win {
+    -fx-background-color: #1a2e1a;
+    -fx-border-color: #4ade80;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-text-fill: #4ade80;
+    -fx-font-size: 11px;
+    -fx-padding: 2 8 2 8;
+}
+.profile-balance {
+    -fx-text-fill: #4ade80;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+.win-bar-track {
+    -fx-background-color: #252934;
+    -fx-background-radius: 4;
+    -fx-min-height: 6;
+    -fx-max-height: 6;
+    -fx-max-width: Infinity;
+}
+.win-bar-fill {
+    -fx-background-color: #3b82f6;
+    -fx-background-radius: 4;
+}
+
+/* Stat table rows */
+.stat-row {
+    -fx-padding: 10 12 10 12;
+    -fx-background-radius: 6;
+}
+.stat-row-alt {
+    -fx-background-color: #212430;
+}
+.stat-label {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 13px;
+}
+.stat-value {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+.stat-value-accent { -fx-text-fill: #3b82f6; }
+.stat-value-pos    { -fx-text-fill: #4ade80; }
+.stat-value-neg    { -fx-text-fill: #f87171; }
+
+/* Last games list */
+.game-row {
+    -fx-padding: 8 4 8 4;
+    -fx-border-color: transparent transparent #2a2e38 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.game-dot {
+    -fx-min-width: 10; -fx-pref-width: 10; -fx-max-width: 10;
+    -fx-min-height: 10; -fx-pref-height: 10; -fx-max-height: 10;
+    -fx-background-radius: 10;
+}
+.game-dot-win  { -fx-background-color: #4ade80; }
+.game-dot-loss { -fx-background-color: #f87171; }
+.game-dot-push { -fx-background-color: #6b7280; }
+.game-opponent {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+.game-result {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.game-result-pos { -fx-text-fill: #4ade80; }
+.game-result-neg { -fx-text-fill: #f87171; }
+
+/* ── Leaderboard screen ──────────────────────────────────────── */
+
+.lb-header {
+    -fx-background-color: #212430;
+    -fx-background-radius: 8 8 0 0;
+    -fx-padding: 0;
+}
+.lb-row {
+    -fx-border-color: transparent transparent #2a2e38 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.lb-row-alt {
+    -fx-background-color: #1e2029;
+}
+.lb-row-gold {
+    -fx-background-color: #1c1a0e;
+    -fx-border-color: transparent transparent #3d3410 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.lb-cell {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 16 12 16;
+}
+.lb-rank-col { -fx-pref-width: 48; -fx-min-width: 48; -fx-max-width: 48; }
+.lb-name-col { -fx-padding: 12 16 12 8; }
+.lb-num-col  { -fx-pref-width: 90; -fx-min-width: 90; -fx-max-width: 90; -fx-alignment: CENTER_RIGHT; }
+.lb-rank-gold {
+    -fx-text-fill: #fbbf24;
+    -fx-font-size: 15px;
+}
+.lb-name {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+.lb-balance-pos { -fx-text-fill: #4ade80; }
+.lb-avatar {
+    -fx-background-color: #3b82f6;
+    -fx-background-radius: 50;
+    -fx-min-width: 28; -fx-pref-width: 28; -fx-max-width: 28;
+    -fx-min-height: 28; -fx-pref-height: 28; -fx-max-height: 28;
+}
+.lb-avatar-gold { -fx-background-color: #d97706; }
+.lb-avatar-cpu  { -fx-background-color: #6b7280; }
+.lb-avatar-initial {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
