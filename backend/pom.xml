@@ -45,18 +45,19 @@
                 <version>3.1.0</version>
                 <executions>
                     <execution>
-                        <id>build-native-windows</id>
+                        <id>build-native</id>
                         <phase>package</phase>
                         <goals><goal>exec</goal></goals>
                         <configuration>
                             <executable>gcc</executable>
                             <arguments>
                                 <argument>-shared</argument>
+                                <argument>${native.extra.cflag}</argument>
                                 <argument>-o</argument>
-                                <argument>${output.dir}/licensechecker.dll</argument>
+                                <argument>${output.dir}/${native.lib.file}</argument>
                                 <argument>${native.dir}/LicenseChecker.c</argument>
                                 <argument>-I${env.JAVA_HOME}/include</argument>
-                                <argument>-I${env.JAVA_HOME}/include/win32</argument>
+                                <argument>-I${env.JAVA_HOME}/include/${native.jni.os.include}</argument>
                             </arguments>
                         </configuration>
                     </execution>
@@ -64,4 +65,34 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>native-windows</id>
+            <activation><os><family>windows</family></os></activation>
+            <properties>
+                <native.lib.file>licensechecker.dll</native.lib.file>
+                <native.jni.os.include>win32</native.jni.os.include>
+                <native.extra.cflag>-DWIN32</native.extra.cflag>
+            </properties>
+        </profile>
+        <profile>
+            <id>native-mac</id>
+            <activation><os><family>mac</family></os></activation>
+            <properties>
+                <native.lib.file>liblicensechecker.dylib</native.lib.file>
+                <native.jni.os.include>darwin</native.jni.os.include>
+                <native.extra.cflag>-fPIC</native.extra.cflag>
+            </properties>
+        </profile>
+        <profile>
+            <id>native-linux</id>
+            <activation><os><family>unix</family></os></activation>
+            <properties>
+                <native.lib.file>liblicensechecker.so</native.lib.file>
+                <native.jni.os.include>linux</native.jni.os.include>
+                <native.extra.cflag>-fPIC</native.extra.cflag>
+            </properties>
+        </profile>
+    </profiles>
 </project>
