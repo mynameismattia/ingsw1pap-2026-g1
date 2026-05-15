@@ -5,7 +5,6 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Spinner?>
-<?import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
@@ -24,12 +23,6 @@
 
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
             <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
-
-            <HBox spacing="6" alignment="CENTER_LEFT">
-                <Region styleClass="traffic-light, traffic-red"/>
-                <Region styleClass="traffic-light, traffic-yellow"/>
-                <Region styleClass="traffic-light, traffic-green"/>
-            </HBox>
 
             <Region HBox.hgrow="ALWAYS"/>
             <Label text="Blackjack" styleClass="titlebar-title"/>
@@ -92,11 +85,7 @@
 
                 <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
                     <Label text="Giocatori umani" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Spinner fx:id="humansSpinner" editable="false" styleClass="row-spinner" prefWidth="78">
-                        <valueFactory>
-                            <IntegerSpinnerValueFactory min="1" max="4" initialValue="2"/>
-                        </valueFactory>
-                    </Spinner>
+                    <Spinner fx:id="humansSpinner" editable="false" styleClass="row-spinner" prefWidth="78"/>
                 </HBox>
 
                 <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">

@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -28,6 +29,8 @@ public class MenuController {
 
     @FXML
     private void initialize() {
+        humansSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 4, 2));
+
         String saved = LicenseController.loadSavedLicense();
         if (saved != null) {
             licenseCodeLabel.setText(saved);
