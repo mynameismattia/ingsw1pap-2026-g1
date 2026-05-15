@@ -229,14 +229,14 @@ public class GameController {
 
     private void renderPlayer(Player player, MessageService msg) {
         playerCardsBox.getChildren().clear();
-        for (Card c : player.getHand().getCards()) {
+        for (Card c : player.getHands().get(0).getHand().getCards()) {
             playerCardsBox.getChildren().add(new CardView(c));
         }
-        if (player.getHand().getCards().isEmpty()) {
+        if (player.getHands().get(0).getHand().getCards().isEmpty()) {
             playerScoreLabel.setText("");
         } else {
             playerScoreLabel.setText(
-                    msg.getMessage("game.score") + ": " + player.getHand().getScore());
+                    msg.getMessage("game.score") + ": " + player.getHands().get(0).getHand().getScore());
         }
     }
 
@@ -252,9 +252,9 @@ public class GameController {
     }
 
     private String resolveMessage(Player player, MessageService msg) {
-        if (player.getHand().isBlackJack())   return msg.getMessage("game.message.blackjack");
-        if (player.getHand().isBusted())      return msg.getMessage("game.message.bust");
-        int playerScore = player.getHand().getScore();
+        if (player.getHands().get(0).getHand().isBlackJack())   return msg.getMessage("game.message.blackjack");
+        if (player.getHands().get(0).getHand().isBusted())      return msg.getMessage("game.message.bust");
+        int playerScore = player.getHands().get(0).getHand().getScore();
         int dealerScore = gameManager.getDealer().getHand().getScore();
         boolean dealerBust = gameManager.getDealer().getHand().isBusted();
         if (dealerBust || playerScore > dealerScore) return msg.getMessage("game.message.win");

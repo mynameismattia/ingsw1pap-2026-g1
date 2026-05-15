@@ -182,7 +182,7 @@ public class GameManagerTest {
         gm.hit();
 
         assertEquals(GameState.ROUND_OVER, gm.getState());
-        assertTrue(gm.getPlayers().get(0).getHand().isBusted());
+        assertTrue(gm.getPlayers().get(0).getHands().get(0).getHand().isBusted());
         assertEquals(INITIAL_BALANCE - BET, gm.getPlayers().get(0).getBalance());
     }
 
@@ -536,7 +536,7 @@ public class GameManagerTest {
         gm.deal();
         gm.declineInsurance(0);
         assertEquals(GameState.PLAYER_TURN, gm.getState());
-        assertEquals(0, gm.getPlayers().get(0).getInsuranceBet());
+        assertEquals(0, gm.getPlayers().get(0).getHands().get(0).getInsuranceBet());
     }
 
     @Test
@@ -570,7 +570,7 @@ public class GameManagerTest {
         assertTrue(gm.canDoubleDown());
         gm.doubleDown();
         // Only one card drawn after double; auto-stand → DEALER_TURN.
-        assertEquals(3, gm.getPlayers().get(0).getHand().getCards().size());
+        assertEquals(3, gm.getPlayers().get(0).getHands().get(0).getHand().getCards().size());
         assertEquals(GameState.DEALER_TURN, gm.getState());
         gm.dealerPlay();
         // Player 21 > dealer 20 → wins on a doubled bet (20). Net = -10 (placeBet) -10 (double) + 40 = +20
@@ -590,7 +590,7 @@ public class GameManagerTest {
         gm.placeBet(0, BET);
         gm.deal();
         gm.doubleDown();
-        assertTrue(gm.getPlayers().get(0).getHand().isBusted());
+        assertTrue(gm.getPlayers().get(0).getHands().get(0).getHand().isBusted());
         assertEquals(GameState.ROUND_OVER, gm.getState());
         assertEquals(INITIAL_BALANCE - 2 * BET, gm.getPlayers().get(0).getBalance());
     }
