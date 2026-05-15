@@ -1,9 +1,11 @@
 package ch.supsi.dti.backend.game;
 
+import ch.supsi.dti.backend.model.Card;
 import ch.supsi.dti.backend.model.Dealer;
 import ch.supsi.dti.backend.model.Deck;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
+import ch.supsi.dti.backend.model.Rank;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -92,7 +94,7 @@ public class GameManager {
             throw new IndexOutOfBoundsException("Player index out of bounds: " + playerIndex);
         }
         Player player = players.get(playerIndex);
-        PlayerHand mainHand = player.getHands().get(0);
+        PlayerHand mainHand = player.getHands().getFirst();
         if (mainHand.getBet() != 0) {
             throw new IllegalStateException(
                     "Player " + player.getName() + " has already placed a bet");
@@ -109,7 +111,7 @@ public class GameManager {
             throw new IllegalStateException("Cannot deal in state " + state);
         }
         for (Player player : players) {
-            if (player.getHands().get(0).getBet() == 0) {
+            if (player.getHands().getFirst().getBet() == 0) {
                 throw new IllegalStateException(
                         "Player " + player.getName() + " has not placed a bet");
             }
@@ -120,7 +122,7 @@ public class GameManager {
         // Two cards each, player first, dealer last (standard blackjack order).
         for (int i = 0; i < 2; i++) {
             for (Player player : players) {
-                player.getHands().get(0).getHand().addCard(deck.draw());
+                player.getHands().getFirst().getHand().addCard(deck.draw());
             }
             dealer.getHand().addCard(deck.draw());
         }
@@ -300,10 +302,54 @@ public class GameManager {
     }
 
     public void split() { // (#6)
-        throw new UnsupportedOperationException("Split is not supported in v1");
+        if (!canSplit()) {
+            throw new IllegalStateException("Cannot split in state " + state);
+        }
+        Player player = players.get(currentPlayerIndex);
+        PlayerHand currentHand = player.getHands().get(currentHandIndex);
+        int bet = currentHand.getBet();
+
+        List<Card> originalCards = new ArrayList<>(currentHand.getHand().getCards());
+        Card kept = originalCards.get(0);
+        Card moved = originalCards.get(1);
+        boolean wasAces = kept.getRank() == Rank.ACE;
+
+        currentHand.getHand().clear();
+        currentHand.getHand().addCard(kept);
+
+        PlayerHand newHand = player.insertHandAfter(currentHandIndex);
+        newHand.getHand().addCard(moved);
+        newHand.placeBet(bet);
+
+        currentHand.getHand().addCard(deck.draw());
+        newHand.getHand().addCard(deck.draw());
+
+        if (wasAces) {
+            // Split aces get exactly one card each and cannot be hit further.
+            currentHandIndex += 2;
+            advanceToNextActiveHand();
+        } else if (currentHand.getHand().getScore() == 21) {
+            // First split hand auto-stands at 21 (consistent with hit's auto-21).
+            currentHandIndex++;
+            advanceToNextActiveHand();
+        }
+        // else: stay on the first split hand for further play.
     }
 
-    public boolean canSplit() { return false; }
+    public boolean canSplit() {
+        if (state != GameState.PLAYER_TURN || currentPlayerIndex >= players.size()) {
+            return false;
+        }
+        Player current = players.get(currentPlayerIndex);
+        if (currentHandIndex >= current.getHands().size()) {
+            return false;
+        }
+        PlayerHand h = current.getHands().get(currentHandIndex);
+        List<Card> cards = h.getHand().getCards();
+        return cards.size() == 2
+                && cards.get(0).getRank() == cards.get(1).getRank()
+                && current.getBalance() >= h.getBet();
+    }
 
     public boolean canDoubleDown() {
         if (state != GameState.PLAYER_TURN || currentPlayerIndex >= players.size()) {

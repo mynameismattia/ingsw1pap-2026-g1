@@ -21,6 +21,12 @@ public class Player {
         hands.add(new PlayerHand(this));
     }
 
+    public PlayerHand insertHandAfter(int index) {
+        PlayerHand newHand = new PlayerHand(this);
+        hands.add(index + 1, newHand);
+        return newHand;
+    }
+
     public void debit(int amount) {
         balance -= amount;
     }

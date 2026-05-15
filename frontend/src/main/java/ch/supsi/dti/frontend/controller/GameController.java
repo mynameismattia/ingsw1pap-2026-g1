@@ -5,16 +5,19 @@ import ch.supsi.dti.backend.game.GameState;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.Card;
 import ch.supsi.dti.backend.model.Player;
+import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.frontend.MainApp;
 import ch.supsi.dti.frontend.view.CardView;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 import java.util.List;
 import java.util.Locale;
@@ -40,6 +43,7 @@ public class GameController {
     @FXML private Button newRoundButton;
     @FXML private Button backToMenuButton;
     @FXML private Button doubleButton;
+    @FXML private Button splitButton;
     @FXML private Button insureButton;
     @FXML private Button declineInsuranceButton;
 
@@ -100,6 +104,14 @@ public class GameController {
     private void onDoubleClicked() {
         runSafe(() -> {
             gameManager.doubleDown();
+            autoPlayDealerIfNeeded();
+        });
+    }
+
+    @FXML
+    private void onSplitClicked() {
+        runSafe(() -> {
+            gameManager.split();
             autoPlayDealerIfNeeded();
         });
     }
@@ -198,6 +210,9 @@ public class GameController {
         doubleButton.setDisable(gameOver || !gameManager.canDoubleDown());
         doubleButton.setVisible(state == GameState.PLAYER_TURN);
         doubleButton.setManaged(state == GameState.PLAYER_TURN);
+        splitButton.setDisable(gameOver || !gameManager.canSplit());
+        splitButton.setVisible(state == GameState.PLAYER_TURN);
+        splitButton.setManaged(state == GameState.PLAYER_TURN);
         insureButton.setDisable(gameOver || !insurance);
         insureButton.setVisible(insurance);
         insureButton.setManaged(insurance);
@@ -229,15 +244,32 @@ public class GameController {
 
     private void renderPlayer(Player player, MessageService msg) {
         playerCardsBox.getChildren().clear();
-        for (Card c : player.getHands().get(0).getHand().getCards()) {
-            playerCardsBox.getChildren().add(new CardView(c));
+        playerCardsBox.setSpacing(24);
+        List<PlayerHand> hands = player.getHands();
+        PlayerHand active = gameManager.getCurrentHand();
+
+        for (PlayerHand ph : hands) {
+            VBox handBox = new VBox(4);
+            handBox.setAlignment(Pos.CENTER);
+            HBox cardsRow = new HBox(6);
+            cardsRow.setAlignment(Pos.CENTER);
+            for (Card c : ph.getHand().getCards()) {
+                cardsRow.getChildren().add(new CardView(c));
+            }
+            handBox.getChildren().add(cardsRow);
+
+            if (!ph.getHand().getCards().isEmpty()) {
+                String label = msg.getMessage("game.score") + ": " + ph.getHand().getScore()
+                        + "  (" + ph.getBet() + ")";
+                Label scoreLbl = new Label(label);
+                boolean isActive = ph == active;
+                scoreLbl.setStyle("-fx-text-fill: " + (isActive ? "yellow" : "white")
+                        + (isActive ? "; -fx-font-weight: bold;" : ";"));
+                handBox.getChildren().add(scoreLbl);
+            }
+            playerCardsBox.getChildren().add(handBox);
         }
-        if (player.getHands().get(0).getHand().getCards().isEmpty()) {
-            playerScoreLabel.setText("");
-        } else {
-            playerScoreLabel.setText(
-                    msg.getMessage("game.score") + ": " + player.getHands().get(0).getHand().getScore());
-        }
+        playerScoreLabel.setText("");
     }
 
     private String stateMessage(GameState state, Player player, MessageService msg) {
