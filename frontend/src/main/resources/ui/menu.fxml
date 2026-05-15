@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.SpinnerValueFactory.IntegerSpinnerValueFactory?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="ch.supsi.dti.frontend.controller.MenuController"
+           styleClass="root-pane"
+           stylesheets="@menu.css"
+           prefWidth="1100" prefHeight="680">
+
+    <VBox styleClass="card" maxWidth="1000" maxHeight="600" spacing="0">
+
+        <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
+            <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
+
+            <HBox spacing="6" alignment="CENTER_LEFT">
+                <Region styleClass="traffic-light, traffic-red"/>
+                <Region styleClass="traffic-light, traffic-yellow"/>
+                <Region styleClass="traffic-light, traffic-green"/>
+            </HBox>
+
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Blackjack" styleClass="titlebar-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button styleClass="icon-button" text="⚙" onAction="#onSettings"/>
+        </HBox>
+
+        <Region styleClass="divider"/>
+
+        <HBox styleClass="card-body" spacing="0" VBox.vgrow="ALWAYS">
+
+            <VBox styleClass="hero-pane" alignment="CENTER" spacing="14" HBox.hgrow="ALWAYS">
+                <padding><Insets top="36" right="32" bottom="28" left="32"/></padding>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <ImageView fitWidth="110" fitHeight="110" preserveRatio="true" smooth="true" styleClass="app-icon">
+                    <image><Image url="@icon.png"/></image>
+                </ImageView>
+
+                <Label text="Blackjack" styleClass="hero-title"/>
+                <Label text="Fino a 4 giocatori. Batti il banco." styleClass="hero-subtitle"/>
+
+                <HBox styleClass="dots" spacing="8" alignment="CENTER">
+                    <padding><Insets top="6" bottom="6"/></padding>
+                    <Region styleClass="dot, dot-active"/>
+                    <Region styleClass="dot"/>
+                    <Region styleClass="dot"/>
+                    <Region styleClass="dot"/>
+                </HBox>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <VBox styleClass="license-pill" alignment="CENTER" spacing="2">
+                    <padding><Insets top="10" right="18" bottom="10" left="18"/></padding>
+                    <HBox alignment="CENTER" spacing="8">
+                        <Label text="✓" styleClass="license-pill-icon"/>
+                        <Label text="Licenza attiva" styleClass="license-pill-title"/>
+                    </HBox>
+                    <Label fx:id="licenseCodeLabel" text="XXXXX-XXXXX-XXXXX-XXXXX" styleClass="license-pill-code"/>
+                </VBox>
+            </VBox>
+
+            <Region styleClass="vdivider"/>
+
+            <VBox styleClass="controls-pane" spacing="14" prefWidth="320" minWidth="320">
+                <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+
+                <Label text="MODALITÀ" styleClass="field-label"/>
+                <HBox styleClass="mode-pills" spacing="8">
+                    <Button fx:id="modeVsCpuBtn"    text="vs CPU"   onAction="#onModeVsCpu"    styleClass="mode-pill, mode-pill-active" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="modeMultiBtn"    text="Multi"    onAction="#onModeMulti"    styleClass="mode-pill"                   maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="modeTutorialBtn" text="Tutorial" onAction="#onModeTutorial" styleClass="mode-pill"                   maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                </HBox>
+
+                <Region styleClass="spacer-sm"/>
+
+                <Label text="TAVOLO" styleClass="field-label"/>
+
+                <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Giocatori umani" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Spinner fx:id="humansSpinner" editable="false" styleClass="row-spinner" prefWidth="78">
+                        <valueFactory>
+                            <IntegerSpinnerValueFactory min="1" max="4" initialValue="2"/>
+                        </valueFactory>
+                    </Spinner>
+                </HBox>
+
+                <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                    <Label text="CPU avversari" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="1" styleClass="row-value"/>
+                </HBox>
+
+                <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Saldo iniziale" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="\$1.000" styleClass="row-value"/>
+                </HBox>
+
+                <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Effetti sonori" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <CheckBox fx:id="soundToggle" styleClass="toggle-switch" selected="true"/>
+                </HBox>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <Button fx:id="startBtn" text="Inizia partita" onAction="#onStartGame" styleClass="primary-button" maxWidth="Infinity"/>
+
+                <HBox spacing="10">
+                    <Button text="Profilo"    onAction="#onProfile"     styleClass="secondary-button" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <Button text="Classifica" onAction="#onLeaderboard" styleClass="secondary-button" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                </HBox>
+            </VBox>
+
+        </HBox>
+
+    </VBox>
+
+</StackPane>
