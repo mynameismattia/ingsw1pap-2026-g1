@@ -3,6 +3,7 @@ package ch.supsi.dti.backend.game;
 import ch.supsi.dti.backend.model.Card;
 import ch.supsi.dti.backend.model.Deck;
 import ch.supsi.dti.backend.model.Player;
+import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.backend.model.Rank;
 import ch.supsi.dti.backend.model.Suit;
 import org.junit.jupiter.api.Disabled;
@@ -626,16 +627,152 @@ public class GameManagerTest {
         assertThrows(IllegalStateException.class, gm::doubleDown);
     }
 
+    // --- Split ---
+
+    @Test
+    void testSplitCreatesTwoHands() {
+        // p1=8, p2=8 -> pair of 8s. Dealer 9+9 = 18 (no Ace, no insurance).
+        // Split: hand1 gets 8 + 3 = 11, hand2 gets 8 + 4 = 12.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.THREE), c(Rank.FOUR) // split cards: first hand, second hand
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        assertTrue(gm.canSplit());
+        gm.split();
+
+        List<PlayerHand> hands = gm.getPlayers().get(0).getHands();
+        assertEquals(2, hands.size());
+        assertEquals(2, hands.get(0).getHand().getCards().size());
+        assertEquals(2, hands.get(1).getHand().getCards().size());
+        assertEquals(BET, hands.get(0).getBet());
+        assertEquals(BET, hands.get(1).getBet());
+        // After split, balance is initial - 2*bet.
+        assertEquals(INITIAL_BALANCE - 2 * BET, gm.getPlayers().get(0).getBalance());
+        // First split hand is active (11, not 21): state stays PLAYER_TURN.
+        assertEquals(GameState.PLAYER_TURN, gm.getState());
+        assertEquals(hands.get(0), gm.getCurrentHand());
+    }
+
+    @Test
+    void testCannotSplitDifferentRanks() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.SEVEN), c(Rank.NINE)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        assertFalse(gm.canSplit());
+        assertThrows(IllegalStateException.class, gm::split);
+    }
+
+    @Test
+    void testCannotSplitWithoutBalance() {
+        // Balance just enough for first bet, not for a second.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.EIGHT), c(Rank.NINE)
+        ));
+        GameManager gm = new GameManager(List.of("Alice"), 10, deck);
+        gm.startNewRound();
+        gm.placeBet(0, 10);
+        gm.deal();
+        assertFalse(gm.canSplit());
+        assertThrows(IllegalStateException.class, gm::split);
+    }
+
+    @Test
+    void testSplitAcesGetOneCardAndAutoStand() {
+        // Player A+A → split. Each hand: A + drawn. Dealer 9+9 = 18 (no Ace upcard).
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.ACE), c(Rank.NINE),
+                c(Rank.ACE), c(Rank.NINE),
+                c(Rank.FIVE), c(Rank.SEVEN) // split cards
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.split();
+
+        List<PlayerHand> hands = gm.getPlayers().get(0).getHands();
+        assertEquals(2, hands.size());
+        // Each hand has exactly 2 cards (the original Ace + one drawn card).
+        assertEquals(2, hands.get(0).getHand().getCards().size());
+        assertEquals(2, hands.get(1).getHand().getCards().size());
+        // Both hands auto-stand → state advances to DEALER_TURN.
+        assertEquals(GameState.DEALER_TURN, gm.getState());
+        assertThrows(IllegalStateException.class, gm::hit);
+    }
+
+    @Test
+    void testSplitPlaysBothHandsThenDealer() {
+        // Split 8s. Hand1: 8+3=11 → stand. Hand2: 8+5=13 → stand. Dealer 9+9 = 18.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.THREE), c(Rank.FIVE)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.split();
+
+        // Active hand = first (11)
+        assertEquals(11, gm.getCurrentHand().getHand().getScore());
+        gm.stand();
+        // Active hand = second (13)
+        assertEquals(13, gm.getCurrentHand().getHand().getScore());
+        gm.stand();
+        // Dealer's turn
+        assertEquals(GameState.DEALER_TURN, gm.getState());
+        gm.dealerPlay();
+        // Dealer 18 beats both player hands (11, 13) → both bets lost.
+        assertEquals(INITIAL_BALANCE - 2 * BET, gm.getPlayers().get(0).getBalance());
+    }
+
+    @Test
+    void testSplitHandsResolveIndependently() {
+        // Split 8s. Hand1: 8+K=18 → stand. Hand2: 8+3=11 → hit T → 21 (auto-stand).
+        // Dealer 6+6=12 → must hit. Draws K → 22 bust.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.SIX),
+                c(Rank.EIGHT), c(Rank.SIX),
+                c(Rank.KING), c(Rank.THREE), // split cards (h1, h2)
+                c(Rank.TEN),                  // hit on h2 -> 21 auto-stand
+                c(Rank.KING)                  // dealer hit -> 22 bust
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.split();
+        // h1 = 8+K = 18
+        gm.stand();
+        // h2 = 8+3 = 11 → hit
+        gm.hit();
+        // h2 = 11 + 10 = 21 → auto-stand → dealer turn
+        assertEquals(GameState.DEALER_TURN, gm.getState());
+        gm.dealerPlay();
+        // Dealer busts → both player hands win. Net: -2*BET (placeBet+split) + 2*(2*BET) = +2*BET
+        assertEquals(INITIAL_BALANCE + 2 * BET, gm.getPlayers().get(0).getBalance());
+    }
+
+    @Test
+    void testCannotSplitInWrongState() {
+        GameManager gm = new GameManager(List.of("Alice"), INITIAL_BALANCE);
+        assertFalse(gm.canSplit());
+        assertThrows(IllegalStateException.class, gm::split);
+    }
+
     // --- Out of scope for v1 ---
-
-    @Test @Disabled("Split is not supported in v1 (#6)")
-    void testSplitCreates2Hands() {}
-
-    @Test @Disabled("Resplit Aces is not supported in v1 (#9)")
-    void testResplitAces() {}
-
-    @Test @Disabled("Double down after split is not supported in v1 (#8)")
-    void testDoubleDownAfterSplit() {}
 
     @Test @Disabled("Game history is not supported in v1 (#13)")
     void testGameHistory() {}
