@@ -23,6 +23,7 @@ public class GameManager {
     private final Dealer dealer;
     private final Deck deck;
     private final Set<Integer> settledPlayers;
+    private final Set<Integer> insuranceDecisions;
     private GameState state;
     private int currentPlayerIndex;
 
@@ -39,6 +40,7 @@ public class GameManager {
         this.dealer = new Dealer();
         this.deck = deck;
         this.settledPlayers = new HashSet<>();
+        this.insuranceDecisions = new HashSet<>();
         this.state = GameState.WAITING;
         this.currentPlayerIndex = 0;
     }
@@ -46,8 +48,23 @@ public class GameManager {
     // --- Round flow ---
 
     public void startNewRound() {
+        if (state == GameState.GAME_OVER) {
+            throw new IllegalStateException("Game is over");
+        }
         if (state != GameState.WAITING && state != GameState.ROUND_OVER) {
             throw new IllegalStateException("Cannot start a new round in state " + state);
+        }
+
+        boolean anyCanPlay = false;
+        for (Player player : players) {
+            if (player.getBalance() >= MIN_BET) {
+                anyCanPlay = true;
+                break;
+            }
+        }
+        if (!anyCanPlay) {
+            state = GameState.GAME_OVER;
+            return;
         }
 
         for (Player player : players) {
@@ -57,6 +74,7 @@ public class GameManager {
         dealer.getHand().clear();
         dealer.setHandRevealed(false);
         settledPlayers.clear();
+        insuranceDecisions.clear();
         currentPlayerIndex = 0;
 
         if (deck.needsReshuffle()) {
@@ -73,11 +91,16 @@ public class GameManager {
         if (playerIndex < 0 || playerIndex >= players.size()) {
             throw new IndexOutOfBoundsException("Player index out of bounds: " + playerIndex);
         }
+        Player player = players.get(playerIndex);
+        if (player.getCurrentBet() != 0) {
+            throw new IllegalStateException(
+                    "Player " + player.getName() + " has already placed a bet");
+        }
         if (amount < MIN_BET || amount > MAX_BET) {
             throw new IllegalArgumentException(
                     "Bet must be between " + MIN_BET + " and " + MAX_BET);
         }
-        players.get(playerIndex).placeBet(amount);
+        player.placeBet(amount);
     }
 
     public void deal() {
@@ -101,6 +124,67 @@ public class GameManager {
             dealer.getHand().addCard(deck.draw());
         }
 
+        // Dealer shows Ace → offer insurance to each player before peeking.
+        if (dealer.showsAce()) {
+            state = GameState.INSURANCE_OFFER;
+            return;
+        }
+
+        resolveNaturalBlackjacks();
+    }
+
+    public void takeInsurance(int playerIndex) {
+        if (state != GameState.INSURANCE_OFFER) {
+            throw new IllegalStateException("Cannot take insurance in state " + state);
+        }
+        if (playerIndex < 0 || playerIndex >= players.size()) {
+            throw new IndexOutOfBoundsException("Player index out of bounds: " + playerIndex);
+        }
+        if (insuranceDecisions.contains(playerIndex)) {
+            throw new IllegalStateException(
+                    "Player " + players.get(playerIndex).getName() + " has already answered");
+        }
+        Player player = players.get(playerIndex);
+        player.placeInsuranceBet(player.getCurrentBet() / 2);
+        insuranceDecisions.add(playerIndex);
+        finishInsurancePhaseIfDone();
+    }
+
+    public void declineInsurance(int playerIndex) {
+        if (state != GameState.INSURANCE_OFFER) {
+            throw new IllegalStateException("Cannot decline insurance in state " + state);
+        }
+        if (playerIndex < 0 || playerIndex >= players.size()) {
+            throw new IndexOutOfBoundsException("Player index out of bounds: " + playerIndex);
+        }
+        if (insuranceDecisions.contains(playerIndex)) {
+            throw new IllegalStateException(
+                    "Player " + players.get(playerIndex).getName() + " has already answered");
+        }
+        insuranceDecisions.add(playerIndex);
+        finishInsurancePhaseIfDone();
+    }
+
+    private void finishInsurancePhaseIfDone() {
+        if (insuranceDecisions.size() < players.size()) {
+            return;
+        }
+        // All players have answered. Peek the hole card.
+        if (dealer.getHand().isBlackJack()) {
+            // Insurance pays 2:1 to those who took it.
+            for (Player player : players) {
+                if (player.getInsuranceBet() > 0) {
+                    player.winInsurance(2.0);
+                }
+            }
+        }
+        // Insurance bets are not refunded if the dealer didn't have BJ — they are lost.
+        // (Player.placeInsuranceBet already debited the balance.)
+
+        resolveNaturalBlackjacks();
+    }
+
+    private void resolveNaturalBlackjacks() {
         // If the dealer has a natural blackjack, the round ends immediately:
         // players with a blackjack push, everyone else loses.
         if (dealer.getHand().isBlackJack()) {
@@ -139,6 +223,9 @@ public class GameManager {
         if (current.getHand().isBusted()) {
             // Bet was already subtracted at placeBet time: nothing more to do.
             settledPlayers.add(currentPlayerIndex);
+            advanceToNextActivePlayer();
+        } else if (current.getHand().getScore() == 21) {
+            // 21: no further decision, auto-stand.
             currentPlayerIndex++;
             advanceToNextActivePlayer();
         }
@@ -179,9 +266,7 @@ public class GameManager {
             Player player = players.get(i);
             int playerScore = player.getHand().getScore();
 
-            if (player.getHand().isBusted()) {
-                // lost, bet already taken
-            } else if (dealerBust || playerScore > dealerScore) {
+            if (dealerBust || playerScore > dealerScore) {
                 player.win(NORMAL_PAYOUT);
             } else if (playerScore == dealerScore) {
                 player.push();
@@ -193,25 +278,42 @@ public class GameManager {
         state = GameState.ROUND_OVER;
     }
 
-    // --- Advanced actions: not in v1 ---
+    // --- Advanced actions: ---
 
     public void doubleDown() { // (#7)
-        throw new UnsupportedOperationException("Double down is not supported in v1");
+        if (!canDoubleDown()) {
+            throw new IllegalStateException("Cannot double down in state " + state);
+        }
+        Player current = players.get(currentPlayerIndex);
+        current.doubleBet();
+        current.getHand().addCard(deck.draw());
+
+        if (current.getHand().isBusted()) {
+            settledPlayers.add(currentPlayerIndex);
+        }
+        // Double-down always ends the hand: auto-stand on any non-bust result.
+        currentPlayerIndex++;
+        advanceToNextActivePlayer();
     }
 
     public void split() { // (#6)
         throw new UnsupportedOperationException("Split is not supported in v1");
     }
 
-    public void insurance() { // (#5)
-        throw new UnsupportedOperationException("Insurance is not supported in v1");
-    }
-
     public boolean canSplit() { return false; }
 
-    public boolean canDoubleDown() { return false; }
+    public boolean canDoubleDown() {
+        if (state != GameState.PLAYER_TURN || currentPlayerIndex >= players.size()) {
+            return false;
+        }
+        Player current = players.get(currentPlayerIndex);
+        return current.getHand().getCards().size() == 2
+                && current.getBalance() >= current.getCurrentBet();
+    }
 
-    public boolean canInsure() { return false; }
+    public boolean canInsure() {
+        return state == GameState.INSURANCE_OFFER && dealer.showsAce();
+    }
 
     public List<?> getHistory() { return null; } // (#13)
 
@@ -249,12 +351,11 @@ public class GameManager {
     }
 
     private void beginDealerTurn() {
-        // If no player is still in contention (all busted or already settled),
-        // the dealer does not need to draw: resolve directly.
+        // If no player is still in contention (all already settled),
+        // the dealer does not draw — but still reveal the hole card.
         boolean anyInContention = false;
         for (int i = 0; i < players.size(); i++) {
-            Player player = players.get(i);
-            if (!settledPlayers.contains(i) && !player.getHand().isBusted()) {
+            if (!settledPlayers.contains(i)) {
                 anyInContention = true;
                 break;
             }
@@ -262,6 +363,7 @@ public class GameManager {
         if (anyInContention) {
             state = GameState.DEALER_TURN;
         } else {
+            dealer.setHandRevealed(true);
             state = GameState.RESOLVING;
             resolveRound();
         }

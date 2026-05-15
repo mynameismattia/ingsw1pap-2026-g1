@@ -32,15 +32,14 @@ public class Hand {
         return score;
     }
 
+
     public boolean isBusted(){
         return getScore() > 21;
     }
 
+
     public boolean isBlackJack(){
-        if(cards.size() == 2 && getScore() == 21){
-            return true;
-        }
-        return false;
+        return cards.size() == 2 && getScore() == 21;
     }
 
     public boolean isSoft(){

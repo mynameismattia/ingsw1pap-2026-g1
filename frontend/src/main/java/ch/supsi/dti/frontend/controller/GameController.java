@@ -13,6 +13,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.HBox;
 
 import java.util.List;
@@ -24,7 +25,7 @@ public class GameController {
     private static final int MIN_BET = 5;
     private static final int MAX_BET = 1000;
     private static final int DEFAULT_BET = 10;
-    private static final int BET_STEP = 5;
+    private static final int BET_STEP = 1;
 
     @FXML private HBox dealerCardsBox;
     @FXML private Label dealerScoreLabel;
@@ -37,15 +38,34 @@ public class GameController {
     @FXML private Button hitButton;
     @FXML private Button standButton;
     @FXML private Button newRoundButton;
+    @FXML private Button backToMenuButton;
+    @FXML private Button doubleButton;
+    @FXML private Button insureButton;
+    @FXML private Button declineInsuranceButton;
+
+    // Survives FXML reloads (e.g. language change) so the active game isn't lost.
+    private static GameManager sharedGameManager;
 
     private GameManager gameManager;
 
     @FXML
     public void initialize() {
-        betSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                MIN_BET, MAX_BET, DEFAULT_BET, BET_STEP));
-        gameManager = new GameManager(List.of("Player 1"), INITIAL_BALANCE);
-        gameManager.startNewRound();
+        SpinnerValueFactory.IntegerSpinnerValueFactory factory =
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(MIN_BET, MAX_BET, DEFAULT_BET, BET_STEP);
+        betSpinner.setValueFactory(factory);
+        betSpinner.setEditable(true);
+        betSpinner.getEditor().setTextFormatter(new TextFormatter<>(change ->
+                change.getControlNewText().matches("\\d*") ? change : null));
+        betSpinner.getEditor().setOnAction(e -> betSpinner.commitValue());
+        betSpinner.focusedProperty().addListener((obs, was, isFocused) -> {
+            if (!isFocused) betSpinner.commitValue();
+        });
+
+        if (sharedGameManager == null) {
+            sharedGameManager = new GameManager(List.of("Player 1"), INITIAL_BALANCE);
+            sharedGameManager.startNewRound();
+        }
+        gameManager = sharedGameManager;
         updateUI();
     }
 
@@ -77,20 +97,51 @@ public class GameController {
     }
 
     @FXML
+    private void onDoubleClicked() {
+        runSafe(() -> {
+            gameManager.doubleDown();
+            autoPlayDealerIfNeeded();
+        });
+    }
+
+    @FXML
+    private void onInsureClicked() {
+        runSafe(() -> {
+            gameManager.takeInsurance(0);
+            autoPlayDealerIfNeeded();
+        });
+    }
+
+    @FXML
+    private void onDeclineInsuranceClicked() {
+        runSafe(() -> {
+            gameManager.declineInsurance(0);
+            autoPlayDealerIfNeeded();
+        });
+    }
+
+    @FXML
     private void onNewRoundClicked() {
         runSafe(gameManager::startNewRound);
     }
 
     @FXML
     private void onNewGameClicked() {
-        gameManager = new GameManager(List.of("Player 1"), INITIAL_BALANCE);
-        gameManager.startNewRound();
+        sharedGameManager = new GameManager(List.of("Player 1"), INITIAL_BALANCE);
+        sharedGameManager.startNewRound();
+        gameManager = sharedGameManager;
         updateUI();
     }
 
     @FXML
     private void onExitClicked() {
         Platform.exit();
+    }
+
+    @FXML
+    private void onBackToMenuClicked() {
+        // TODO: navigate to menu screen once it exists.
+        messageLabel.setText(MessageService.getInstance().getMessage("game.message.gameOver"));
     }
 
     @FXML
@@ -139,11 +190,24 @@ public class GameController {
         balanceLabel.setText(msg.getMessage("game.balance") + ": " + player.getBalance());
         messageLabel.setText(stateMessage(state, player, msg));
 
-        dealButton.setDisable(state != GameState.BETTING);
-        hitButton.setDisable(state != GameState.PLAYER_TURN);
-        standButton.setDisable(state != GameState.PLAYER_TURN);
-        newRoundButton.setDisable(state != GameState.ROUND_OVER);
-        betSpinner.setDisable(state != GameState.BETTING);
+        boolean gameOver = state == GameState.GAME_OVER;
+        boolean insurance = state == GameState.INSURANCE_OFFER;
+        dealButton.setDisable(gameOver || state != GameState.BETTING);
+        hitButton.setDisable(gameOver || state != GameState.PLAYER_TURN);
+        standButton.setDisable(gameOver || state != GameState.PLAYER_TURN);
+        doubleButton.setDisable(gameOver || !gameManager.canDoubleDown());
+        doubleButton.setVisible(state == GameState.PLAYER_TURN);
+        doubleButton.setManaged(state == GameState.PLAYER_TURN);
+        insureButton.setDisable(gameOver || !insurance);
+        insureButton.setVisible(insurance);
+        insureButton.setManaged(insurance);
+        declineInsuranceButton.setDisable(gameOver || !insurance);
+        declineInsuranceButton.setVisible(insurance);
+        declineInsuranceButton.setManaged(insurance);
+        newRoundButton.setDisable(gameOver || state != GameState.ROUND_OVER);
+        betSpinner.setDisable(gameOver || state != GameState.BETTING);
+        backToMenuButton.setVisible(gameOver);
+        backToMenuButton.setManaged(gameOver);
     }
 
     private void renderDealer(GameState state) {
@@ -180,8 +244,10 @@ public class GameController {
         return switch (state) {
             case WAITING, BETTING       -> msg.getMessage("game.message.placeBet");
             case DEALING, PLAYER_TURN   -> msg.getMessage("game.message.playerTurn");
+            case INSURANCE_OFFER        -> msg.getMessage("game.message.offerInsurance");
             case DEALER_TURN, RESOLVING -> msg.getMessage("game.message.dealerTurn");
             case ROUND_OVER             -> resolveMessage(player, msg);
+            case GAME_OVER              -> msg.getMessage("game.message.gameOver");
         };
     }
 

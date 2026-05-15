@@ -21,6 +21,10 @@ public class Dealer {
         return hand.getCards().getFirst();
     }
 
+    public boolean showsAce(){
+        return !hand.getCards().isEmpty() && getVisibleCard().getRank() == Rank.ACE;
+    }
+
     public Hand getHand() {
         return hand;
     }
