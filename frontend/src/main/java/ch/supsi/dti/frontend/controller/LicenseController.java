@@ -117,7 +117,7 @@ public class LicenseController {
                 showSuccess("Licenza valida");
                 setStatus(StatusKind.OK, "Licenza valida. Avvio del gioco...");
                 PauseTransition hold = new PauseTransition(SUCCESS_HOLD);
-                hold.setOnFinished(ev -> launchGame());
+                hold.setOnFinished(ev -> launchMenu());
                 hold.play();
             } else {
                 showError("Codice non valido");
@@ -198,12 +198,12 @@ public class LicenseController {
         if (state != null) activateButton.getStyleClass().add(state);
     }
 
-    private void launchGame() {
+    private void launchMenu() {
         try {
             Stage stage = (Stage) licenseField.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/game.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/menu.fxml"));
             loader.setResources(MessageService.getInstance().getBundle());
-            Scene scene = new Scene(loader.load(), 1280, 720);
+            Scene scene = new Scene(loader.load(), 1100, 680);
             stage.setScene(scene);
             stage.setTitle(MessageService.getInstance().getMessage("app.title"));
             stage.setResizable(true);
