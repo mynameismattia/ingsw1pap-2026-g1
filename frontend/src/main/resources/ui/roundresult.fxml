@@ -41,31 +41,14 @@
                 <HBox fx:id="dealerCardsBox" alignment="CENTER" spacing="6" minHeight="100"/>
 
                 <HBox alignment="CENTER">
-                    <Label text="18" styleClass="dealer-score-pill"/>
+                    <Label fx:id="dealerScorePill" text="" styleClass="dealer-score-pill"/>
                 </HBox>
 
                 <Region prefHeight="14"/>
 
                 <Label text="%roundresult.balancesUpdated" styleClass="field-label"/>
 
-                <HBox styleClass="balance-mini-row" alignment="CENTER_LEFT" spacing="10">
-                    <StackPane styleClass="seat-avatar"><Label text="A" styleClass="seat-avatar-initial"/></StackPane>
-                    <Label text="Alice" styleClass="balance-mini-name" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="\$1.300" styleClass="balance-mini-value"/>
-                    <Label text="+" styleClass="delta-pos"/>
-                </HBox>
-
-                <HBox styleClass="balance-mini-row" alignment="CENTER_LEFT" spacing="10">
-                    <StackPane styleClass="seat-avatar, seat-avatar-bob"><Label text="B" styleClass="seat-avatar-initial"/></StackPane>
-                    <Label text="Bob" styleClass="balance-mini-name" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="\$1.000" styleClass="balance-mini-value"/>
-                </HBox>
-
-                <HBox styleClass="balance-mini-row" alignment="CENTER_LEFT" spacing="10">
-                    <StackPane styleClass="seat-avatar, seat-avatar-cpu"><Label text="C" styleClass="seat-avatar-initial"/></StackPane>
-                    <Label text="Carlos" styleClass="balance-mini-name" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="\$780" styleClass="balance-mini-value"/>
-                </HBox>
+                <VBox fx:id="balancesList" spacing="0"/>
             </VBox>
 
             <Region styleClass="vdivider"/>
@@ -79,42 +62,13 @@
                 </StackPane>
 
                 <Label fx:id="winnerLabel" text="" styleClass="winner-title"/>
-                <Label text="Blackjack · +\$150" styleClass="winner-subtitle"/>
+                <Label fx:id="winnerSubtitle" text="" styleClass="winner-subtitle"/>
 
                 <HBox styleClass="streak-banner" alignment="CENTER_LEFT" spacing="10">
                     <Label fx:id="streakLabel" text="" styleClass="streak-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="+\$0 XP" styleClass="delta-pos"/>
                 </HBox>
 
-                <VBox spacing="6">
-                    <HBox styleClass="outcome-row" alignment="CENTER_LEFT" spacing="10">
-                        <StackPane styleClass="seat-avatar"><Label text="A" styleClass="seat-avatar-initial"/></StackPane>
-                        <Label text="Alice 21" styleClass="outcome-name" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                        <Label text="%roundresult.outcome.win" styleClass="outcome-chip, outcome-chip-win"/>
-                        <Label text="+\$150" styleClass="delta-pos"/>
-                    </HBox>
-
-                    <HBox styleClass="outcome-row" alignment="CENTER_LEFT" spacing="10">
-                        <StackPane styleClass="seat-avatar, seat-avatar-bob"><Label text="B" styleClass="seat-avatar-initial"/></StackPane>
-                        <Label text="Bob 17" styleClass="outcome-name" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                        <Label text="%roundresult.outcome.push" styleClass="outcome-chip, outcome-chip-push"/>
-                        <Label text="-\$25" styleClass="delta-neg"/>
-                    </HBox>
-
-                    <HBox styleClass="outcome-row" alignment="CENTER_LEFT" spacing="10">
-                        <StackPane styleClass="seat-avatar, seat-avatar-cpu"><Label text="C" styleClass="seat-avatar-initial"/></StackPane>
-                        <Label text="Carlos 20" styleClass="outcome-name" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                        <Label text="%roundresult.outcome.lose" styleClass="outcome-chip, outcome-chip-loss"/>
-                        <Label text="-\$100" styleClass="delta-neg"/>
-                    </HBox>
-
-                    <HBox styleClass="outcome-row" alignment="CENTER_LEFT" spacing="10">
-                        <StackPane styleClass="seat-avatar, seat-avatar-cpu"><Label text="C" styleClass="seat-avatar-initial"/></StackPane>
-                        <Label text="CPU 18" styleClass="outcome-name" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                        <Label text="%roundresult.outcome.push" styleClass="outcome-chip, outcome-chip-push"/>
-                        <Label text="+\$0" styleClass="balance-mini-value"/>
-                    </HBox>
-                </VBox>
+                <VBox fx:id="outcomeList" spacing="6"/>
 
                 <Region VBox.vgrow="ALWAYS"/>
 
@@ -135,7 +89,7 @@
                 <padding><Insets top="24" right="20" bottom="24" left="20"/></padding>
 
                 <Label text="%roundresult.nextBet" styleClass="field-label"/>
-                <Label text="\$50" styleClass="next-bet-value"/>
+                <Label fx:id="nextBetValue" text="\$50" styleClass="next-bet-value"/>
 
                 <HBox spacing="10">
                     <Button text="%roundresult.change" styleClass="secondary-button"

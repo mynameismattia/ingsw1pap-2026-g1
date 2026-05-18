@@ -44,7 +44,6 @@ public class GameController {
     private static final int MAX_BET = 1000;
     private static final Duration DEALER_STEP_DELAY = Duration.millis(800);
     private static final int TOTAL_ROUNDS = 10;
-    private static final int DECK_SIZE = 52;
 
     private Timeline dealerTimeline;
 
@@ -81,6 +80,7 @@ public class GameController {
     @FXML private Button chip250;
     @FXML private Label currentBetLabel;
     @FXML private Button dealButton;
+    @FXML private VBox lastRoundsList;
 
     // Sequential betting / insurance state — tracked per-frontend, not in GameManager.
     private int bettingPlayerIndex = 0;
@@ -94,9 +94,12 @@ public class GameController {
     // Injected by the menu before navigating to the game scene.
     private static GameManager pendingGameManager;
 
+    // Round counter shared across FXML reloads. Reset to 1 on a fresh game,
+    // incremented by RoundResultController when the user starts the next round.
+    static int sharedRoundNumber = 1;
+
     private GameManager gameManager;
     private int currentBet;
-    private int roundNumber = 1;
 
     public static void setPendingGameManager(GameManager gm) {
         pendingGameManager = gm;
@@ -119,6 +122,7 @@ public class GameController {
         gameManager = sharedGameManager;
         currentBet = 0;
         if (freshGame) {
+            sharedRoundNumber = 1;
             bettingPlayerIndex = nextActivePlayerIndex(0);
             insuranceAskingIndex = 0;
             persistIndices();
@@ -395,11 +399,12 @@ public class GameController {
         GameState state = gameManager.getState();
 
         // Titlebar pills (parametric — set programmatically because FXML %key can't apply MessageFormat)
-        roundLabel.setText(msg.getMessage("game.titlebar.round", roundNumber, TOTAL_ROUNDS));
-        deckLabel.setText(msg.getMessage("game.titlebar.deck", DECK_SIZE));
+        roundLabel.setText(msg.getMessage("game.titlebar.round", sharedRoundNumber, TOTAL_ROUNDS));
+        deckLabel.setText(msg.getMessage("game.titlebar.deck", gameManager.getDeckRemaining()));
 
         renderDealer();
         renderPlayers(msg, state);
+        renderLastRounds();
 
         currentBetLabel.setText("$" + currentBet);
 
@@ -611,6 +616,72 @@ public class GameController {
             case LOSE      -> "game.message.lose";
             case PUSH      -> "game.message.push";
             case BLACKJACK -> "game.message.blackjack";
+        };
+    }
+
+    /** Populates the right-panel "Last rounds" list with the human player's recent records. */
+    private void renderLastRounds() {
+        lastRoundsList.getChildren().clear();
+        String humanName = gameManager.getPlayers().stream()
+                .filter(p -> !p.isBot())
+                .map(Player::getName)
+                .findFirst()
+                .orElse(null);
+        if (humanName == null) {
+            return;
+        }
+
+        List<RoundRecord> history = gameManager.getHistory();
+        int totalForHuman = 0;
+        for (RoundRecord r : history) {
+            if (r.playerName().equals(humanName)) {
+                totalForHuman++;
+            }
+        }
+        // Walk in reverse chronological order; collect up to 3 of the human's records.
+        java.util.ArrayList<RoundRecord> recent = new java.util.ArrayList<>(3);
+        for (int i = history.size() - 1; i >= 0 && recent.size() < 3; i--) {
+            RoundRecord r = history.get(i);
+            if (r.playerName().equals(humanName)) {
+                recent.add(r);
+            }
+        }
+
+        // Build rows in the order they appear (latest first).
+        for (int idx = 0; idx < recent.size(); idx++) {
+            RoundRecord r = recent.get(idx);
+            int displayRound = totalForHuman - idx;
+            int delta = computeDelta(r.bet(), r.outcome());
+
+            HBox row = new HBox();
+            row.getStyleClass().add("mini-round-row");
+            row.setAlignment(Pos.CENTER_LEFT);
+
+            Label nameLbl = labeled("Round " + displayRound, "mini-round-label");
+            HBox.setHgrow(nameLbl, Priority.ALWAYS);
+            nameLbl.setMaxWidth(Double.MAX_VALUE);
+            row.getChildren().add(nameLbl);
+
+            Label deltaLbl;
+            if (delta > 0) {
+                deltaLbl = labeled("+$" + delta, "delta-pos");
+            } else if (delta < 0) {
+                deltaLbl = labeled("-$" + Math.abs(delta), "delta-neg");
+            } else {
+                deltaLbl = labeled("$0", "mini-round-label");
+            }
+            row.getChildren().add(deltaLbl);
+
+            lastRoundsList.getChildren().add(row);
+        }
+    }
+
+    private static int computeDelta(int bet, HandOutcome outcome) {
+        return switch (outcome) {
+            case WIN       -> bet;
+            case BLACKJACK -> (int) Math.round(bet * 1.5);
+            case LOSE      -> -bet;
+            case PUSH      -> 0;
         };
     }
 }

@@ -131,14 +131,7 @@
 
                 <Label text="%game.panel.lastRounds" styleClass="field-label"/>
 
-                <HBox styleClass="mini-round-row" alignment="CENTER_LEFT">
-                    <Label text="Round 2" styleClass="mini-round-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="+\$75" styleClass="delta-pos"/>
-                </HBox>
-                <HBox styleClass="mini-round-row" alignment="CENTER_LEFT">
-                    <Label text="Round 1" styleClass="mini-round-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="-\$25" styleClass="delta-neg"/>
-                </HBox>
+                <VBox fx:id="lastRoundsList" spacing="6"/>
             </VBox>
 
         </HBox>

@@ -96,8 +96,9 @@ public class GameManager {
         for (Player player : players) {
             player.resetForNewRound();
             boolean broke = player.getBalance() < MIN_BET;
-            player.setSittingOut(broke);
-            if (broke) {
+            boolean sittingOut = broke || player.isBot();
+            player.setSittingOut(sittingOut);
+            if (sittingOut) {
                 // Pre-settle the placeholder hand so the turn loop skips them naturally.
                 player.getHands().get(0).setSettled(true);
             }
@@ -512,6 +513,10 @@ public class GameManager {
 
     public List<Player> getPlayers() {
         return Collections.unmodifiableList(players);
+    }
+
+    public int getDeckRemaining() {
+        return deck.remainingCards();
     }
 
     // --- Internal helpers ---
