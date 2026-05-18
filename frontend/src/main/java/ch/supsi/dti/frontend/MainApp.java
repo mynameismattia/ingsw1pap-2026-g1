@@ -24,7 +24,7 @@
 
           String saved = LicenseController.loadSavedLicense();
           if (saved != null && new LicenseChecker().checkLicense(saved)) {
-              stage.setScene(new Scene(loadGameRoot(), 1280, 720));
+              stage.setScene(new Scene(loadMenuRoot(), 1100, 680));
           } else {
               FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/license.fxml"));
               stage.setScene(new Scene(loader.load(), 480, 550));
@@ -41,6 +41,12 @@
 
       private static Parent loadGameRoot() throws Exception {
           FXMLLoader loader = new FXMLLoader(MainApp.class.getResource("/ui/game.fxml"));
+          loader.setResources(MessageService.getInstance().getBundle());
+          return loader.load();
+      }
+
+      private static Parent loadMenuRoot() throws Exception {
+          FXMLLoader loader = new FXMLLoader(MainApp.class.getResource("/ui/menu.fxml"));
           loader.setResources(MessageService.getInstance().getBundle());
           return loader.load();
       }
