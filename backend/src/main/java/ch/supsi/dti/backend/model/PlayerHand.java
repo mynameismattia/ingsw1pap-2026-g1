@@ -7,6 +7,7 @@ public class PlayerHand {
     private int bet;
     private int insuranceBet;
     private boolean settled;
+    private HandOutcome outcome;
 
     public PlayerHand(Player owner) {
         this.owner = owner;
@@ -14,6 +15,7 @@ public class PlayerHand {
         this.bet = 0;
         this.insuranceBet = 0;
         this.settled = false;
+        this.outcome = null;
     }
 
     public void placeBet(int amount) {
@@ -70,5 +72,13 @@ public class PlayerHand {
 
     public void setSettled(boolean settled) {
         this.settled = settled;
+    }
+
+    public HandOutcome getOutcome() {
+        return outcome;
+    }
+
+    public void setOutcome(HandOutcome outcome) {
+        this.outcome = outcome;
     }
 }

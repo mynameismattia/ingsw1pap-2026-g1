@@ -4,10 +4,13 @@ import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.game.GameState;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.Card;
+import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.frontend.MainApp;
 import ch.supsi.dti.frontend.view.CardView;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -18,6 +21,7 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 
 import java.util.List;
 import java.util.Locale;
@@ -29,6 +33,9 @@ public class GameController {
     private static final int MAX_BET = 1000;
     private static final int DEFAULT_BET = 10;
     private static final int BET_STEP = 1;
+    private static final Duration DEALER_STEP_DELAY = Duration.millis(800);
+
+    private Timeline dealerTimeline;
 
     @FXML private HBox dealerCardsBox;
     @FXML private Label dealerScoreLabel;
@@ -187,9 +194,21 @@ public class GameController {
     }
 
     private void autoPlayDealerIfNeeded() {
-        if (gameManager.getState() == GameState.DEALER_TURN) {
-            gameManager.dealerPlay();
+        if (gameManager.getState() != GameState.DEALER_TURN) {
+            return;
         }
+        if (dealerTimeline != null && dealerTimeline.getStatus() == Timeline.Status.RUNNING) {
+            return;
+        }
+        dealerTimeline = new Timeline(new KeyFrame(DEALER_STEP_DELAY, e -> {
+            boolean more = gameManager.dealerTakeTurnStep();
+            updateUI();
+            if (!more) {
+                dealerTimeline.stop();
+            }
+        }));
+        dealerTimeline.setCycleCount(Timeline.INDEFINITE);
+        dealerTimeline.play();
     }
 
     private void updateUI() {
@@ -200,7 +219,14 @@ public class GameController {
         renderDealer(state);
         renderPlayer(player, msg);
         balanceLabel.setText(msg.getMessage("game.balance") + ": " + player.getBalance());
-        messageLabel.setText(stateMessage(state, player, msg));
+        messageLabel.setText(switch (state) {
+            case WAITING, BETTING       -> msg.getMessage("game.message.placeBet");
+            case DEALING, PLAYER_TURN   -> msg.getMessage("game.message.playerTurn");
+            case INSURANCE_OFFER        -> msg.getMessage("game.message.offerInsurance");
+            case DEALER_TURN, RESOLVING -> msg.getMessage("game.message.dealerTurn");
+            case ROUND_OVER             -> "";
+            case GAME_OVER              -> msg.getMessage("game.message.gameOver");
+        });
 
         boolean gameOver = state == GameState.GAME_OVER;
         boolean insurance = state == GameState.INSURANCE_OFFER;
@@ -261,6 +287,10 @@ public class GameController {
             if (!ph.getHand().getCards().isEmpty()) {
                 String label = msg.getMessage("game.score") + ": " + ph.getHand().getScore()
                         + "  (" + ph.getBet() + ")";
+                HandOutcome outcome = ph.getOutcome();
+                if (outcome != null) {
+                    label += "  — " + msg.getMessage(outcomeKey(outcome));
+                }
                 Label scoreLbl = new Label(label);
                 boolean isActive = ph == active;
                 scoreLbl.setStyle("-fx-text-fill: " + (isActive ? "yellow" : "white")
@@ -272,25 +302,12 @@ public class GameController {
         playerScoreLabel.setText("");
     }
 
-    private String stateMessage(GameState state, Player player, MessageService msg) {
-        return switch (state) {
-            case WAITING, BETTING       -> msg.getMessage("game.message.placeBet");
-            case DEALING, PLAYER_TURN   -> msg.getMessage("game.message.playerTurn");
-            case INSURANCE_OFFER        -> msg.getMessage("game.message.offerInsurance");
-            case DEALER_TURN, RESOLVING -> msg.getMessage("game.message.dealerTurn");
-            case ROUND_OVER             -> resolveMessage(player, msg);
-            case GAME_OVER              -> msg.getMessage("game.message.gameOver");
+    private String outcomeKey(HandOutcome outcome) {
+        return switch (outcome) {
+            case WIN       -> "game.message.win";
+            case LOSE      -> "game.message.lose";
+            case PUSH      -> "game.message.push";
+            case BLACKJACK -> "game.message.blackjack";
         };
-    }
-
-    private String resolveMessage(Player player, MessageService msg) {
-        if (player.getHands().get(0).getHand().isBlackJack())   return msg.getMessage("game.message.blackjack");
-        if (player.getHands().get(0).getHand().isBusted())      return msg.getMessage("game.message.bust");
-        int playerScore = player.getHands().get(0).getHand().getScore();
-        int dealerScore = gameManager.getDealer().getHand().getScore();
-        boolean dealerBust = gameManager.getDealer().getHand().isBusted();
-        if (dealerBust || playerScore > dealerScore) return msg.getMessage("game.message.win");
-        if (playerScore == dealerScore)              return msg.getMessage("game.message.push");
-        return msg.getMessage("game.message.lose");
     }
 }

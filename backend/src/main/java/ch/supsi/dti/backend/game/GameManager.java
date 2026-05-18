@@ -3,6 +3,7 @@ package ch.supsi.dti.backend.game;
 import ch.supsi.dti.backend.model.Card;
 import ch.supsi.dti.backend.model.Dealer;
 import ch.supsi.dti.backend.model.Deck;
+import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.backend.model.Rank;
@@ -197,6 +198,9 @@ public class GameManager {
                 PlayerHand mainHand = player.getHands().get(0);
                 if (mainHand.getHand().isBlackJack()) {
                     mainHand.push();
+                    mainHand.setOutcome(HandOutcome.PUSH);
+                } else {
+                    mainHand.setOutcome(HandOutcome.LOSE);
                 }
                 mainHand.setSettled(true);
             }
@@ -209,6 +213,7 @@ public class GameManager {
             PlayerHand mainHand = player.getHands().get(0);
             if (mainHand.getHand().isBlackJack()) {
                 mainHand.win(BLACKJACK_PAYOUT);
+                mainHand.setOutcome(HandOutcome.BLACKJACK);
                 mainHand.setSettled(true);
             }
         }
@@ -255,6 +260,27 @@ public class GameManager {
         resolveRound();
     }
 
+    /**
+     * Plays one step of the dealer's turn so the UI can animate between draws.
+     * @return true if the dealer drew a card and another step may follow;
+     *         false if the dealer is done (round has been resolved).
+     */
+    public boolean dealerTakeTurnStep() {
+        if (state != GameState.DEALER_TURN) {
+            throw new IllegalStateException("Cannot play dealer in state " + state);
+        }
+        if (!dealer.isHandRevealed()) {
+            dealer.setHandRevealed(true);
+        }
+        if (dealer.shouldHit()) {
+            dealer.getHand().addCard(deck.draw());
+            return true;
+        }
+        state = GameState.RESOLVING;
+        resolveRound();
+        return false;
+    }
+
     public void resolveRound() {
         if (state != GameState.RESOLVING) {
             throw new IllegalStateException("Cannot resolve round in state " + state);
@@ -265,17 +291,26 @@ public class GameManager {
 
         for (Player player : players) {
             for (PlayerHand ph : player.getHands()) {
-                if (ph.isSettled()) {
+                if (ph.getOutcome() != null) {
+                    continue; // outcome already determined (natural BJ)
+                }
+                if (ph.getHand().isBusted()) {
+                    ph.setOutcome(HandOutcome.LOSE);
+                    ph.setSettled(true);
                     continue;
                 }
                 int playerScore = ph.getHand().getScore();
 
                 if (dealerBust || playerScore > dealerScore) {
                     ph.win(NORMAL_PAYOUT);
+                    ph.setOutcome(HandOutcome.WIN);
                 } else if (playerScore == dealerScore) {
                     ph.push();
+                    ph.setOutcome(HandOutcome.PUSH);
+                } else {
+                    // dealer wins, bet is already lost
+                    ph.setOutcome(HandOutcome.LOSE);
                 }
-                // else: dealer wins, bet is already lost
                 ph.setSettled(true);
             }
         }
