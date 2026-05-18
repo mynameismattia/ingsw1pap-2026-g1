@@ -59,7 +59,12 @@
             <Button fx:id="dealButton"     text="%game.button.deal"     onAction="#onDealClicked"/>
             <Button fx:id="hitButton"      text="%game.button.hit"      onAction="#onHitClicked"/>
             <Button fx:id="standButton"    text="%game.button.stand"    onAction="#onStandClicked"/>
+            <Button fx:id="doubleButton"   text="%game.button.double"   onAction="#onDoubleClicked"/>
+            <Button fx:id="splitButton"    text="%game.button.split"    onAction="#onSplitClicked"/>
+            <Button fx:id="insureButton"   text="%game.button.insure"   onAction="#onInsureClicked"/>
+            <Button fx:id="declineInsuranceButton" text="%game.button.declineInsurance" onAction="#onDeclineInsuranceClicked"/>
             <Button fx:id="newRoundButton" text="%game.button.newRound" onAction="#onNewRoundClicked"/>
+            <Button fx:id="backToMenuButton" text="%game.button.backToMenu" onAction="#onBackToMenuClicked"/>
         </HBox>
     </bottom>
 </BorderPane>

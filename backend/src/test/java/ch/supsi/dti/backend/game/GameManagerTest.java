@@ -3,6 +3,7 @@ package ch.supsi.dti.backend.game;
 import ch.supsi.dti.backend.model.Card;
 import ch.supsi.dti.backend.model.Deck;
 import ch.supsi.dti.backend.model.Player;
+import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.backend.model.Rank;
 import ch.supsi.dti.backend.model.Suit;
 import org.junit.jupiter.api.Disabled;
@@ -13,6 +14,7 @@ import java.util.Deque;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -142,6 +144,7 @@ public class GameManagerTest {
         gm.startNewRound();
         gm.placeBet(0, BET);
         gm.deal();
+        gm.declineInsurance(0);
 
         assertEquals(GameState.ROUND_OVER, gm.getState());
         assertTrue(gm.getDealer().isHandRevealed());
@@ -159,6 +162,7 @@ public class GameManagerTest {
         gm.startNewRound();
         gm.placeBet(0, BET);
         gm.deal();
+        gm.declineInsurance(0);
 
         assertEquals(GameState.ROUND_OVER, gm.getState());
         assertEquals(INITIAL_BALANCE, gm.getPlayers().get(0).getBalance());
@@ -179,7 +183,7 @@ public class GameManagerTest {
         gm.hit();
 
         assertEquals(GameState.ROUND_OVER, gm.getState());
-        assertTrue(gm.getPlayers().get(0).getHand().isBusted());
+        assertTrue(gm.getPlayers().get(0).getHands().get(0).getHand().isBusted());
         assertEquals(INITIAL_BALANCE - BET, gm.getPlayers().get(0).getBalance());
     }
 
@@ -269,6 +273,7 @@ public class GameManagerTest {
         gm.startNewRound();
         gm.placeBet(0, BET);
         gm.deal();
+        gm.declineInsurance(0);
         gm.stand();
         gm.dealerPlay();
 
@@ -373,19 +378,401 @@ public class GameManagerTest {
         assertThrows(IllegalStateException.class, gm::dealerPlay);
     }
 
+    // --- Game over ---
+
+    @Test
+    void testGameOverWhenBalanceFallsBelowMinBet() {
+        // Player 16 vs dealer 20 -> player loses 95 of 99, ends with 4 (< MIN_BET 5).
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.TEN), c(Rank.KING),
+                c(Rank.SIX), c(Rank.QUEEN)
+        ));
+        GameManager gm = new GameManager(List.of("Alice"), 99, deck);
+        gm.startNewRound();
+        gm.placeBet(0, 95);
+        gm.deal();
+        gm.stand();
+        gm.dealerPlay();
+        assertEquals(4, gm.getPlayers().get(0).getBalance());
+
+        gm.startNewRound();
+        assertEquals(GameState.GAME_OVER, gm.getState());
+    }
+
+    @Test
+    void testStartNewRoundFromGameOverThrows() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.TEN), c(Rank.KING),
+                c(Rank.SIX), c(Rank.QUEEN)
+        ));
+        GameManager gm = new GameManager(List.of("Alice"), 99, deck);
+        gm.startNewRound();
+        gm.placeBet(0, 95);
+        gm.deal();
+        gm.stand();
+        gm.dealerPlay();
+        gm.startNewRound(); // transitions to GAME_OVER
+        assertThrows(IllegalStateException.class, gm::startNewRound);
+    }
+
+    @Test
+    void testPlaceBetTwiceThrows() {
+        GameManager gm = new GameManager(List.of("Alice"), INITIAL_BALANCE);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        assertThrows(IllegalStateException.class, () -> gm.placeBet(0, BET));
+    }
+
+    @Test
+    void testPlayerAutoStandsOnTwentyOne() {
+        // Player starts 7+7 = 14, hits a 7 -> 21. Dealer stands on 18.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.SEVEN), c(Rank.TEN),
+                c(Rank.SEVEN), c(Rank.EIGHT),
+                c(Rank.SEVEN) // hit card -> player = 21
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.hit();
+        // After hitting to 21 the player auto-stands: dealer must play immediately.
+        assertEquals(GameState.DEALER_TURN, gm.getState());
+        assertThrows(IllegalStateException.class, gm::hit);
+        gm.dealerPlay();
+        // Player 21 > dealer 18 -> even-money win.
+        assertEquals(INITIAL_BALANCE + BET, gm.getPlayers().get(0).getBalance());
+        // 21 from 3 cards is NOT a natural blackjack: only 3:2 payout for 2-card 21.
+    }
+
+    @Test
+    void testDealerHandRevealedWhenPlayerBusts() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.KING), c(Rank.QUEEN),
+                c(Rank.SEVEN), c(Rank.TEN),
+                c(Rank.TEN) // hit card: busts player at 27
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.hit();
+        assertTrue(gm.getDealer().isHandRevealed());
+        assertEquals(GameState.ROUND_OVER, gm.getState());
+    }
+
+    // --- Insurance ---
+
+    @Test
+    void testInsuranceOfferedOnDealerAce() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.KING), c(Rank.ACE),   // p1, d1 (Ace upcard)
+                c(Rank.NINE), c(Rank.NINE)   // p2 -> 19, d2 -> 20 (no BJ)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        assertEquals(GameState.INSURANCE_OFFER, gm.getState());
+        assertTrue(gm.canInsure());
+    }
+
+    @Test
+    void testNoInsuranceWhenDealerHasNoAce() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.KING), c(Rank.SEVEN),
+                c(Rank.NINE), c(Rank.NINE)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        assertEquals(GameState.PLAYER_TURN, gm.getState());
+        assertFalse(gm.canInsure());
+    }
+
+    @Test
+    void testInsurancePays2to1OnDealerBlackjack() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.NINE), c(Rank.ACE),   // p1=9, d1=A
+                c(Rank.SEVEN), c(Rank.KING)  // p2 -> 16, d2 -> 21 (BJ)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.takeInsurance(0);
+        // Main bet (10) lost, insurance (5) wins 10 → net = -10 + 10 = 0
+        assertEquals(INITIAL_BALANCE, gm.getPlayers().get(0).getBalance());
+        assertEquals(GameState.ROUND_OVER, gm.getState());
+        assertTrue(gm.getDealer().isHandRevealed());
+    }
+
+    @Test
+    void testInsuranceLostWhenDealerHasNoBlackjack() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.KING), c(Rank.ACE),   // p1=10, d1=A
+                c(Rank.NINE), c(Rank.NINE)   // p2 -> 19, d2 -> 20 (no BJ)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.takeInsurance(0);
+        // After insurance phase, dealer didn't have BJ → continue with PLAYER_TURN.
+        assertEquals(GameState.PLAYER_TURN, gm.getState());
+        // Balance is initial - main bet (10) - insurance bet (5) = 85
+        assertEquals(INITIAL_BALANCE - BET - BET / 2, gm.getPlayers().get(0).getBalance());
+    }
+
+    @Test
+    void testDeclineInsuranceContinuesPlay() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.KING), c(Rank.ACE),
+                c(Rank.NINE), c(Rank.NINE)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.declineInsurance(0);
+        assertEquals(GameState.PLAYER_TURN, gm.getState());
+        assertEquals(0, gm.getPlayers().get(0).getHands().get(0).getInsuranceBet());
+    }
+
+    @Test
+    void testInsuranceCannotBeAnsweredTwice() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.KING), c(Rank.ACE),
+                c(Rank.NINE), c(Rank.NINE)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.declineInsurance(0);
+        assertThrows(IllegalStateException.class, () -> gm.takeInsurance(0));
+    }
+
+    // --- Double down ---
+
+    @Test
+    void testDoubleDownDoublesBetAndDealsOneCard() {
+        // p1=5, p2=6 -> 11. Double, hit card K -> 21. Dealer stands on 20.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.FIVE), c(Rank.KING),
+                c(Rank.SIX), c(Rank.QUEEN),
+                c(Rank.KING) // double-down card
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        assertTrue(gm.canDoubleDown());
+        gm.doubleDown();
+        // Only one card drawn after double; auto-stand → DEALER_TURN.
+        assertEquals(3, gm.getPlayers().get(0).getHands().get(0).getHand().getCards().size());
+        assertEquals(GameState.DEALER_TURN, gm.getState());
+        gm.dealerPlay();
+        // Player 21 > dealer 20 → wins on a doubled bet (20). Net = -10 (placeBet) -10 (double) + 40 = +20
+        assertEquals(INITIAL_BALANCE + 2 * BET, gm.getPlayers().get(0).getBalance());
+    }
+
+    @Test
+    void testDoubleDownBustForfeitsDoubledBet() {
+        // p1=K, p2=K -> 20. Double, hit card K -> 30 bust.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.KING), c(Rank.QUEEN),
+                c(Rank.KING), c(Rank.TEN),
+                c(Rank.KING)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.doubleDown();
+        assertTrue(gm.getPlayers().get(0).getHands().get(0).getHand().isBusted());
+        assertEquals(GameState.ROUND_OVER, gm.getState());
+        assertEquals(INITIAL_BALANCE - 2 * BET, gm.getPlayers().get(0).getBalance());
+    }
+
+    @Test
+    void testDoubleDownNotAllowedAfterHit() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.FIVE), c(Rank.KING),
+                c(Rank.SIX), c(Rank.QUEEN),
+                c(Rank.TWO) // hit card
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.hit();
+        assertFalse(gm.canDoubleDown());
+        assertThrows(IllegalStateException.class, gm::doubleDown);
+    }
+
+    @Test
+    void testDoubleDownRejectedWithoutEnoughBalance() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.FIVE), c(Rank.KING),
+                c(Rank.SIX), c(Rank.QUEEN)
+        ));
+        // Balance = 50, bet = 30 → can't double (would need another 30, only 20 left).
+        GameManager gm = new GameManager(List.of("Alice"), 50, deck);
+        gm.startNewRound();
+        gm.placeBet(0, 30);
+        gm.deal();
+        assertFalse(gm.canDoubleDown());
+        assertThrows(IllegalStateException.class, gm::doubleDown);
+    }
+
+    // --- Split ---
+
+    @Test
+    void testSplitCreatesTwoHands() {
+        // p1=8, p2=8 -> pair of 8s. Dealer 9+9 = 18 (no Ace, no insurance).
+        // Split: hand1 gets 8 + 3 = 11, hand2 gets 8 + 4 = 12.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.THREE), c(Rank.FOUR) // split cards: first hand, second hand
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        assertTrue(gm.canSplit());
+        gm.split();
+
+        List<PlayerHand> hands = gm.getPlayers().get(0).getHands();
+        assertEquals(2, hands.size());
+        assertEquals(2, hands.get(0).getHand().getCards().size());
+        assertEquals(2, hands.get(1).getHand().getCards().size());
+        assertEquals(BET, hands.get(0).getBet());
+        assertEquals(BET, hands.get(1).getBet());
+        // After split, balance is initial - 2*bet.
+        assertEquals(INITIAL_BALANCE - 2 * BET, gm.getPlayers().get(0).getBalance());
+        // First split hand is active (11, not 21): state stays PLAYER_TURN.
+        assertEquals(GameState.PLAYER_TURN, gm.getState());
+        assertEquals(hands.get(0), gm.getCurrentHand());
+    }
+
+    @Test
+    void testCannotSplitDifferentRanks() {
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.SEVEN), c(Rank.NINE)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        assertFalse(gm.canSplit());
+        assertThrows(IllegalStateException.class, gm::split);
+    }
+
+    @Test
+    void testCannotSplitWithoutBalance() {
+        // Balance just enough for first bet, not for a second.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.EIGHT), c(Rank.NINE)
+        ));
+        GameManager gm = new GameManager(List.of("Alice"), 10, deck);
+        gm.startNewRound();
+        gm.placeBet(0, 10);
+        gm.deal();
+        assertFalse(gm.canSplit());
+        assertThrows(IllegalStateException.class, gm::split);
+    }
+
+    @Test
+    void testSplitAcesGetOneCardAndAutoStand() {
+        // Player A+A → split. Each hand: A + drawn. Dealer 9+9 = 18 (no Ace upcard).
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.ACE), c(Rank.NINE),
+                c(Rank.ACE), c(Rank.NINE),
+                c(Rank.FIVE), c(Rank.SEVEN) // split cards
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.split();
+
+        List<PlayerHand> hands = gm.getPlayers().get(0).getHands();
+        assertEquals(2, hands.size());
+        // Each hand has exactly 2 cards (the original Ace + one drawn card).
+        assertEquals(2, hands.get(0).getHand().getCards().size());
+        assertEquals(2, hands.get(1).getHand().getCards().size());
+        // Both hands auto-stand → state advances to DEALER_TURN.
+        assertEquals(GameState.DEALER_TURN, gm.getState());
+        assertThrows(IllegalStateException.class, gm::hit);
+    }
+
+    @Test
+    void testSplitPlaysBothHandsThenDealer() {
+        // Split 8s. Hand1: 8+3=11 → stand. Hand2: 8+5=13 → stand. Dealer 9+9 = 18.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.EIGHT), c(Rank.NINE),
+                c(Rank.THREE), c(Rank.FIVE)
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.split();
+
+        // Active hand = first (11)
+        assertEquals(11, gm.getCurrentHand().getHand().getScore());
+        gm.stand();
+        // Active hand = second (13)
+        assertEquals(13, gm.getCurrentHand().getHand().getScore());
+        gm.stand();
+        // Dealer's turn
+        assertEquals(GameState.DEALER_TURN, gm.getState());
+        gm.dealerPlay();
+        // Dealer 18 beats both player hands (11, 13) → both bets lost.
+        assertEquals(INITIAL_BALANCE - 2 * BET, gm.getPlayers().get(0).getBalance());
+    }
+
+    @Test
+    void testSplitHandsResolveIndependently() {
+        // Split 8s. Hand1: 8+K=18 → stand. Hand2: 8+3=11 → hit T → 21 (auto-stand).
+        // Dealer 6+6=12 → must hit. Draws K → 22 bust.
+        StackedDeck deck = new StackedDeck(List.of(
+                c(Rank.EIGHT), c(Rank.SIX),
+                c(Rank.EIGHT), c(Rank.SIX),
+                c(Rank.KING), c(Rank.THREE), // split cards (h1, h2)
+                c(Rank.TEN),                  // hit on h2 -> 21 auto-stand
+                c(Rank.KING)                  // dealer hit -> 22 bust
+        ));
+        GameManager gm = singlePlayer(deck);
+        gm.startNewRound();
+        gm.placeBet(0, BET);
+        gm.deal();
+        gm.split();
+        // h1 = 8+K = 18
+        gm.stand();
+        // h2 = 8+3 = 11 → hit
+        gm.hit();
+        // h2 = 11 + 10 = 21 → auto-stand → dealer turn
+        assertEquals(GameState.DEALER_TURN, gm.getState());
+        gm.dealerPlay();
+        // Dealer busts → both player hands win. Net: -2*BET (placeBet+split) + 2*(2*BET) = +2*BET
+        assertEquals(INITIAL_BALANCE + 2 * BET, gm.getPlayers().get(0).getBalance());
+    }
+
+    @Test
+    void testCannotSplitInWrongState() {
+        GameManager gm = new GameManager(List.of("Alice"), INITIAL_BALANCE);
+        assertFalse(gm.canSplit());
+        assertThrows(IllegalStateException.class, gm::split);
+    }
+
     // --- Out of scope for v1 ---
-
-    @Test @Disabled("Insurance is not supported in v1 (#5)")
-    void testInsurancePays2to1() {}
-
-    @Test @Disabled("Split is not supported in v1 (#6)")
-    void testSplitCreates2Hands() {}
-
-    @Test @Disabled("Resplit Aces is not supported in v1 (#9)")
-    void testResplitAces() {}
-
-    @Test @Disabled("Double down after split is not supported in v1 (#8)")
-    void testDoubleDownAfterSplit() {}
 
     @Test @Disabled("Game history is not supported in v1 (#13)")
     void testGameHistory() {}

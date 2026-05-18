@@ -5,6 +5,7 @@ import ch.supsi.dti.backend.license.LicenseChecker;
 import javafx.animation.Interpolator;
 import javafx.animation.PauseTransition;
 import javafx.animation.RotateTransition;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -52,10 +53,15 @@ public class LicenseController {
             if (formatting) return;
             String formatted = format(newVal);
             if (!formatted.equals(newVal)) {
+                // Defer the re-set: mutating the TextField synchronously from its own
+                // listener corrupts the in-flight edit (e.g. backspace) and crashes
+                // TextInputControl.updateContent with "start must be <= end".
                 formatting = true;
-                licenseField.setText(formatted);
-                licenseField.positionCaret(formatted.length());
-                formatting = false;
+                Platform.runLater(() -> {
+                    licenseField.setText(formatted);
+                    licenseField.positionCaret(formatted.length());
+                    formatting = false;
+                });
             }
             if (checking) return;
 

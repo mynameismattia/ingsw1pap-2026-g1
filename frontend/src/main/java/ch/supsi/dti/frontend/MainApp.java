@@ -10,6 +10,8 @@
   import javafx.scene.image.Image;
   import javafx.stage.Stage;
 
+  import java.util.Objects;
+
   public class MainApp extends Application {
 
       private static Stage primaryStage;
@@ -18,7 +20,7 @@
       public void start(Stage stage) throws Exception {
           primaryStage = stage;
           stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-          stage.getIcons().add(new Image(getClass().getResourceAsStream("/ui/icon.png")));
+          stage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ui/icon.png"))));
 
           String saved = LicenseController.loadSavedLicense();
           if (saved != null && new LicenseChecker().checkLicense(saved)) {

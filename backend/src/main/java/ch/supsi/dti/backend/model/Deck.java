@@ -12,20 +12,7 @@ public class Deck {
 
     public Deck() {
         this.cards = new ArrayList<>();
-
-        for (int i = 0; i < NUM_DECKS; i++) {
-
-            for (Suit suit : Suit.values()) {
-
-                for (Rank rank : Rank.values()) {
-                    cards.add(new Card(suit, rank));
-                }
-
-            }
-
-        }
-        shuffle();
-
+        reset();
     }
 
     public void shuffle() {
