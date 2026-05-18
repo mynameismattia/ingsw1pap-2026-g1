@@ -6,12 +6,20 @@ import java.util.List;
 
 public class Player {
     private final String name;
+    private final boolean bot;
     private int balance;
+    private boolean sittingOut;
     private final List<PlayerHand> hands;
 
     public Player(String name, int balance) {
+        this(name, balance, false);
+    }
+
+    public Player(String name, int balance, boolean bot) {
         this.name = name;
         this.balance = balance;
+        this.bot = bot;
+        this.sittingOut = false;
         this.hands = new ArrayList<>();
         this.hands.add(new PlayerHand(this));
     }
@@ -45,5 +53,17 @@ public class Player {
 
     public List<PlayerHand> getHands() {
         return Collections.unmodifiableList(hands);
+    }
+
+    public boolean isBot() {
+        return bot;
+    }
+
+    public boolean isSittingOut() {
+        return sittingOut;
+    }
+
+    public void setSittingOut(boolean sittingOut) {
+        this.sittingOut = sittingOut;
     }
 }

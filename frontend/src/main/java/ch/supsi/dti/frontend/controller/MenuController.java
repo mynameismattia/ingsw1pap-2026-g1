@@ -1,20 +1,32 @@
 package ch.supsi.dti.frontend.controller;
 
+import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.i18n.MessageService;
+import ch.supsi.dti.backend.model.Player;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 public class MenuController {
+
+    private static final int INITIAL_BALANCE = 100;
 
     private enum Mode { VS_CPU, MULTI, TUTORIAL }
 
@@ -60,6 +72,24 @@ public class MenuController {
     @FXML
     private void onStartGame() {
         startBtn.setDisable(true);
+
+        List<Player> players;
+        if (selectedMode == Mode.MULTI && humansSpinner.getValue() > 1) {
+            Optional<List<String>> names = promptHumanNames(humansSpinner.getValue());
+            if (names.isEmpty()) {
+                startBtn.setDisable(false);
+                return; // user cancelled
+            }
+            players = new ArrayList<>(names.get().size());
+            for (String name : names.get()) {
+                players.add(new Player(name, INITIAL_BALANCE));
+            }
+        } else {
+            players = List.of(new Player("Player 1", INITIAL_BALANCE));
+        }
+
+        GameController.setPendingGameManager(new GameManager(players));
+
         try {
             Stage stage = (Stage) startBtn.getScene().getWindow();
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/game.fxml"));
@@ -73,6 +103,52 @@ public class MenuController {
             startBtn.setDisable(false);
             e.printStackTrace();
         }
+    }
+
+    private Optional<List<String>> promptHumanNames(int n) {
+        Stage dialog = new Stage();
+        dialog.initOwner(startBtn.getScene().getWindow());
+        dialog.initModality(Modality.WINDOW_MODAL);
+        dialog.setTitle(MessageService.getInstance().getMessage("menu.names.title"));
+        dialog.setResizable(false);
+
+        VBox root = new VBox(12);
+        root.setPadding(new Insets(20));
+        root.setAlignment(Pos.CENTER);
+        Label header = new Label(MessageService.getInstance().getMessage("menu.names.header"));
+        header.setStyle("-fx-font-size: 14;");
+        root.getChildren().add(header);
+
+        List<TextField> fields = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            TextField tf = new TextField("Player " + (i + 1));
+            tf.setPromptText("Player " + (i + 1));
+            tf.setPrefWidth(240);
+            fields.add(tf);
+            root.getChildren().add(tf);
+        }
+
+        Button ok = new Button(MessageService.getInstance().getMessage("menu.names.ok"));
+        Button cancel = new Button(MessageService.getInstance().getMessage("menu.names.cancel"));
+        HBox actions = new HBox(10, cancel, ok);
+        actions.setAlignment(Pos.CENTER);
+        root.getChildren().add(actions);
+
+        final List<String>[] result = new List[]{null};
+        ok.setOnAction(e -> {
+            List<String> names = new ArrayList<>(n);
+            for (int i = 0; i < n; i++) {
+                String v = fields.get(i).getText().trim();
+                names.add(v.isEmpty() ? "Player " + (i + 1) : v);
+            }
+            result[0] = names;
+            dialog.close();
+        });
+        cancel.setOnAction(e -> dialog.close());
+
+        dialog.setScene(new Scene(root));
+        dialog.showAndWait();
+        return Optional.ofNullable(result[0]);
     }
 
     @FXML

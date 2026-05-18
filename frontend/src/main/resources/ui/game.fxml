@@ -43,17 +43,16 @@
             <Label fx:id="messageLabel"
                    style="-fx-text-fill: yellow; -fx-font-size: 18px; -fx-font-weight: bold;"/>
 
-            <Label text="%game.player"
-                   style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;"/>
-            <HBox fx:id="playerCardsBox" spacing="6" alignment="CENTER" minHeight="100"/>
-            <Label fx:id="playerScoreLabel" style="-fx-text-fill: white;"/>
+            <Label fx:id="bettingPromptLabel"
+                   style="-fx-text-fill: white; -fx-font-size: 14px;"/>
+
+            <HBox fx:id="playersRow" spacing="40" alignment="BOTTOM_CENTER" minHeight="220"/>
         </VBox>
     </center>
 
     <bottom>
         <HBox spacing="10" alignment="CENTER">
             <padding><Insets top="12" right="20" bottom="20" left="20"/></padding>
-            <Label fx:id="balanceLabel"/>
             <Label text="%game.bet"/>
             <Spinner fx:id="betSpinner" prefWidth="100"/>
             <Button fx:id="dealButton"     text="%game.button.deal"     onAction="#onDealClicked"/>
@@ -64,6 +63,7 @@
             <Button fx:id="insureButton"   text="%game.button.insure"   onAction="#onInsureClicked"/>
             <Button fx:id="declineInsuranceButton" text="%game.button.declineInsurance" onAction="#onDeclineInsuranceClicked"/>
             <Button fx:id="newRoundButton" text="%game.button.newRound" onAction="#onNewRoundClicked"/>
+            <Button fx:id="historyButton"  text="%game.button.history"  onAction="#onHistoryClicked"/>
             <Button fx:id="backToMenuButton" text="%game.button.backToMenu" onAction="#onBackToMenuClicked"/>
         </HBox>
     </bottom>
