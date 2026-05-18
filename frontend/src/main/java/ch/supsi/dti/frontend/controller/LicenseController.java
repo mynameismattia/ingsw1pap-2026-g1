@@ -108,7 +108,7 @@ public class LicenseController {
         delay.setOnFinished(e -> {
             boolean valid;
             try {
-                valid = new LicenseChecker().checkLicense(key);
+                valid = new LicenseChecker().verifyLicense(key);
             } catch (Throwable t) {
                 stopSpinner();
                 showError("Errore: " + t.getMessage());

@@ -7,7 +7,9 @@ import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.backend.model.Rank;
+import ch.supsi.dti.backend.model.RoundRecord;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,6 +29,7 @@ public class GameManager {
     private final Dealer dealer;
     private final Deck deck;
     private final Set<Integer> insuranceDecisions;
+    private final List<RoundRecord> roundHistory;
     private GameState state;
     private int currentPlayerIndex;
     private int currentHandIndex;
@@ -37,16 +40,35 @@ public class GameManager {
 
     // Package-private constructor: allows injecting a deck (used by tests).
     GameManager(List<String> playersNames, int initialBalance, Deck deck) {
-        this.players = new ArrayList<>();
-        for (String name : playersNames) {
-            players.add(new Player(name, initialBalance));
-        }
+        this(buildPlayers(playersNames, initialBalance), deck);
+    }
+
+    /**
+     * Accepts pre-built {@link Player} instances. Used by the menu (to inject
+     * custom names + bot flags) and by future snapshot-restore in the
+     * persistence layer.
+     */
+    public GameManager(List<Player> prebuiltPlayers) {
+        this(prebuiltPlayers, new Deck());
+    }
+
+    private GameManager(List<Player> prebuiltPlayers, Deck deck) {
+        this.players = new ArrayList<>(prebuiltPlayers);
         this.dealer = new Dealer();
         this.deck = deck;
         this.insuranceDecisions = new HashSet<>();
+        this.roundHistory = new ArrayList<>();
         this.state = GameState.WAITING;
         this.currentPlayerIndex = 0;
         this.currentHandIndex = 0;
+    }
+
+    private static List<Player> buildPlayers(List<String> names, int initialBalance) {
+        List<Player> list = new ArrayList<>(names.size());
+        for (String name : names) {
+            list.add(new Player(name, initialBalance));
+        }
+        return list;
     }
 
     // --- Round flow ---
@@ -73,6 +95,12 @@ public class GameManager {
 
         for (Player player : players) {
             player.resetForNewRound();
+            boolean broke = player.getBalance() < MIN_BET;
+            player.setSittingOut(broke);
+            if (broke) {
+                // Pre-settle the placeholder hand so the turn loop skips them naturally.
+                player.getHands().get(0).setSettled(true);
+            }
         }
         dealer.getHand().clear();
         dealer.setHandRevealed(false);
@@ -95,6 +123,10 @@ public class GameManager {
             throw new IndexOutOfBoundsException("Player index out of bounds: " + playerIndex);
         }
         Player player = players.get(playerIndex);
+        if (player.isSittingOut()) {
+            throw new IllegalStateException(
+                    "Player " + player.getName() + " is sitting out this round");
+        }
         PlayerHand mainHand = player.getHands().getFirst();
         if (mainHand.getBet() != 0) {
             throw new IllegalStateException(
@@ -112,6 +144,9 @@ public class GameManager {
             throw new IllegalStateException("Cannot deal in state " + state);
         }
         for (Player player : players) {
+            if (player.isSittingOut()) {
+                continue;
+            }
             if (player.getHands().getFirst().getBet() == 0) {
                 throw new IllegalStateException(
                         "Player " + player.getName() + " has not placed a bet");
@@ -123,6 +158,9 @@ public class GameManager {
         // Two cards each, player first, dealer last (standard blackjack order).
         for (int i = 0; i < 2; i++) {
             for (Player player : players) {
+                if (player.isSittingOut()) {
+                    continue;
+                }
                 player.getHands().getFirst().getHand().addCard(deck.draw());
             }
             dealer.getHand().addCard(deck.draw());
@@ -144,11 +182,16 @@ public class GameManager {
         if (playerIndex < 0 || playerIndex >= players.size()) {
             throw new IndexOutOfBoundsException("Player index out of bounds: " + playerIndex);
         }
+        Player player = players.get(playerIndex);
+        if (player.isSittingOut()) {
+            throw new IllegalStateException(
+                    "Player " + player.getName() + " is sitting out this round");
+        }
         if (insuranceDecisions.contains(playerIndex)) {
             throw new IllegalStateException(
-                    "Player " + players.get(playerIndex).getName() + " has already answered");
+                    "Player " + player.getName() + " has already answered");
         }
-        PlayerHand mainHand = players.get(playerIndex).getHands().get(0);
+        PlayerHand mainHand = player.getHands().get(0);
         mainHand.placeInsuranceBet(mainHand.getBet() / 2);
         insuranceDecisions.add(playerIndex);
         finishInsurancePhaseIfDone();
@@ -161,22 +204,36 @@ public class GameManager {
         if (playerIndex < 0 || playerIndex >= players.size()) {
             throw new IndexOutOfBoundsException("Player index out of bounds: " + playerIndex);
         }
+        Player player = players.get(playerIndex);
+        if (player.isSittingOut()) {
+            throw new IllegalStateException(
+                    "Player " + player.getName() + " is sitting out this round");
+        }
         if (insuranceDecisions.contains(playerIndex)) {
             throw new IllegalStateException(
-                    "Player " + players.get(playerIndex).getName() + " has already answered");
+                    "Player " + player.getName() + " has already answered");
         }
         insuranceDecisions.add(playerIndex);
         finishInsurancePhaseIfDone();
     }
 
+    private int activePlayerCount() {
+        int n = 0;
+        for (Player p : players) {
+            if (!p.isSittingOut()) n++;
+        }
+        return n;
+    }
+
     private void finishInsurancePhaseIfDone() {
-        if (insuranceDecisions.size() < players.size()) {
+        if (insuranceDecisions.size() < activePlayerCount()) {
             return;
         }
-        // All players have answered. Peek the hole card.
+        // All active players have answered. Peek the hole card.
         if (dealer.getHand().isBlackJack()) {
             // Insurance pays 2:1 to those who took it.
             for (Player player : players) {
+                if (player.isSittingOut()) continue;
                 PlayerHand mainHand = player.getHands().get(0);
                 if (mainHand.getInsuranceBet() > 0) {
                     mainHand.winInsurance(2.0);
@@ -195,6 +252,9 @@ public class GameManager {
         if (dealer.getHand().isBlackJack()) {
             dealer.setHandRevealed(true);
             for (Player player : players) {
+                if (player.isSittingOut()) {
+                    continue;
+                }
                 PlayerHand mainHand = player.getHands().get(0);
                 if (mainHand.getHand().isBlackJack()) {
                     mainHand.push();
@@ -203,6 +263,7 @@ public class GameManager {
                     mainHand.setOutcome(HandOutcome.LOSE);
                 }
                 mainHand.setSettled(true);
+                recordRound(player, mainHand);
             }
             state = GameState.ROUND_OVER;
             return;
@@ -210,11 +271,15 @@ public class GameManager {
 
         // Pay out any player blackjacks 3:2 and mark them as settled.
         for (Player player : players) {
+            if (player.isSittingOut()) {
+                continue;
+            }
             PlayerHand mainHand = player.getHands().get(0);
             if (mainHand.getHand().isBlackJack()) {
                 mainHand.win(BLACKJACK_PAYOUT);
                 mainHand.setOutcome(HandOutcome.BLACKJACK);
                 mainHand.setSettled(true);
+                recordRound(player, mainHand);
             }
         }
 
@@ -290,6 +355,9 @@ public class GameManager {
         final boolean dealerBust = dealer.getHand().isBusted();
 
         for (Player player : players) {
+            if (player.isSittingOut()) {
+                continue;
+            }
             for (PlayerHand ph : player.getHands()) {
                 if (ph.getOutcome() != null) {
                     continue; // outcome already determined (natural BJ)
@@ -297,6 +365,7 @@ public class GameManager {
                 if (ph.getHand().isBusted()) {
                     ph.setOutcome(HandOutcome.LOSE);
                     ph.setSettled(true);
+                    recordRound(player, ph);
                     continue;
                 }
                 int playerScore = ph.getHand().getScore();
@@ -312,6 +381,7 @@ public class GameManager {
                     ph.setOutcome(HandOutcome.LOSE);
                 }
                 ph.setSettled(true);
+                recordRound(player, ph);
             }
         }
 
@@ -363,12 +433,17 @@ public class GameManager {
             // Split aces get exactly one card each and cannot be hit further.
             currentHandIndex += 2;
             advanceToNextActiveHand();
-        } else if (currentHand.getHand().getScore() == 21) {
-            // First split hand auto-stands at 21 (consistent with hit's auto-21).
-            currentHandIndex++;
+        } else {
+            // Auto-stand any post-split 21 (consistent with hit's auto-21).
+            // Split 21 is not a natural blackjack — it still pays 1:1 at resolve.
+            if (currentHand.getHand().getScore() == 21) {
+                currentHand.setSettled(true);
+            }
+            if (newHand.getHand().getScore() == 21) {
+                newHand.setSettled(true);
+            }
             advanceToNextActiveHand();
         }
-        // else: stay on the first split hand for further play.
     }
 
     public boolean canSplit() {
@@ -403,7 +478,9 @@ public class GameManager {
         return state == GameState.INSURANCE_OFFER && dealer.showsAce();
     }
 
-    public List<?> getHistory() { return null; } // (#13)
+    public List<RoundRecord> getHistory() {
+        return Collections.unmodifiableList(roundHistory);
+    }
 
     // --- Queries ---
 
@@ -441,6 +518,17 @@ public class GameManager {
 
     private PlayerHand currentPlayerHand() {
         return players.get(currentPlayerIndex).getHands().get(currentHandIndex);
+    }
+
+    private void recordRound(Player player, PlayerHand ph) {
+        roundHistory.add(new RoundRecord(
+                player.getName(),
+                ph.getBet(),
+                ph.getOutcome(),
+                ph.getHand().getScore(),
+                dealer.getHand().getScore(),
+                Instant.now()
+        ));
     }
 
     private void advanceToNextActiveHand() {

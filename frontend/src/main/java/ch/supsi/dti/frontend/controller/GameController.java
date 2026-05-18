@@ -7,21 +7,33 @@ import ch.supsi.dti.backend.model.Card;
 import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
+import ch.supsi.dti.backend.model.RoundRecord;
 import ch.supsi.dti.frontend.MainApp;
 import ch.supsi.dti.frontend.view.CardView;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyObjectWrapper;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 import javafx.util.Duration;
+
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 import java.util.List;
 import java.util.Locale;
@@ -39,10 +51,9 @@ public class GameController {
 
     @FXML private HBox dealerCardsBox;
     @FXML private Label dealerScoreLabel;
-    @FXML private HBox playerCardsBox;
-    @FXML private Label playerScoreLabel;
+    @FXML private HBox playersRow;
     @FXML private Label messageLabel;
-    @FXML private Label balanceLabel;
+    @FXML private Label bettingPromptLabel;
     @FXML private Spinner<Integer> betSpinner;
     @FXML private Button dealButton;
     @FXML private Button hitButton;
@@ -53,11 +64,24 @@ public class GameController {
     @FXML private Button splitButton;
     @FXML private Button insureButton;
     @FXML private Button declineInsuranceButton;
+    @FXML private Button historyButton;
+
+    // Sequential betting / insurance state — tracked per-frontend, not in GameManager.
+    private int bettingPlayerIndex = 0;
+    private int insuranceAskingIndex = 0;
 
     // Survives FXML reloads (e.g. language change) so the active game isn't lost.
     private static GameManager sharedGameManager;
+    private static int sharedBettingIndex;
+    private static int sharedInsuranceIndex;
+    // Injected by the menu before navigating to the game scene.
+    private static GameManager pendingGameManager;
 
     private GameManager gameManager;
+
+    public static void setPendingGameManager(GameManager gm) {
+        pendingGameManager = gm;
+    }
 
     @FXML
     public void initialize() {
@@ -72,12 +96,31 @@ public class GameController {
             if (!isFocused) betSpinner.commitValue();
         });
 
+        boolean freshGame = false;
+        if (pendingGameManager != null) {
+            sharedGameManager = pendingGameManager;
+            pendingGameManager = null;
+            sharedGameManager.startNewRound();
+            freshGame = true;
+        }
         if (sharedGameManager == null) {
             sharedGameManager = new GameManager(List.of("Player 1"), INITIAL_BALANCE);
             sharedGameManager.startNewRound();
+            freshGame = true;
         }
         gameManager = sharedGameManager;
+        if (freshGame) {
+            bettingPlayerIndex = nextActivePlayerIndex(0);
+            insuranceAskingIndex = 0;
+            sharedBettingIndex = bettingPlayerIndex;
+            sharedInsuranceIndex = insuranceAskingIndex;
+        } else {
+            // FXML reload (e.g. language switch): preserve the in-flight indices.
+            bettingPlayerIndex = sharedBettingIndex;
+            insuranceAskingIndex = sharedInsuranceIndex;
+        }
         updateUI();
+        autoPlayDealerIfNeeded(); // B3: resume dealer animation after a reload.
     }
 
     // --- Action handlers ---
@@ -85,10 +128,31 @@ public class GameController {
     @FXML
     private void onDealClicked() {
         runSafe(() -> {
-            gameManager.placeBet(0, betSpinner.getValue());
-            gameManager.deal();
-            autoPlayDealerIfNeeded();
+            // Sequential betting: confirm current player's bet, then advance.
+            gameManager.placeBet(bettingPlayerIndex, betSpinner.getValue());
+            bettingPlayerIndex = nextActivePlayerIndex(bettingPlayerIndex + 1);
+            if (bettingPlayerIndex >= gameManager.getPlayers().size()) {
+                gameManager.deal();
+                bettingPlayerIndex = 0;
+                insuranceAskingIndex = nextActivePlayerIndex(0);
+                autoPlayDealerIfNeeded();
+            }
+            persistIndices();
         });
+    }
+
+    private void persistIndices() {
+        sharedBettingIndex = bettingPlayerIndex;
+        sharedInsuranceIndex = insuranceAskingIndex;
+    }
+
+    private int nextActivePlayerIndex(int from) {
+        List<Player> players = gameManager.getPlayers();
+        int i = from;
+        while (i < players.size() && players.get(i).isSittingOut()) {
+            i++;
+        }
+        return i;
     }
 
     @FXML
@@ -126,7 +190,9 @@ public class GameController {
     @FXML
     private void onInsureClicked() {
         runSafe(() -> {
-            gameManager.takeInsurance(0);
+            gameManager.takeInsurance(insuranceAskingIndex);
+            insuranceAskingIndex = nextActivePlayerIndex(insuranceAskingIndex + 1);
+            persistIndices();
             autoPlayDealerIfNeeded();
         });
     }
@@ -134,21 +200,32 @@ public class GameController {
     @FXML
     private void onDeclineInsuranceClicked() {
         runSafe(() -> {
-            gameManager.declineInsurance(0);
+            gameManager.declineInsurance(insuranceAskingIndex);
+            insuranceAskingIndex = nextActivePlayerIndex(insuranceAskingIndex + 1);
+            persistIndices();
             autoPlayDealerIfNeeded();
         });
     }
 
     @FXML
     private void onNewRoundClicked() {
-        runSafe(gameManager::startNewRound);
+        runSafe(() -> {
+            gameManager.startNewRound();
+            bettingPlayerIndex = nextActivePlayerIndex(0);
+            insuranceAskingIndex = 0;
+            persistIndices();
+        });
     }
 
     @FXML
     private void onNewGameClicked() {
+        stopDealerTimeline(); // B2: avoid orphan ticks against the new manager.
         sharedGameManager = new GameManager(List.of("Player 1"), INITIAL_BALANCE);
         sharedGameManager.startNewRound();
         gameManager = sharedGameManager;
+        bettingPlayerIndex = nextActivePlayerIndex(0);
+        insuranceAskingIndex = 0;
+        persistIndices();
         updateUI();
     }
 
@@ -176,11 +253,19 @@ public class GameController {
     // --- Helpers ---
 
     private void switchLocale(Locale locale) {
+        stopDealerTimeline(); // B3: prevent orphan Timeline ticking against the new controller.
         MessageService.getInstance().setLocale(locale);
         try {
             MainApp.reloadRoot();
         } catch (Exception e) {
             messageLabel.setText("⚠ " + e.getMessage());
+        }
+    }
+
+    private void stopDealerTimeline() {
+        if (dealerTimeline != null) {
+            dealerTimeline.stop();
+            dealerTimeline = null;
         }
     }
 
@@ -213,12 +298,11 @@ public class GameController {
 
     private void updateUI() {
         MessageService msg = MessageService.getInstance();
-        Player player = gameManager.getPlayers().getFirst();
         GameState state = gameManager.getState();
 
         renderDealer(state);
-        renderPlayer(player, msg);
-        balanceLabel.setText(msg.getMessage("game.balance") + ": " + player.getBalance());
+        renderPlayers(msg, state);
+
         messageLabel.setText(switch (state) {
             case WAITING, BETTING       -> msg.getMessage("game.message.placeBet");
             case DEALING, PLAYER_TURN   -> msg.getMessage("game.message.playerTurn");
@@ -228,11 +312,30 @@ public class GameController {
             case GAME_OVER              -> msg.getMessage("game.message.gameOver");
         });
 
+        // Per-turn prompt below the message label.
+        if (state == GameState.BETTING && bettingPlayerIndex < gameManager.getPlayers().size()) {
+            String name = gameManager.getPlayers().get(bettingPlayerIndex).getName();
+            bettingPromptLabel.setText(msg.getMessage("game.message.bettingTurn", name));
+        } else if (state == GameState.INSURANCE_OFFER
+                && insuranceAskingIndex < gameManager.getPlayers().size()) {
+            String name = gameManager.getPlayers().get(insuranceAskingIndex).getName();
+            bettingPromptLabel.setText(name);
+        } else {
+            bettingPromptLabel.setText("");
+        }
+
         boolean gameOver = state == GameState.GAME_OVER;
         boolean insurance = state == GameState.INSURANCE_OFFER;
-        dealButton.setDisable(gameOver || state != GameState.BETTING);
+        boolean betting = state == GameState.BETTING;
+        dealButton.setDisable(gameOver || !betting);
+        dealButton.setVisible(betting);
+        dealButton.setManaged(betting);
         hitButton.setDisable(gameOver || state != GameState.PLAYER_TURN);
+        hitButton.setVisible(state == GameState.PLAYER_TURN);
+        hitButton.setManaged(state == GameState.PLAYER_TURN);
         standButton.setDisable(gameOver || state != GameState.PLAYER_TURN);
+        standButton.setVisible(state == GameState.PLAYER_TURN);
+        standButton.setManaged(state == GameState.PLAYER_TURN);
         doubleButton.setDisable(gameOver || !gameManager.canDoubleDown());
         doubleButton.setVisible(state == GameState.PLAYER_TURN);
         doubleButton.setManaged(state == GameState.PLAYER_TURN);
@@ -246,7 +349,10 @@ public class GameController {
         declineInsuranceButton.setVisible(insurance);
         declineInsuranceButton.setManaged(insurance);
         newRoundButton.setDisable(gameOver || state != GameState.ROUND_OVER);
-        betSpinner.setDisable(gameOver || state != GameState.BETTING);
+        betSpinner.setDisable(gameOver || !betting);
+        betSpinner.setVisible(betting);
+        betSpinner.setManaged(betting);
+        historyButton.setDisable(gameManager.getHistory().isEmpty());
         backToMenuButton.setVisible(gameOver);
         backToMenuButton.setManaged(gameOver);
     }
@@ -268,16 +374,63 @@ public class GameController {
         }
     }
 
-    private void renderPlayer(Player player, MessageService msg) {
-        playerCardsBox.getChildren().clear();
-        playerCardsBox.setSpacing(24);
-        List<PlayerHand> hands = player.getHands();
-        PlayerHand active = gameManager.getCurrentHand();
+    private void renderPlayers(MessageService msg, GameState state) {
+        playersRow.getChildren().clear();
+        List<Player> players = gameManager.getPlayers();
+        int activeIdx = activePlayerIndex(state);
+        for (int i = 0; i < players.size(); i++) {
+            playersRow.getChildren().add(buildPlayerPanel(players.get(i), i == activeIdx, msg));
+        }
+    }
 
-        for (PlayerHand ph : hands) {
-            VBox handBox = new VBox(4);
+    private int activePlayerIndex(GameState state) {
+        return switch (state) {
+            case BETTING          -> bettingPlayerIndex < gameManager.getPlayers().size()
+                                     ? bettingPlayerIndex : -1;
+            case INSURANCE_OFFER  -> insuranceAskingIndex < gameManager.getPlayers().size()
+                                     ? insuranceAskingIndex : -1;
+            case PLAYER_TURN      -> gameManager.getPlayers().indexOf(gameManager.getCurrentPlayer());
+            default               -> -1;
+        };
+    }
+
+    private VBox buildPlayerPanel(Player player, boolean isActive, MessageService msg) {
+        VBox panel = new VBox(6);
+        panel.setAlignment(Pos.TOP_CENTER);
+        panel.setMinWidth(200);
+        panel.setPrefWidth(220);
+        panel.setPadding(new Insets(8));
+        String border = isActive
+                ? "-fx-border-color: yellow; -fx-border-width: 3; -fx-border-radius: 8;"
+                : "-fx-border-color: rgba(255,255,255,0.25); -fx-border-width: 1; -fx-border-radius: 8;";
+        panel.setStyle(border + " -fx-background-color: rgba(0,0,0,0.18); -fx-background-radius: 8;");
+        if (isActive) {
+            panel.setTranslateY(-25);
+        }
+
+        // Header: name (with bot prefix) + balance + status badge
+        String displayName = (player.isBot() ? "🤖 " : "") + player.getName();
+        Label nameLbl = new Label(displayName);
+        nameLbl.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;");
+        Label balLbl = new Label("💰 " + player.getBalance());
+        balLbl.setStyle("-fx-text-fill: white;");
+        HBox header = new HBox(8, nameLbl, balLbl);
+        header.setAlignment(Pos.CENTER);
+        panel.getChildren().add(header);
+
+        if (player.isSittingOut()) {
+            Label sitOut = new Label("⏸ " + msg.getMessage("game.message.sittingOut"));
+            sitOut.setStyle("-fx-text-fill: #ffb86b; -fx-font-style: italic;");
+            panel.getChildren().add(sitOut);
+            return panel;
+        }
+
+        // Hands (a player can have multiple after split).
+        PlayerHand activeHand = gameManager.getCurrentHand();
+        for (PlayerHand ph : player.getHands()) {
+            VBox handBox = new VBox(2);
             handBox.setAlignment(Pos.CENTER);
-            HBox cardsRow = new HBox(6);
+            HBox cardsRow = new HBox(4);
             cardsRow.setAlignment(Pos.CENTER);
             for (Card c : ph.getHand().getCards()) {
                 cardsRow.getChildren().add(new CardView(c));
@@ -292,14 +445,15 @@ public class GameController {
                     label += "  — " + msg.getMessage(outcomeKey(outcome));
                 }
                 Label scoreLbl = new Label(label);
-                boolean isActive = ph == active;
-                scoreLbl.setStyle("-fx-text-fill: " + (isActive ? "yellow" : "white")
-                        + (isActive ? "; -fx-font-weight: bold;" : ";"));
+                boolean handActive = ph == activeHand;
+                scoreLbl.setStyle("-fx-text-fill: " + (handActive ? "yellow" : "white")
+                        + (handActive ? "; -fx-font-weight: bold;" : ";"));
                 handBox.getChildren().add(scoreLbl);
             }
-            playerCardsBox.getChildren().add(handBox);
+            panel.getChildren().add(handBox);
         }
-        playerScoreLabel.setText("");
+
+        return panel;
     }
 
     private String outcomeKey(HandOutcome outcome) {
@@ -309,5 +463,52 @@ public class GameController {
             case PUSH      -> "game.message.push";
             case BLACKJACK -> "game.message.blackjack";
         };
+    }
+
+    @FXML
+    private void onHistoryClicked() {
+        MessageService msg = MessageService.getInstance();
+        Stage dialog = new Stage();
+        dialog.initOwner(playersRow.getScene().getWindow());
+        dialog.initModality(Modality.WINDOW_MODAL);
+        dialog.setTitle(msg.getMessage("game.history.title"));
+
+        TableView<RoundRecord> table = new TableView<>(
+                FXCollections.observableArrayList(gameManager.getHistory()));
+        table.setPlaceholder(new Label(msg.getMessage("game.history.empty")));
+
+        DateTimeFormatter tf = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
+
+        TableColumn<RoundRecord, String> colTime = new TableColumn<>(
+                msg.getMessage("game.history.col.time"));
+        colTime.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(tf.format(d.getValue().timestamp())));
+
+        TableColumn<RoundRecord, String> colPlayer = new TableColumn<>(
+                msg.getMessage("game.history.col.player"));
+        colPlayer.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(d.getValue().playerName()));
+
+        TableColumn<RoundRecord, Number> colBet = new TableColumn<>(
+                msg.getMessage("game.history.col.bet"));
+        colBet.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(d.getValue().bet()));
+
+        TableColumn<RoundRecord, Number> colScore = new TableColumn<>(
+                msg.getMessage("game.history.col.score"));
+        colScore.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(d.getValue().playerScore()));
+
+        TableColumn<RoundRecord, Number> colDealer = new TableColumn<>(
+                msg.getMessage("game.history.col.dealer"));
+        colDealer.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(d.getValue().dealerScore()));
+
+        TableColumn<RoundRecord, String> colOutcome = new TableColumn<>(
+                msg.getMessage("game.history.col.outcome"));
+        colOutcome.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(
+                msg.getMessage(outcomeKey(d.getValue().outcome()))));
+
+        table.getColumns().addAll(colTime, colPlayer, colBet, colScore, colDealer, colOutcome);
+
+        VBox root = new VBox(table);
+        root.setPadding(new Insets(10));
+        dialog.setScene(new Scene(root, 640, 360));
+        dialog.show();
     }
 }

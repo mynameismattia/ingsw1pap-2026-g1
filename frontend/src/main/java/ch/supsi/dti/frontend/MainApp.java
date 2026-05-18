@@ -23,7 +23,7 @@
           stage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ui/icon.png"))));
 
           String saved = LicenseController.loadSavedLicense();
-          if (saved != null && new LicenseChecker().checkLicense(saved)) {
+          if (saved != null && new LicenseChecker().verifyLicense(saved)) {
               stage.setScene(new Scene(loadMenuRoot(), 1100, 680));
           } else {
               FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/license.fxml"));
