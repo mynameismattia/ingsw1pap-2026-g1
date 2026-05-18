@@ -193,7 +193,7 @@ public class MenuController {
             loader.setResources(MessageService.getInstance().getBundle());
             Scene scene = new Scene(loader.load(), 480, 320);
             dialog.setScene(scene);
-            dialog.setTitle("Impostazioni");
+            dialog.setTitle(MessageService.getInstance().getMessage("settings.title"));
             dialog.setResizable(false);
 
             SettingsController ctrl = loader.getController();

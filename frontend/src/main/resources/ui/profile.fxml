@@ -20,9 +20,9 @@
         <!-- Titlebar -->
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
             <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
-            <Button fx:id="backBtn" text="← Indietro" onAction="#onBack" styleClass="icon-button"/>
+            <Button fx:id="backBtn" text="%common.back" onAction="#onBack" styleClass="icon-button"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label text="Profilo" styleClass="titlebar-title"/>
+            <Label text="%profile.title" styleClass="titlebar-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Region prefWidth="90"/>
         </HBox>
@@ -46,15 +46,15 @@
 
                 <!-- Badges -->
                 <HBox alignment="CENTER" spacing="8">
-                    <Label text="Pro" styleClass="badge-pro"/>
-                    <Label text="1 vittoria" styleClass="badge-win"/>
+                    <Label text="%profile.badge.pro" styleClass="badge-pro"/>
+                    <Label fx:id="winStreakBadge" text="" styleClass="badge-win"/>
                 </HBox>
 
                 <Region VBox.vgrow="ALWAYS"/>
 
                 <!-- Balance -->
                 <VBox alignment="CENTER" spacing="4">
-                    <Label text="SALDO" styleClass="field-label"/>
+                    <Label text="%profile.balance" styleClass="field-label"/>
                     <Label text="\$3.240" styleClass="profile-balance"/>
                 </VBox>
 
@@ -63,7 +63,7 @@
                 <!-- Win rate -->
                 <VBox alignment="CENTER_LEFT" spacing="6" maxWidth="160">
                     <HBox alignment="CENTER_LEFT" spacing="10">
-                        <Label text="VITTORIE" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Label text="%profile.wins" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
                         <Label text="62.7%" styleClass="field-label"/>
                     </HBox>
                     <HBox styleClass="win-bar-track" prefHeight="6" maxWidth="Infinity">
@@ -79,31 +79,31 @@
             <VBox HBox.hgrow="ALWAYS" spacing="0">
                 <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
 
-                <Label text="STATISTICHE" styleClass="field-label"/>
+                <Label text="%profile.statistics" styleClass="field-label"/>
                 <Region prefHeight="14"/>
 
                 <HBox styleClass="stat-row stat-row-alt" alignment="CENTER_LEFT">
-                    <Label text="Partite totali" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="%profile.stat.totalGames" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
                     <Label text="80" styleClass="stat-value"/>
                 </HBox>
                 <HBox styleClass="stat-row" alignment="CENTER_LEFT">
-                    <Label text="Vittorie / Sconfitte" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="%profile.stat.winsLosses" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
                     <Label text="47 / 28" styleClass="stat-value"/>
                 </HBox>
                 <HBox styleClass="stat-row stat-row-alt" alignment="CENTER_LEFT">
-                    <Label text="Miglior serie" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="8 vinte" styleClass="stat-value stat-value-accent"/>
+                    <Label text="%profile.stat.bestStreak" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="8" styleClass="stat-value stat-value-accent"/>
                 </HBox>
                 <HBox styleClass="stat-row" alignment="CENTER_LEFT">
-                    <Label text="Vincita più alta" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="%profile.stat.biggestWin" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
                     <Label text="\$500" styleClass="stat-value stat-value-pos"/>
                 </HBox>
                 <HBox styleClass="stat-row stat-row-alt" alignment="CENTER_LEFT">
-                    <Label text="Perdita più alta" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="-$200" styleClass="stat-value stat-value-neg"/>
+                    <Label text="%profile.stat.biggestLoss" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="-\$200" styleClass="stat-value stat-value-neg"/>
                 </HBox>
                 <HBox styleClass="stat-row" alignment="CENTER_LEFT">
-                    <Label text="Blackjack ottenuti" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="%profile.stat.blackjacks" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
                     <Label text="12" styleClass="stat-value"/>
                 </HBox>
             </VBox>
@@ -114,7 +114,7 @@
             <VBox prefWidth="260" minWidth="260" spacing="0">
                 <padding><Insets top="24" right="20" bottom="24" left="20"/></padding>
 
-                <Label text="ULTIME PARTITE" styleClass="field-label"/>
+                <Label text="%profile.lastGames" styleClass="field-label"/>
                 <Region prefHeight="14"/>
 
                 <HBox styleClass="game-row" alignment="CENTER_LEFT" spacing="10">

@@ -14,11 +14,8 @@
 
   public class MainApp extends Application {
 
-      private static Stage primaryStage;
-
       @Override
       public void start(Stage stage) throws Exception {
-          primaryStage = stage;
           stage.setTitle(MessageService.getInstance().getMessage("app.title"));
           stage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ui/icon.png"))));
 
@@ -32,17 +29,6 @@
           }
 
           stage.show();
-      }
-
-      public static void reloadRoot() throws Exception {
-          primaryStage.getScene().setRoot(loadGameRoot());
-          primaryStage.setTitle(MessageService.getInstance().getMessage("app.title"));
-      }
-
-      private static Parent loadGameRoot() throws Exception {
-          FXMLLoader loader = new FXMLLoader(MainApp.class.getResource("/ui/game.fxml"));
-          loader.setResources(MessageService.getInstance().getBundle());
-          return loader.load();
       }
 
       private static Parent loadMenuRoot() throws Exception {
