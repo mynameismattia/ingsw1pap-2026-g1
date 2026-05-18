@@ -1,0 +1,354 @@
+/* ──────────────────────────────────────────────────────────────
+   Game screen specific styles (Mockup02)
+   Extends menu.css — base palette and components live there.
+   ────────────────────────────────────────────────────────────── */
+
+/* ── Table felt (center column) ─────────────────────────────── */
+
+.table-felt {
+    -fx-background-color: radial-gradient(center 50% 40%, radius 80%, #0e3b25 0%, #082a18 100%);
+    -fx-background-radius: 0;
+    -fx-border-color: #2a2e38;
+    -fx-border-width: 0 1 0 1;
+}
+
+.table-oval {
+    -fx-background-color: rgba(255,255,255,0.04);
+    -fx-background-radius: 200;
+    -fx-border-color: rgba(255,255,255,0.06);
+    -fx-border-radius: 200;
+    -fx-border-width: 1;
+    -fx-min-height: 60;
+}
+
+/* ── Side panel seat rows (left column) ─────────────────────── */
+
+.seat-row {
+    -fx-background-color: #1e2029;
+    -fx-background-radius: 10;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 8 12 8 10;
+}
+.seat-row-active {
+    -fx-border-color: #3b82f6;
+    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.35), 12, 0.4, 0, 0);
+}
+
+.seat-avatar {
+    -fx-background-color: #3b82f6;
+    -fx-background-radius: 50;
+    -fx-min-width: 32; -fx-pref-width: 32; -fx-max-width: 32;
+    -fx-min-height: 32; -fx-pref-height: 32; -fx-max-height: 32;
+}
+.seat-avatar-bob { -fx-background-color: #4ade80; }
+.seat-avatar-cpu { -fx-background-color: #6b7280; }
+.seat-avatar-initial {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.seat-name {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+.seat-balance {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 11px;
+}
+
+.turn-badge {
+    -fx-background-color: #3b82f6;
+    -fx-background-radius: 6;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 8 2 8;
+}
+
+/* ── Seat cards (center table players) ──────────────────────── */
+
+.seat-card {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 10;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 10;
+}
+.seat-card-active {
+    -fx-border-color: #3b82f6;
+    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.35), 14, 0.4, 0, 0);
+}
+.seat-card-ghost {
+    -fx-opacity: 0.85;
+}
+.seat-card-name {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.seat-card-score {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 11px;
+}
+.seat-card-score-active {
+    -fx-text-fill: #fbbf24;
+    -fx-font-weight: bold;
+}
+
+/* ── Titlebar pills ─────────────────────────────────────────── */
+
+.round-pill,
+.deck-pill {
+    -fx-background-color: #252934;
+    -fx-background-radius: 8;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 4 12 4 12;
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* ── Chip buttons (right column) ────────────────────────────── */
+
+.chip-button {
+    -fx-background-radius: 100;
+    -fx-min-width: 56; -fx-pref-width: 56; -fx-max-width: 56;
+    -fx-min-height: 56; -fx-pref-height: 56; -fx-max-height: 56;
+    -fx-border-color: #ffffff;
+    -fx-border-width: 2;
+    -fx-border-radius: 100;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 6, 0.2, 0, 2);
+}
+.chip-button:hover  { -fx-scale-x: 1.06; -fx-scale-y: 1.06; }
+.chip-button:disabled { -fx-opacity: 0.30; }
+
+.chip-5    { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #9ca3af 0%, #6b7280 100%); }
+.chip-10   { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #4ade80 0%, #16a34a 100%); }
+.chip-25   { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #5b9bff 0%, #2563eb 100%); }
+.chip-50   { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #a78bfa 0%, #7c3aed 100%); }
+.chip-100  { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #fb923c 0%, #ea580c 100%); }
+.chip-250  { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #f87171 0%, #dc2626 100%); }
+
+/* ── Current bet card ───────────────────────────────────────── */
+
+.current-bet-card {
+    -fx-background-color: #252934;
+    -fx-background-radius: 10;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 14;
+}
+.current-bet-value {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+/* ── Last rounds list ───────────────────────────────────────── */
+
+.mini-round-row {
+    -fx-background-color: #252934;
+    -fx-background-radius: 6;
+    -fx-padding: 8 10 8 10;
+}
+.mini-round-label {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12px;
+}
+.delta-pos {
+    -fx-text-fill: #4ade80;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.delta-neg {
+    -fx-text-fill: #f87171;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* ── Bottom-left actions ────────────────────────────────────── */
+
+.danger-button {
+    -fx-background-color: #dc2626;
+    -fx-background-radius: 9;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 14 10 14;
+    -fx-cursor: hand;
+}
+.danger-button:hover { -fx-background-color: #ef4444; }
+.danger-button:pressed { -fx-background-color: #b91c1c; }
+
+/* ── In-game message banner ─────────────────────────────────── */
+
+.message-banner {
+    -fx-text-fill: #fbbf24;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.betting-prompt {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+}
+
+/* ── Action bar (hit/stand/double/split/insure under table) ─ */
+
+.action-bar {
+    -fx-background-color: rgba(0,0,0,0.25);
+    -fx-background-radius: 10;
+    -fx-padding: 10 12 10 12;
+}
+.action-button {
+    -fx-background-color: #252934;
+    -fx-background-radius: 8;
+    -fx-border-color: #3b4252;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 14 8 14;
+    -fx-cursor: hand;
+}
+.action-button:hover  { -fx-background-color: #2c313d; }
+.action-button:disabled { -fx-opacity: 0.4; }
+
+/* ──────────────────────────────────────────────────────────────
+   Round Result screen (Mockup04) — defined here so a single
+   stylesheet covers both game and result screens.
+   ────────────────────────────────────────────────────────────── */
+
+.winner-circle {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #4ade80 0%, #16a34a 100%);
+    -fx-background-radius: 80;
+    -fx-min-width: 80; -fx-pref-width: 80; -fx-max-width: 80;
+    -fx-min-height: 80; -fx-pref-height: 80; -fx-max-height: 80;
+    -fx-effect: dropshadow(gaussian, rgba(74,222,128,0.4), 18, 0.4, 0, 4);
+}
+.winner-icon {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 36px;
+}
+.winner-title {
+    -fx-text-fill: #4ade80;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+.winner-subtitle {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 13px;
+}
+
+.outcome-row {
+    -fx-background-color: #252934;
+    -fx-background-radius: 8;
+    -fx-padding: 10 14 10 14;
+}
+.outcome-name {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+.outcome-chip {
+    -fx-background-radius: 6;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 2 8 2 8;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+}
+.outcome-chip-win {
+    -fx-background-color: #1a2e1a;
+    -fx-border-color: #4ade80;
+    -fx-text-fill: #4ade80;
+}
+.outcome-chip-loss {
+    -fx-background-color: #2e1a1a;
+    -fx-border-color: #f87171;
+    -fx-text-fill: #f87171;
+}
+.outcome-chip-push {
+    -fx-background-color: #252934;
+    -fx-border-color: #6b7280;
+    -fx-text-fill: #9ca3af;
+}
+
+.streak-banner {
+    -fx-background-color: #3d3410;
+    -fx-background-radius: 8;
+    -fx-border-color: #fbbf24;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 8 14 8 14;
+}
+.streak-label {
+    -fx-text-fill: #fbbf24;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.next-bet-value {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+}
+
+.autosave-pill {
+    -fx-background-color: #1a162e;
+    -fx-background-radius: 8;
+    -fx-border-color: #7c3aed;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 12 14 12 14;
+}
+.autosave-icon {
+    -fx-text-fill: #a78bfa;
+    -fx-font-size: 18px;
+}
+.autosave-text {
+    -fx-text-fill: #a78bfa;
+    -fx-font-size: 12px;
+}
+
+.balance-mini-row {
+    -fx-padding: 6 4 6 4;
+    -fx-border-color: transparent transparent #2a2e38 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.balance-mini-name {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.balance-mini-value {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.dealer-score-pill {
+    -fx-background-color: #252934;
+    -fx-background-radius: 8;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 4 14 4 14;
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}

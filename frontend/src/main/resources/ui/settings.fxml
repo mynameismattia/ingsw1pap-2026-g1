@@ -21,7 +21,7 @@
 
         <HBox styleClass="card-titlebar" alignment="CENTER">
             <padding><Insets top="14" right="14" bottom="14" left="14"/></padding>
-            <Label text="Impostazioni" styleClass="titlebar-title"/>
+            <Label text="%settings.title" styleClass="titlebar-title"/>
         </HBox>
 
         <Region styleClass="divider"/>
@@ -29,22 +29,22 @@
         <VBox spacing="14" VBox.vgrow="ALWAYS">
             <padding><Insets top="24" right="28" bottom="24" left="28"/></padding>
 
-            <Label text="LINGUA" styleClass="field-label"/>
+            <Label text="%settings.language" styleClass="field-label"/>
 
             <VBox spacing="12">
                 <fx:define>
                     <ToggleGroup fx:id="langGroup"/>
                 </fx:define>
-                <RadioButton fx:id="itRadio" text="Italiano" toggleGroup="$langGroup" styleClass="settings-radio"/>
-                <RadioButton fx:id="enRadio" text="English"  toggleGroup="$langGroup" styleClass="settings-radio"/>
+                <RadioButton fx:id="itRadio" text="%settings.language.it" toggleGroup="$langGroup" styleClass="settings-radio"/>
+                <RadioButton fx:id="enRadio" text="%settings.language.en" toggleGroup="$langGroup" styleClass="settings-radio"/>
             </VBox>
 
             <Region VBox.vgrow="ALWAYS"/>
 
             <HBox spacing="10">
-                <Button text="Annulla" onAction="#onCancel"
+                <Button text="%settings.action.cancel" onAction="#onCancel"
                         styleClass="secondary-button" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                <Button fx:id="applyBtn" text="Applica" onAction="#onApply"
+                <Button fx:id="applyBtn" text="%settings.action.apply" onAction="#onApply"
                         styleClass="primary-button"  maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
             </HBox>
         </VBox>

@@ -2,6 +2,7 @@ package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.i18n.MessageService;
+import ch.supsi.dti.backend.model.BotNames;
 import ch.supsi.dti.backend.model.Player;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -21,8 +22,10 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class MenuController {
 
@@ -84,6 +87,13 @@ public class MenuController {
             for (String name : names.get()) {
                 players.add(new Player(name, INITIAL_BALANCE));
             }
+        } else if (selectedMode == Mode.VS_CPU) {
+            players = new ArrayList<>(2);
+            players.add(new Player("Player 1", INITIAL_BALANCE));
+            Set<String> taken = new HashSet<>();
+            taken.add("Player 1");
+            List<String> botNames = BotNames.allocate(1, taken);
+            players.add(new Player(botNames.get(0), INITIAL_BALANCE, true));
         } else {
             players = List.of(new Player("Player 1", INITIAL_BALANCE));
         }
@@ -193,7 +203,7 @@ public class MenuController {
             loader.setResources(MessageService.getInstance().getBundle());
             Scene scene = new Scene(loader.load(), 480, 320);
             dialog.setScene(scene);
-            dialog.setTitle("Impostazioni");
+            dialog.setTitle(MessageService.getInstance().getMessage("settings.title"));
             dialog.setResizable(false);
 
             SettingsController ctrl = loader.getController();

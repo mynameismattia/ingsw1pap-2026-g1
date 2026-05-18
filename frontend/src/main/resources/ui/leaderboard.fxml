@@ -20,9 +20,9 @@
         <!-- Titlebar -->
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
             <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
-            <Button fx:id="backBtn" text="← Indietro" onAction="#onBack" styleClass="icon-button"/>
+            <Button fx:id="backBtn" text="%common.back" onAction="#onBack" styleClass="icon-button"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label text="Classifica" styleClass="titlebar-title"/>
+            <Label text="%leaderboard.title" styleClass="titlebar-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Region prefWidth="90"/>
         </HBox>
@@ -33,15 +33,15 @@
         <VBox VBox.vgrow="ALWAYS" spacing="0">
             <padding><Insets top="24" right="32" bottom="24" left="32"/></padding>
 
-            <Label text="CLASSIFICA" styleClass="field-label"/>
+            <Label text="%leaderboard.title" styleClass="field-label"/>
             <Region prefHeight="14"/>
 
             <!-- Header row -->
             <HBox styleClass="lb-header" alignment="CENTER_LEFT" spacing="0">
-                <Label text="#"        styleClass="lb-cell lb-rank-col"/>
-                <Label text="GIOCATORE" styleClass="lb-cell lb-name-col" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                <Label text="VITTORIE" styleClass="lb-cell lb-num-col"/>
-                <Label text="SALDO"    styleClass="lb-cell lb-num-col"/>
+                <Label text="%leaderboard.header.rank"    styleClass="lb-cell lb-rank-col"/>
+                <Label text="%leaderboard.header.player"  styleClass="lb-cell lb-name-col" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                <Label text="%leaderboard.header.wins"    styleClass="lb-cell lb-num-col"/>
+                <Label text="%leaderboard.header.balance" styleClass="lb-cell lb-num-col"/>
             </HBox>
 
             <!-- Row 1 — gold highlight -->
