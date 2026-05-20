@@ -507,6 +507,41 @@ public class GameManager {
         return state;
     }
 
+    /**
+     * Index of the player who must place a bet next, or {@code -1} if the
+     * betting phase is complete (or the game is not in BETTING).
+     * Derived from state — no separate cursor to keep in sync.
+     */
+    public int currentBettingPlayerIndex() {
+        if (state != GameState.BETTING) {
+            return -1;
+        }
+        for (int i = 0; i < players.size(); i++) {
+            Player p = players.get(i);
+            if (!p.isSittingOut() && p.getHands().get(0).getBet() == 0) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Index of the player who must answer the insurance question next, or
+     * {@code -1} if the insurance phase is over (or not in INSURANCE_OFFER).
+     */
+    public int currentInsurancePlayerIndex() {
+        if (state != GameState.INSURANCE_OFFER) {
+            return -1;
+        }
+        for (int i = 0; i < players.size(); i++) {
+            Player p = players.get(i);
+            if (!p.isSittingOut() && !insuranceDecisions.contains(i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     public Dealer getDealer() {
         return dealer;
     }

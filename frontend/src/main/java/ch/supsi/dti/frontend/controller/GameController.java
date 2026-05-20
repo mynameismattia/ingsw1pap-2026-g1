@@ -82,15 +82,10 @@ public class GameController {
     @FXML private Button dealButton;
     @FXML private VBox lastRoundsList;
 
-    // Sequential betting / insurance state — tracked per-frontend, not in GameManager.
-    private int bettingPlayerIndex = 0;
-    private int insuranceAskingIndex = 0;
-
     // Survives FXML reloads (e.g. language change) so the active game isn't lost.
     // Package-private so RoundResultController.onNewRound can call startNewRound() on it.
+    // Sequential betting / insurance turn is derived from GameManager — no UI cursor needed.
     static GameManager sharedGameManager;
-    private static int sharedBettingIndex;
-    private static int sharedInsuranceIndex;
     // Injected by the menu before navigating to the game scene.
     private static GameManager pendingGameManager;
 
@@ -123,13 +118,6 @@ public class GameController {
         currentBet = 0;
         if (freshGame) {
             sharedRoundNumber = 1;
-            bettingPlayerIndex = nextActivePlayerIndex(0);
-            insuranceAskingIndex = 0;
-            persistIndices();
-        } else {
-            // FXML reload (e.g. language switch): preserve the in-flight indices.
-            bettingPlayerIndex = sharedBettingIndex;
-            insuranceAskingIndex = sharedInsuranceIndex;
         }
         updateUI();
         autoPlayDealerIfNeeded(); // resume dealer animation after a reload
@@ -161,17 +149,18 @@ public class GameController {
             return;
         }
         runSafe(() -> {
-            // Sequential betting: confirm current player's bet, advance to next active.
-            gameManager.placeBet(bettingPlayerIndex, currentBet);
+            // Sequential betting: ask the backend whose turn it is, then advance.
+            int bettingIdx = gameManager.currentBettingPlayerIndex();
+            if (bettingIdx < 0) {
+                return;
+            }
+            gameManager.placeBet(bettingIdx, currentBet);
             currentBet = 0;
-            bettingPlayerIndex = nextActivePlayerIndex(bettingPlayerIndex + 1);
-            if (bettingPlayerIndex >= gameManager.getPlayers().size()) {
+            if (gameManager.currentBettingPlayerIndex() < 0) {
+                // All active players have bet → deal and possibly enter insurance / dealer turn.
                 gameManager.deal();
-                bettingPlayerIndex = 0;
-                insuranceAskingIndex = nextActivePlayerIndex(0);
                 autoPlayDealerIfNeeded();
             }
-            persistIndices();
         });
     }
 
@@ -210,9 +199,11 @@ public class GameController {
     @FXML
     private void onInsureClicked() {
         runSafe(() -> {
-            gameManager.takeInsurance(insuranceAskingIndex);
-            insuranceAskingIndex = nextActivePlayerIndex(insuranceAskingIndex + 1);
-            persistIndices();
+            int idx = gameManager.currentInsurancePlayerIndex();
+            if (idx < 0) {
+                return;
+            }
+            gameManager.takeInsurance(idx);
             autoPlayDealerIfNeeded();
         });
     }
@@ -220,9 +211,11 @@ public class GameController {
     @FXML
     private void onDeclineInsuranceClicked() {
         runSafe(() -> {
-            gameManager.declineInsurance(insuranceAskingIndex);
-            insuranceAskingIndex = nextActivePlayerIndex(insuranceAskingIndex + 1);
-            persistIndices();
+            int idx = gameManager.currentInsurancePlayerIndex();
+            if (idx < 0) {
+                return;
+            }
+            gameManager.declineInsurance(idx);
             autoPlayDealerIfNeeded();
         });
     }
@@ -320,20 +313,6 @@ public class GameController {
 
     // ── Helpers ──────────────────────────────────────────────────
 
-    private void persistIndices() {
-        sharedBettingIndex = bettingPlayerIndex;
-        sharedInsuranceIndex = insuranceAskingIndex;
-    }
-
-    private int nextActivePlayerIndex(int from) {
-        List<Player> players = gameManager.getPlayers();
-        int i = from;
-        while (i < players.size() && players.get(i).isSittingOut()) {
-            i++;
-        }
-        return i;
-    }
-
     private void navigateTo(String fxml, int w, int h) {
         try {
             Stage stage = (Stage) dealButton.getScene().getWindow();
@@ -418,12 +397,13 @@ public class GameController {
         });
 
         // Per-turn prompt (who is betting / answering insurance)
-        if (state == GameState.BETTING && bettingPlayerIndex < gameManager.getPlayers().size()) {
-            String name = gameManager.getPlayers().get(bettingPlayerIndex).getName();
+        int bettingIdx = gameManager.currentBettingPlayerIndex();
+        int insuranceIdx = gameManager.currentInsurancePlayerIndex();
+        if (state == GameState.BETTING && bettingIdx >= 0) {
+            String name = gameManager.getPlayers().get(bettingIdx).getName();
             bettingPromptLabel.setText(msg.getMessage("game.message.bettingTurn", name));
-        } else if (state == GameState.INSURANCE_OFFER
-                && insuranceAskingIndex < gameManager.getPlayers().size()) {
-            String name = gameManager.getPlayers().get(insuranceAskingIndex).getName();
+        } else if (state == GameState.INSURANCE_OFFER && insuranceIdx >= 0) {
+            String name = gameManager.getPlayers().get(insuranceIdx).getName();
             bettingPromptLabel.setText(name);
         } else {
             bettingPromptLabel.setText("");
@@ -507,10 +487,8 @@ public class GameController {
 
     private int activePlayerIndex(GameState state) {
         return switch (state) {
-            case BETTING         -> bettingPlayerIndex < gameManager.getPlayers().size()
-                                    ? bettingPlayerIndex : -1;
-            case INSURANCE_OFFER -> insuranceAskingIndex < gameManager.getPlayers().size()
-                                    ? insuranceAskingIndex : -1;
+            case BETTING         -> gameManager.currentBettingPlayerIndex();
+            case INSURANCE_OFFER -> gameManager.currentInsurancePlayerIndex();
             case PLAYER_TURN     -> gameManager.getPlayers().indexOf(gameManager.getCurrentPlayer());
             default              -> -1;
         };
