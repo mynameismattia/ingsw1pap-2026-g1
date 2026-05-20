@@ -11,9 +11,7 @@ import ch.supsi.dti.backend.model.Rank;
 import ch.supsi.dti.backend.model.Suit;
 import ch.supsi.dti.frontend.view.CardView;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
@@ -22,7 +20,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -325,15 +322,6 @@ public class RoundResultController {
     }
 
     private void navigateTo(String fxml, int w, int h) {
-        try {
-            Stage stage = (Stage) titleLabel.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
-            loader.setResources(MessageService.getInstance().getBundle());
-            stage.setScene(new Scene(loader.load(), w, h));
-            stage.setResizable(true);
-            stage.centerOnScreen();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Navigation.navigate((Stage) titleLabel.getScene().getWindow(), fxml);
     }
 }

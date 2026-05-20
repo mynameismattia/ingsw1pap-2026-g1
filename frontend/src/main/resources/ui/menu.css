@@ -49,6 +49,20 @@
 .icon-button:hover {
     -fx-background-color: #2c313d;
 }
+.icon-button:disabled {
+    -fx-opacity: 0.55;
+    -fx-cursor: default;
+}
+
+/* "Soon" mini-pill — paired with a disabled icon-button to flag unfinished features. */
+.badge-soon {
+    -fx-background-color: #353a47;
+    -fx-background-radius: 4;
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 5 1 5;
+}
 
 .divider {
     -fx-min-height: 1;
@@ -84,23 +98,6 @@
 .hero-subtitle {
     -fx-text-fill: #8a909c;
     -fx-font-size: 13px;
-}
-
-.dots {
-    -fx-padding: 4 0 4 0;
-}
-.dot {
-    -fx-min-width: 7;
-    -fx-min-height: 7;
-    -fx-pref-width: 7;
-    -fx-pref-height: 7;
-    -fx-max-width: 7;
-    -fx-max-height: 7;
-    -fx-background-color: #353a47;
-    -fx-background-radius: 7;
-}
-.dot-active {
-    -fx-background-color: #c9ccd4;
 }
 
 .license-pill {
@@ -272,6 +269,150 @@
 }
 .secondary-button:hover {
     -fx-background-color: #2c313d;
+}
+
+/* ── Language dropdown (anchored to the topbar ⚙) ─────────────── */
+
+.lang-dropdown {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 10;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 6 0 6 0;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 24, 0.15, 0, 8);
+}
+.lang-dropdown .menu-item {
+    -fx-padding: 6 16 6 12;
+}
+.lang-dropdown .menu-item .label {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12.5px;
+}
+.lang-dropdown .menu-item:focused {
+    -fx-background-color: #2c313d;
+}
+.lang-dropdown .menu-item:focused .label {
+    -fx-text-fill: #f3f4f7;
+}
+.lang-dropdown-item-active .label {
+    -fx-text-fill: #4ade80;
+    -fx-font-weight: bold;
+}
+
+/* ── Tutorial / Rules page ───────────────────────────────────── */
+
+.tutorial-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+.tutorial-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+.tutorial-body {
+    -fx-background-color: transparent;
+}
+
+/* Hero band with decorative card fan */
+.tutorial-hero {
+    -fx-background-color: radial-gradient(center 50% 40%, radius 70%, #1f232c 0%, #14161c 100%);
+    -fx-background-radius: 14;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+}
+.tutorial-hero-title {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+.tutorial-hero-subtitle {
+    -fx-text-fill: #8a909c;
+    -fx-font-size: 13px;
+}
+
+/* Section containers (Objective / Values / Flow / Dealer / Payouts) */
+.tutorial-section {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 10;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 16 18 16 18;
+}
+
+.tutorial-section-title {
+    -fx-text-fill: #3b82f6;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.tutorial-action-title {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: bold;
+}
+
+/* Action rows: hover-lift the card-like row */
+.tutorial-action-row {
+    -fx-background-color: #252934;
+    -fx-background-radius: 10;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 12 16 12 16;
+    -fx-cursor: default;
+}
+.tutorial-action-row:hover {
+    -fx-background-color: #2c313d;
+    -fx-border-color: #3b82f6;
+    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.18), 14, 0.1, 0, 4);
+}
+.tutorial-action-cards {
+    -fx-padding: 0 6 0 0;
+}
+
+.tutorial-paragraph {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12.5px;
+    -fx-line-spacing: 2px;
+}
+
+.tutorial-value-caption {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+/* Payout grid — 5 equal cells with the multiplier on top */
+.tutorial-payout-grid {
+    -fx-padding: 4 0 0 0;
+}
+.tutorial-payout-cell {
+    -fx-background-color: #252934;
+    -fx-background-radius: 8;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 14 8 12 8;
+}
+.tutorial-payout-cell:hover {
+    -fx-background-color: #2c313d;
+    -fx-border-color: #4ade80;
+}
+.tutorial-payout-cell-loss:hover {
+    -fx-border-color: #f87171;
+}
+.tutorial-payout-value {
+    -fx-text-fill: #4ade80;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+.tutorial-payout-cell-loss .tutorial-payout-value {
+    -fx-text-fill: #f87171;
+}
+.tutorial-payout-label {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 11.5px;
 }
 
 /* ── Settings dialog ─────────────────────────────────────────── */

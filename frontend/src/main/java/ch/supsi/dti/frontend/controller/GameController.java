@@ -16,7 +16,6 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -32,7 +31,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -43,9 +41,11 @@ public class GameController {
     private static final int MIN_BET = 5;
     private static final int MAX_BET = 1000;
     private static final Duration DEALER_STEP_DELAY = Duration.millis(800);
+    private static final Duration BOT_STEP_DELAY = Duration.millis(600);
     private static final int TOTAL_ROUNDS = 10;
 
     private Timeline dealerTimeline;
+    private Timeline botTimeline;
 
     // Titlebar
     @FXML private Label roundLabel;
@@ -80,17 +80,13 @@ public class GameController {
     @FXML private Button chip250;
     @FXML private Label currentBetLabel;
     @FXML private Button dealButton;
+    @FXML private Button settingsBtn;
     @FXML private VBox lastRoundsList;
-
-    // Sequential betting / insurance state — tracked per-frontend, not in GameManager.
-    private int bettingPlayerIndex = 0;
-    private int insuranceAskingIndex = 0;
 
     // Survives FXML reloads (e.g. language change) so the active game isn't lost.
     // Package-private so RoundResultController.onNewRound can call startNewRound() on it.
+    // Sequential betting / insurance turn is derived from GameManager — no UI cursor needed.
     static GameManager sharedGameManager;
-    private static int sharedBettingIndex;
-    private static int sharedInsuranceIndex;
     // Injected by the menu before navigating to the game scene.
     private static GameManager pendingGameManager;
 
@@ -123,16 +119,9 @@ public class GameController {
         currentBet = 0;
         if (freshGame) {
             sharedRoundNumber = 1;
-            bettingPlayerIndex = nextActivePlayerIndex(0);
-            insuranceAskingIndex = 0;
-            persistIndices();
-        } else {
-            // FXML reload (e.g. language switch): preserve the in-flight indices.
-            bettingPlayerIndex = sharedBettingIndex;
-            insuranceAskingIndex = sharedInsuranceIndex;
         }
         updateUI();
-        autoPlayDealerIfNeeded(); // resume dealer animation after a reload
+        tickAutoTurns(); // resume dealer/bot animation after a reload
     }
 
     // ── Action handlers ──────────────────────────────────────────
@@ -161,17 +150,18 @@ public class GameController {
             return;
         }
         runSafe(() -> {
-            // Sequential betting: confirm current player's bet, advance to next active.
-            gameManager.placeBet(bettingPlayerIndex, currentBet);
-            currentBet = 0;
-            bettingPlayerIndex = nextActivePlayerIndex(bettingPlayerIndex + 1);
-            if (bettingPlayerIndex >= gameManager.getPlayers().size()) {
-                gameManager.deal();
-                bettingPlayerIndex = 0;
-                insuranceAskingIndex = nextActivePlayerIndex(0);
-                autoPlayDealerIfNeeded();
+            // Sequential betting: ask the backend whose turn it is, then advance.
+            int bettingIdx = gameManager.currentBettingPlayerIndex();
+            if (bettingIdx < 0) {
+                return;
             }
-            persistIndices();
+            gameManager.placeBet(bettingIdx, currentBet);
+            currentBet = 0;
+            if (gameManager.currentBettingPlayerIndex() < 0) {
+                // All active players have bet → deal and possibly enter insurance / dealer turn.
+                gameManager.deal();
+                tickAutoTurns();
+            }
         });
     }
 
@@ -179,7 +169,7 @@ public class GameController {
     private void onHitClicked() {
         runSafe(() -> {
             gameManager.hit();
-            autoPlayDealerIfNeeded();
+            tickAutoTurns();
         });
     }
 
@@ -187,7 +177,7 @@ public class GameController {
     private void onStandClicked() {
         runSafe(() -> {
             gameManager.stand();
-            autoPlayDealerIfNeeded();
+            tickAutoTurns();
         });
     }
 
@@ -195,7 +185,7 @@ public class GameController {
     private void onDoubleClicked() {
         runSafe(() -> {
             gameManager.doubleDown();
-            autoPlayDealerIfNeeded();
+            tickAutoTurns();
         });
     }
 
@@ -203,27 +193,31 @@ public class GameController {
     private void onSplitClicked() {
         runSafe(() -> {
             gameManager.split();
-            autoPlayDealerIfNeeded();
+            tickAutoTurns();
         });
     }
 
     @FXML
     private void onInsureClicked() {
         runSafe(() -> {
-            gameManager.takeInsurance(insuranceAskingIndex);
-            insuranceAskingIndex = nextActivePlayerIndex(insuranceAskingIndex + 1);
-            persistIndices();
-            autoPlayDealerIfNeeded();
+            int idx = gameManager.currentInsurancePlayerIndex();
+            if (idx < 0) {
+                return;
+            }
+            gameManager.takeInsurance(idx);
+            tickAutoTurns();
         });
     }
 
     @FXML
     private void onDeclineInsuranceClicked() {
         runSafe(() -> {
-            gameManager.declineInsurance(insuranceAskingIndex);
-            insuranceAskingIndex = nextActivePlayerIndex(insuranceAskingIndex + 1);
-            persistIndices();
-            autoPlayDealerIfNeeded();
+            int idx = gameManager.currentInsurancePlayerIndex();
+            if (idx < 0) {
+                return;
+            }
+            gameManager.declineInsurance(idx);
+            tickAutoTurns();
         });
     }
 
@@ -235,30 +229,13 @@ public class GameController {
     @FXML
     private void onBackToMenuClicked() {
         stopDealerTimeline();
+        stopBotTimeline();
         navigateTo("/ui/menu.fxml", 1100, 680);
     }
 
     @FXML
     private void onSettingsClicked() {
-        try {
-            Stage dialog = new Stage();
-            dialog.initOwner(dealButton.getScene().getWindow());
-            dialog.initModality(Modality.WINDOW_MODAL);
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/settings.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            Scene scene = new Scene(loader.load(), 480, 320);
-            dialog.setScene(scene);
-            dialog.setTitle(MessageService.getInstance().getMessage("settings.title"));
-            dialog.setResizable(false);
-
-            SettingsController ctrl = loader.getController();
-            ctrl.setDialogStage(dialog);
-            ctrl.setOnApply(this::reloadGame);
-
-            dialog.showAndWait();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        LanguageDropdown.show(settingsBtn, this::reloadGame);
     }
 
     @FXML
@@ -320,50 +297,27 @@ public class GameController {
 
     // ── Helpers ──────────────────────────────────────────────────
 
-    private void persistIndices() {
-        sharedBettingIndex = bettingPlayerIndex;
-        sharedInsuranceIndex = insuranceAskingIndex;
-    }
-
-    private int nextActivePlayerIndex(int from) {
-        List<Player> players = gameManager.getPlayers();
-        int i = from;
-        while (i < players.size() && players.get(i).isSittingOut()) {
-            i++;
-        }
-        return i;
-    }
-
     private void navigateTo(String fxml, int w, int h) {
-        try {
-            Stage stage = (Stage) dealButton.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
-            loader.setResources(MessageService.getInstance().getBundle());
-            stage.setScene(new Scene(loader.load(), w, h));
-            stage.setResizable(true);
-            stage.centerOnScreen();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Navigation.navigate((Stage) dealButton.getScene().getWindow(), fxml);
     }
 
     private void reloadGame() {
         stopDealerTimeline(); // prevent orphan ticks against the new controller instance
-        try {
-            Stage stage = (Stage) dealButton.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/game.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            stage.setScene(new Scene(loader.load(), 1100, 680));
-            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        stopBotTimeline();
+        Navigation.navigate((Stage) dealButton.getScene().getWindow(), "/ui/game.fxml");
     }
 
     private void stopDealerTimeline() {
         if (dealerTimeline != null) {
             dealerTimeline.stop();
             dealerTimeline = null;
+        }
+    }
+
+    private void stopBotTimeline() {
+        if (botTimeline != null) {
+            botTimeline.stop();
+            botTimeline = null;
         }
     }
 
@@ -374,6 +328,12 @@ public class GameController {
         } catch (RuntimeException e) {
             messageLabel.setText("⚠ " + e.getMessage());
         }
+    }
+
+    /** Kicks off bot / dealer animation if the game state calls for it. No-op otherwise. */
+    private void tickAutoTurns() {
+        autoPlayBotIfNeeded();
+        autoPlayDealerIfNeeded();
     }
 
     private void autoPlayDealerIfNeeded() {
@@ -394,6 +354,26 @@ public class GameController {
         dealerTimeline.play();
     }
 
+    private void autoPlayBotIfNeeded() {
+        if (!gameManager.isCurrentPlayerBot()) {
+            return;
+        }
+        if (botTimeline != null && botTimeline.getStatus() == Timeline.Status.RUNNING) {
+            return;
+        }
+        botTimeline = new Timeline(new KeyFrame(BOT_STEP_DELAY, e -> {
+            boolean more = gameManager.botStep();
+            updateUI();
+            if (!more) {
+                botTimeline.stop();
+                // bot turn ended → possibly chain into the dealer animation.
+                autoPlayDealerIfNeeded();
+            }
+        }));
+        botTimeline.setCycleCount(Timeline.INDEFINITE);
+        botTimeline.play();
+    }
+
     private void updateUI() {
         MessageService msg = MessageService.getInstance();
         GameState state = gameManager.getState();
@@ -408,22 +388,30 @@ public class GameController {
 
         currentBetLabel.setText("$" + currentBet);
 
-        messageLabel.setText(switch (state) {
-            case WAITING, BETTING       -> msg.getMessage("game.message.placeBet");
-            case DEALING, PLAYER_TURN   -> msg.getMessage("game.message.playerTurn");
-            case INSURANCE_OFFER        -> msg.getMessage("game.message.offerInsurance");
-            case DEALER_TURN, RESOLVING -> msg.getMessage("game.message.dealerTurn");
-            case ROUND_OVER             -> "";
-            case GAME_OVER              -> msg.getMessage("game.message.gameOver");
-        });
+        // PLAYER_TURN on a bot → show "🤖 X is thinking…" instead of generic prompt.
+        if (state == GameState.PLAYER_TURN && gameManager.isCurrentPlayerBot()) {
+            Player bot = gameManager.getCurrentPlayer();
+            messageLabel.setText(msg.getMessage("game.message.botThinking",
+                    bot != null ? bot.getName() : ""));
+        } else {
+            messageLabel.setText(switch (state) {
+                case WAITING, BETTING       -> msg.getMessage("game.message.placeBet");
+                case DEALING, PLAYER_TURN   -> msg.getMessage("game.message.playerTurn");
+                case INSURANCE_OFFER        -> msg.getMessage("game.message.offerInsurance");
+                case DEALER_TURN, RESOLVING -> msg.getMessage("game.message.dealerTurn");
+                case ROUND_OVER             -> "";
+                case GAME_OVER              -> msg.getMessage("game.message.gameOver");
+            });
+        }
 
         // Per-turn prompt (who is betting / answering insurance)
-        if (state == GameState.BETTING && bettingPlayerIndex < gameManager.getPlayers().size()) {
-            String name = gameManager.getPlayers().get(bettingPlayerIndex).getName();
+        int bettingIdx = gameManager.currentBettingPlayerIndex();
+        int insuranceIdx = gameManager.currentInsurancePlayerIndex();
+        if (state == GameState.BETTING && bettingIdx >= 0) {
+            String name = gameManager.getPlayers().get(bettingIdx).getName();
             bettingPromptLabel.setText(msg.getMessage("game.message.bettingTurn", name));
-        } else if (state == GameState.INSURANCE_OFFER
-                && insuranceAskingIndex < gameManager.getPlayers().size()) {
-            String name = gameManager.getPlayers().get(insuranceAskingIndex).getName();
+        } else if (state == GameState.INSURANCE_OFFER && insuranceIdx >= 0) {
+            String name = gameManager.getPlayers().get(insuranceIdx).getName();
             bettingPromptLabel.setText(name);
         } else {
             bettingPromptLabel.setText("");
@@ -507,10 +495,8 @@ public class GameController {
 
     private int activePlayerIndex(GameState state) {
         return switch (state) {
-            case BETTING         -> bettingPlayerIndex < gameManager.getPlayers().size()
-                                    ? bettingPlayerIndex : -1;
-            case INSURANCE_OFFER -> insuranceAskingIndex < gameManager.getPlayers().size()
-                                    ? insuranceAskingIndex : -1;
+            case BETTING         -> gameManager.currentBettingPlayerIndex();
+            case INSURANCE_OFFER -> gameManager.currentInsurancePlayerIndex();
             case PLAYER_TURN     -> gameManager.getPlayers().indexOf(gameManager.getCurrentPlayer());
             default              -> -1;
         };
@@ -599,7 +585,12 @@ public class GameController {
         row.getChildren().add(info);
 
         if (isActive) {
-            row.getChildren().add(labeled(msg.getMessage("game.panel.turn"), "turn-badge"));
+            boolean thinking = player.isBot()
+                    && gameManager.getState() == GameState.PLAYER_TURN
+                    && gameManager.isCurrentPlayerBot();
+            String badgeKey = thinking ? "game.panel.thinking" : "game.panel.turn";
+            String badgeStyle = thinking ? "turn-badge-bot" : "turn-badge";
+            row.getChildren().add(labeled(msg.getMessage(badgeKey), badgeStyle));
         }
         return row;
     }

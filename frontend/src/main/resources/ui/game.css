@@ -69,6 +69,17 @@
     -fx-padding: 2 8 2 8;
 }
 
+/* Bot "thinking…" badge — amber so it reads as a different mode from the
+   human Turn badge, not just a translation. */
+.turn-badge-bot {
+    -fx-background-color: #f59e0b;
+    -fx-background-radius: 6;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 8 2 8;
+}
+
 /* ── Seat cards (center table players) ──────────────────────── */
 
 .seat-card {

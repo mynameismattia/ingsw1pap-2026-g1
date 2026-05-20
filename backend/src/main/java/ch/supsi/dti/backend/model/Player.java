@@ -7,21 +7,31 @@ import java.util.List;
 public class Player {
     private final String name;
     private final boolean bot;
+    private final PlayerStrategy strategy;
     private int balance;
     private boolean sittingOut;
     private final List<PlayerHand> hands;
 
     public Player(String name, int balance) {
-        this(name, balance, false);
+        this(name, balance, false, null);
     }
 
     public Player(String name, int balance, boolean bot) {
+        this(name, balance, bot, bot ? new DealerMimicStrategy() : null);
+    }
+
+    public Player(String name, int balance, boolean bot, PlayerStrategy strategy) {
         this.name = name;
         this.balance = balance;
         this.bot = bot;
+        this.strategy = strategy;
         this.sittingOut = false;
         this.hands = new ArrayList<>();
         this.hands.add(new PlayerHand(this));
+    }
+
+    public PlayerStrategy getStrategy() {
+        return strategy;
     }
 
     public void resetForNewRound() {

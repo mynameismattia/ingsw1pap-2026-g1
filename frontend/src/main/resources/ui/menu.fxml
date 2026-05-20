@@ -5,6 +5,7 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
@@ -19,16 +20,34 @@
            stylesheets="@menu.css"
            prefWidth="1100" prefHeight="680">
 
-    <VBox styleClass="card" maxWidth="1000" maxHeight="600" spacing="0">
+    <VBox styleClass="card" minWidth="720" minHeight="520" maxWidth="1280" maxHeight="800" spacing="0">
 
-        <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
+        <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="8">
             <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
 
-            <Region HBox.hgrow="ALWAYS"/>
-            <Label text="%mainmenu.title" styleClass="titlebar-title"/>
+            <Button styleClass="icon-button" text="%mainmenu.action.license" onAction="#onLicense">
+                <tooltip><Tooltip text="%mainmenu.tooltip.license"/></tooltip>
+            </Button>
+
+            <HBox alignment="CENTER_LEFT" spacing="4">
+                <Button styleClass="icon-button" text="%mainmenu.action.profile" onAction="#onProfile" disable="true">
+                    <tooltip><Tooltip text="%mainmenu.tooltip.profile"/></tooltip>
+                </Button>
+                <Label text="%mainmenu.badge.soon" styleClass="badge-soon"/>
+            </HBox>
+
+            <HBox alignment="CENTER_LEFT" spacing="4">
+                <Button styleClass="icon-button" text="%mainmenu.action.leaderboard" onAction="#onLeaderboard" disable="true">
+                    <tooltip><Tooltip text="%mainmenu.tooltip.leaderboard"/></tooltip>
+                </Button>
+                <Label text="%mainmenu.badge.soon" styleClass="badge-soon"/>
+            </HBox>
+
             <Region HBox.hgrow="ALWAYS"/>
 
-            <Button styleClass="icon-button" text="⚙" onAction="#onSettings"/>
+            <Button fx:id="settingsBtn" styleClass="icon-button" text="⚙" onAction="#onSettings">
+                <tooltip><Tooltip text="%mainmenu.tooltip.settings"/></tooltip>
+            </Button>
         </HBox>
 
         <Region styleClass="divider"/>
@@ -46,14 +65,6 @@
 
                 <Label text="%mainmenu.hero.title" styleClass="hero-title"/>
                 <Label text="%mainmenu.hero.subtitle" styleClass="hero-subtitle"/>
-
-                <HBox styleClass="dots" spacing="8" alignment="CENTER">
-                    <padding><Insets top="6" bottom="6"/></padding>
-                    <Region styleClass="dot, dot-active"/>
-                    <Region styleClass="dot"/>
-                    <Region styleClass="dot"/>
-                    <Region styleClass="dot"/>
-                </HBox>
 
                 <Region VBox.vgrow="ALWAYS"/>
 
@@ -74,9 +85,15 @@
 
                 <Label text="%mainmenu.section.mode" styleClass="field-label"/>
                 <HBox styleClass="mode-pills" spacing="8">
-                    <Button fx:id="modeVsCpuBtn"    text="%mainmenu.mode.vsCpu"    onAction="#onModeVsCpu"    styleClass="mode-pill, mode-pill-active" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                    <Button fx:id="modeMultiBtn"    text="%mainmenu.mode.multi"    onAction="#onModeMulti"    styleClass="mode-pill"                   maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                    <Button fx:id="modeTutorialBtn" text="%mainmenu.mode.tutorial" onAction="#onModeTutorial" styleClass="mode-pill"                   maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="modeVsCpuBtn"    text="%mainmenu.mode.vsCpu"    onAction="#onModeVsCpu"    styleClass="mode-pill, mode-pill-active" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                        <tooltip><Tooltip text="%mainmenu.tooltip.mode.vsCpu"/></tooltip>
+                    </Button>
+                    <Button fx:id="modeMultiBtn"    text="%mainmenu.mode.multi"    onAction="#onModeMulti"    styleClass="mode-pill"                   maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                        <tooltip><Tooltip text="%mainmenu.tooltip.mode.multi"/></tooltip>
+                    </Button>
+                    <Button fx:id="modeTutorialBtn" text="%mainmenu.mode.tutorial" onAction="#onModeTutorial" styleClass="mode-pill"                   maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                        <tooltip><Tooltip text="%mainmenu.tooltip.mode.tutorial"/></tooltip>
+                    </Button>
                 </HBox>
 
                 <Region styleClass="spacer-sm"/>
@@ -85,17 +102,17 @@
 
                 <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
                     <Label text="%mainmenu.table.humans" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Spinner fx:id="humansSpinner" editable="false" styleClass="row-spinner" prefWidth="78"/>
+                    <Spinner fx:id="humansSpinner" editable="true" styleClass="row-spinner" prefWidth="78"/>
                 </HBox>
 
                 <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
                     <Label text="%mainmenu.table.cpus" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="1" styleClass="row-value"/>
+                    <Spinner fx:id="cpusSpinner" editable="true" styleClass="row-spinner" prefWidth="78"/>
                 </HBox>
 
                 <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
                     <Label text="%mainmenu.table.balance" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Label text="\$1.000" styleClass="row-value"/>
+                    <Spinner fx:id="balanceSpinner" editable="true" styleClass="row-spinner" prefWidth="100"/>
                 </HBox>
 
                 <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
@@ -105,12 +122,9 @@
 
                 <Region VBox.vgrow="ALWAYS"/>
 
-                <Button fx:id="startBtn" text="%mainmenu.action.start" onAction="#onStartGame" styleClass="primary-button" maxWidth="Infinity"/>
-
-                <HBox spacing="10">
-                    <Button text="%mainmenu.action.profile"      onAction="#onProfile"     styleClass="secondary-button" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                    <Button text="%mainmenu.action.leaderboard"  onAction="#onLeaderboard" styleClass="secondary-button" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                </HBox>
+                <Button fx:id="startBtn" text="%mainmenu.action.start" onAction="#onStartGame" styleClass="primary-button" maxWidth="Infinity">
+                    <tooltip><Tooltip text="%mainmenu.tooltip.start"/></tooltip>
+                </Button>
             </VBox>
 
         </HBox>

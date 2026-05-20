@@ -26,7 +26,7 @@
             <Label fx:id="roundLabel" text="" styleClass="round-pill"/>
             <Label fx:id="deckLabel"  text="" styleClass="deck-pill"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="⚙" onAction="#onSettingsClicked" styleClass="icon-button"/>
+            <Button fx:id="settingsBtn" text="⚙" onAction="#onSettingsClicked" styleClass="icon-button"/>
         </HBox>
 
         <Region styleClass="divider"/>

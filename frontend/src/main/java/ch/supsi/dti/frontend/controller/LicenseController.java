@@ -1,14 +1,10 @@
 package ch.supsi.dti.frontend.controller;
-import ch.supsi.dti.backend.i18n.MessageService;
-
 import ch.supsi.dti.backend.license.LicenseChecker;
 import javafx.animation.Interpolator;
 import javafx.animation.PauseTransition;
 import javafx.animation.RotateTransition;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
@@ -205,20 +201,14 @@ public class LicenseController {
     }
 
     private void launchMenu() {
-        try {
-            Stage stage = (Stage) licenseField.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/menu.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            Scene scene = new Scene(loader.load(), 1100, 680);
-            stage.setScene(scene);
-            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-            stage.setResizable(true);
-            stage.centerOnScreen();
-        } catch (IOException e) {
-            stopSpinner();
-            showError("Errore avvio");
-            setStatus(StatusKind.ERROR, "Impossibile avviare il gioco: " + e.getMessage());
-        }
+        // First-time transition from the small license window (480×550, non-resizable)
+        // up to the menu — explicitly grow the stage, then navigate. From the menu
+        // onward, Navigation.navigate preserves whatever size the user picked.
+        Stage stage = (Stage) licenseField.getScene().getWindow();
+        stage.setResizable(true);
+        stage.setWidth(1100);
+        stage.setHeight(680);
+        Navigation.navigate(stage, "/ui/menu.fxml");
     }
 
     private void saveLicense(String key) {
