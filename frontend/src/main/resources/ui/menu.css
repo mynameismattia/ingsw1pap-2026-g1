@@ -49,6 +49,20 @@
 .icon-button:hover {
     -fx-background-color: #2c313d;
 }
+.icon-button:disabled {
+    -fx-opacity: 0.55;
+    -fx-cursor: default;
+}
+
+/* "Soon" mini-pill — paired with a disabled icon-button to flag unfinished features. */
+.badge-soon {
+    -fx-background-color: #353a47;
+    -fx-background-radius: 4;
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 5 1 5;
+}
 
 .divider {
     -fx-min-height: 1;
@@ -84,23 +98,6 @@
 .hero-subtitle {
     -fx-text-fill: #8a909c;
     -fx-font-size: 13px;
-}
-
-.dots {
-    -fx-padding: 4 0 4 0;
-}
-.dot {
-    -fx-min-width: 7;
-    -fx-min-height: 7;
-    -fx-pref-width: 7;
-    -fx-pref-height: 7;
-    -fx-max-width: 7;
-    -fx-max-height: 7;
-    -fx-background-color: #353a47;
-    -fx-background-radius: 7;
-}
-.dot-active {
-    -fx-background-color: #c9ccd4;
 }
 
 .license-pill {
@@ -272,6 +269,42 @@
 }
 .secondary-button:hover {
     -fx-background-color: #2c313d;
+}
+
+/* ── Tutorial / Rules page ───────────────────────────────────── */
+
+.tutorial-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+.tutorial-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+.tutorial-body {
+    -fx-background-color: transparent;
+}
+.tutorial-section-title {
+    -fx-text-fill: #3b82f6;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+.tutorial-action-title {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: bold;
+}
+.tutorial-action-row {
+    -fx-background-color: #252934;
+    -fx-background-radius: 8;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 10 14 10 14;
+}
+.tutorial-paragraph {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12.5px;
+    -fx-line-spacing: 2px;
 }
 
 /* ── Settings dialog ─────────────────────────────────────────── */
