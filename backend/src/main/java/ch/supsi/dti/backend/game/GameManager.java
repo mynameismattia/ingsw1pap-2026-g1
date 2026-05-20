@@ -6,6 +6,7 @@ import ch.supsi.dti.backend.model.Deck;
 import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
+import ch.supsi.dti.backend.model.PlayerStrategy;
 import ch.supsi.dti.backend.model.Rank;
 import ch.supsi.dti.backend.model.RoundRecord;
 
@@ -96,9 +97,8 @@ public class GameManager {
         for (Player player : players) {
             player.resetForNewRound();
             boolean broke = player.getBalance() < MIN_BET;
-            boolean sittingOut = broke || player.isBot();
-            player.setSittingOut(sittingOut);
-            if (sittingOut) {
+            player.setSittingOut(broke);
+            if (broke) {
                 // Pre-settle the placeholder hand so the turn loop skips them naturally.
                 player.getHands().get(0).setSettled(true);
             }
@@ -114,6 +114,14 @@ public class GameManager {
         }
 
         state = GameState.BETTING;
+
+        // Bots bet immediately — betting phase only blocks on humans.
+        for (int i = 0; i < players.size(); i++) {
+            Player p = players.get(i);
+            if (p.isBot() && !p.isSittingOut() && p.getStrategy() != null) {
+                placeBet(i, p.getStrategy().decideBet(p));
+            }
+        }
     }
 
     public void placeBet(int playerIndex, int amount) {
@@ -170,10 +178,30 @@ public class GameManager {
         // Dealer shows Ace → offer insurance to each player before peeking.
         if (dealer.showsAce()) {
             state = GameState.INSURANCE_OFFER;
+            autoDecideBotInsurance();
             return;
         }
 
         resolveNaturalBlackjacks();
+    }
+
+    private void autoDecideBotInsurance() {
+        Card upcard = dealer.getHand().getCards().get(0);
+        for (int i = 0; i < players.size(); i++) {
+            if (state != GameState.INSURANCE_OFFER) {
+                return; // last bot's decision closed the phase
+            }
+            Player p = players.get(i);
+            if (!p.isBot() || p.isSittingOut() || p.getStrategy() == null) continue;
+            if (insuranceDecisions.contains(i)) continue;
+            PlayerStrategy.Action action =
+                    p.getStrategy().decide(state, p.getHands().get(0), upcard);
+            if (action == PlayerStrategy.Action.TAKE_INSURANCE) {
+                takeInsurance(i);
+            } else {
+                declineInsurance(i);
+            }
+        }
     }
 
     public void takeInsurance(int playerIndex) {
@@ -523,6 +551,48 @@ public class GameManager {
             }
         }
         return -1;
+    }
+
+    /**
+     * True if the player whose turn it is in PLAYER_TURN is a bot with a
+     * strategy attached. Used by the UI to schedule auto-play steps.
+     */
+    public boolean isCurrentPlayerBot() {
+        if (state != GameState.PLAYER_TURN) {
+            return false;
+        }
+        Player p = getCurrentPlayer();
+        return p != null && p.isBot() && p.getStrategy() != null;
+    }
+
+    /**
+     * Executes one decision for the current bot player (one hit, one stand,
+     * one double, etc.). Returns {@code true} if the bot still has more to do
+     * (turn is still PLAYER_TURN on a bot). Used by the UI Timeline to pace
+     * the animation.
+     */
+    public boolean botStep() {
+        if (!isCurrentPlayerBot()) {
+            throw new IllegalStateException("Current player is not a bot in PLAYER_TURN");
+        }
+        Player bot = players.get(currentPlayerIndex);
+        PlayerHand hand = currentPlayerHand();
+        Card upcard = dealer.getHand().getCards().get(0);
+        PlayerStrategy.Action action = bot.getStrategy().decide(state, hand, upcard);
+        switch (action) {
+            case HIT -> hit();
+            case STAND -> stand();
+            case DOUBLE -> {
+                if (canDoubleDown()) doubleDown();
+                else stand();
+            }
+            case SPLIT -> {
+                if (canSplit()) split();
+                else stand();
+            }
+            default -> stand(); // insurance actions don't apply here
+        }
+        return isCurrentPlayerBot();
     }
 
     /**
