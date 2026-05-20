@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+
 public class MenuController {
 
     private static final int DEFAULT_BALANCE = 100;
@@ -125,21 +126,10 @@ public class MenuController {
     @FXML
     private void onStartGame() {
         startBtn.setDisable(true);
+        Stage stage = (Stage) startBtn.getScene().getWindow();
 
-        // Tutorial → navigate to the rules page instead of starting a game.
         if (selectedMode == Mode.TUTORIAL) {
-            try {
-                Stage stage = (Stage) startBtn.getScene().getWindow();
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/tutorial.fxml"));
-                loader.setResources(MessageService.getInstance().getBundle());
-                stage.setScene(new Scene(loader.load(), 1100, 680));
-                stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-                stage.setResizable(true);
-                stage.centerOnScreen();
-            } catch (IOException e) {
-                startBtn.setDisable(false);
-                e.printStackTrace();
-            }
+            Navigation.navigate(stage, "/ui/tutorial.fxml");
             return;
         }
 
@@ -147,7 +137,6 @@ public class MenuController {
         int botCount = cpusSpinner.getValue();
         int balance = balanceSpinner.getValue();
 
-        // Collect human names: prompt only when more than one seat is human.
         List<String> humanNames;
         if (humanCount > 1) {
             Optional<List<String>> names = promptHumanNames(humanCount);
@@ -172,20 +161,7 @@ public class MenuController {
         }
 
         GameController.setPendingGameManager(new GameManager(players));
-
-        try {
-            Stage stage = (Stage) startBtn.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/game.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            Scene scene = new Scene(loader.load(), 1280, 720);
-            stage.setScene(scene);
-            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-            stage.setResizable(true);
-            stage.centerOnScreen();
-        } catch (IOException e) {
-            startBtn.setDisable(false);
-            e.printStackTrace();
-        }
+        Navigation.navigate(stage, "/ui/game.fxml");
     }
 
     private Optional<List<String>> promptHumanNames(int n) {
@@ -236,49 +212,17 @@ public class MenuController {
 
     @FXML
     private void onProfile() {
-        try {
-            Stage stage = (Stage) startBtn.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/profile.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            Scene scene = new Scene(loader.load(), 1100, 680);
-            stage.setScene(scene);
-            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-            stage.setResizable(true);
-            stage.centerOnScreen();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Navigation.navigate((Stage) startBtn.getScene().getWindow(), "/ui/profile.fxml");
     }
 
     @FXML
     private void onLeaderboard() {
-        try {
-            Stage stage = (Stage) startBtn.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/leaderboard.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            Scene scene = new Scene(loader.load(), 1100, 680);
-            stage.setScene(scene);
-            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-            stage.setResizable(true);
-            stage.centerOnScreen();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Navigation.navigate((Stage) startBtn.getScene().getWindow(), "/ui/leaderboard.fxml");
     }
 
     @FXML
     private void onLicense() {
-        try {
-            Stage stage = (Stage) startBtn.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/license.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            stage.setScene(new Scene(loader.load(), 1100, 680));
-            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-            stage.setResizable(true);
-            stage.centerOnScreen();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Navigation.navigate((Stage) startBtn.getScene().getWindow(), "/ui/license.fxml");
     }
 
     @FXML
@@ -296,20 +240,9 @@ public class MenuController {
 
             SettingsController ctrl = loader.getController();
             ctrl.setDialogStage(dialog);
-            ctrl.setOnApply(this::reloadMenu);
+            ctrl.setOnApply(() -> Navigation.navigate((Stage) startBtn.getScene().getWindow(), "/ui/menu.fxml"));
 
             dialog.showAndWait();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void reloadMenu() {
-        try {
-            Stage stage = (Stage) startBtn.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/menu.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            stage.setScene(new Scene(loader.load(), 1100, 680));
         } catch (IOException e) {
             e.printStackTrace();
         }

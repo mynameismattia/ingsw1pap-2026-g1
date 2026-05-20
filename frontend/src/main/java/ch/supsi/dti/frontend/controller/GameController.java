@@ -317,30 +317,13 @@ public class GameController {
     // ── Helpers ──────────────────────────────────────────────────
 
     private void navigateTo(String fxml, int w, int h) {
-        try {
-            Stage stage = (Stage) dealButton.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
-            loader.setResources(MessageService.getInstance().getBundle());
-            stage.setScene(new Scene(loader.load(), w, h));
-            stage.setResizable(true);
-            stage.centerOnScreen();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Navigation.navigate((Stage) dealButton.getScene().getWindow(), fxml);
     }
 
     private void reloadGame() {
         stopDealerTimeline(); // prevent orphan ticks against the new controller instance
         stopBotTimeline();
-        try {
-            Stage stage = (Stage) dealButton.getScene().getWindow();
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/game.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            stage.setScene(new Scene(loader.load(), 1100, 680));
-            stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Navigation.navigate((Stage) dealButton.getScene().getWindow(), "/ui/game.fxml");
     }
 
     private void stopDealerTimeline() {
