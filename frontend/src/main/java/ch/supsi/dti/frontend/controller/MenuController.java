@@ -5,7 +5,6 @@ import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.BotNames;
 import ch.supsi.dti.backend.model.Player;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -20,7 +19,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -48,6 +46,7 @@ public class MenuController {
     @FXML private CheckBox soundToggle;
     @FXML private Label licenseCodeLabel;
     @FXML private Button startBtn;
+    @FXML private Button settingsBtn;
 
     private Mode selectedMode = Mode.VS_CPU;
 
@@ -227,24 +226,7 @@ public class MenuController {
 
     @FXML
     private void onSettings() {
-        try {
-            Stage dialog = new Stage();
-            dialog.initOwner(startBtn.getScene().getWindow());
-            dialog.initModality(Modality.WINDOW_MODAL);
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/settings.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            Scene scene = new Scene(loader.load(), 480, 320);
-            dialog.setScene(scene);
-            dialog.setTitle(MessageService.getInstance().getMessage("settings.title"));
-            dialog.setResizable(false);
-
-            SettingsController ctrl = loader.getController();
-            ctrl.setDialogStage(dialog);
-            ctrl.setOnApply(() -> Navigation.navigate((Stage) startBtn.getScene().getWindow(), "/ui/menu.fxml"));
-
-            dialog.showAndWait();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        LanguageDropdown.show(settingsBtn,
+                () -> Navigation.navigate((Stage) startBtn.getScene().getWindow(), "/ui/menu.fxml"));
     }
 }

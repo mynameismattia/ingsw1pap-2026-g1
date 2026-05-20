@@ -4,6 +4,7 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -24,7 +25,9 @@
             <Region HBox.hgrow="ALWAYS"/>
             <Label text="%tutorial.title" styleClass="titlebar-title"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Region prefWidth="36"/>
+            <Button fx:id="settingsBtn" styleClass="icon-button" text="⚙" onAction="#onSettings">
+                <tooltip><Tooltip text="%mainmenu.tooltip.settings"/></tooltip>
+            </Button>
         </HBox>
 
         <Region styleClass="divider"/>

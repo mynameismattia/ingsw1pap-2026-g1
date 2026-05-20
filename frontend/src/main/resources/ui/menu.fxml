@@ -45,7 +45,7 @@
 
             <Region HBox.hgrow="ALWAYS"/>
 
-            <Button styleClass="icon-button" text="⚙" onAction="#onSettings">
+            <Button fx:id="settingsBtn" styleClass="icon-button" text="⚙" onAction="#onSettings">
                 <tooltip><Tooltip text="%mainmenu.tooltip.settings"/></tooltip>
             </Button>
         </HBox>

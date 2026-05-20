@@ -16,7 +16,6 @@ import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -32,7 +31,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -82,6 +80,7 @@ public class GameController {
     @FXML private Button chip250;
     @FXML private Label currentBetLabel;
     @FXML private Button dealButton;
+    @FXML private Button settingsBtn;
     @FXML private VBox lastRoundsList;
 
     // Survives FXML reloads (e.g. language change) so the active game isn't lost.
@@ -236,25 +235,7 @@ public class GameController {
 
     @FXML
     private void onSettingsClicked() {
-        try {
-            Stage dialog = new Stage();
-            dialog.initOwner(dealButton.getScene().getWindow());
-            dialog.initModality(Modality.WINDOW_MODAL);
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/settings.fxml"));
-            loader.setResources(MessageService.getInstance().getBundle());
-            Scene scene = new Scene(loader.load(), 480, 320);
-            dialog.setScene(scene);
-            dialog.setTitle(MessageService.getInstance().getMessage("settings.title"));
-            dialog.setResizable(false);
-
-            SettingsController ctrl = loader.getController();
-            ctrl.setDialogStage(dialog);
-            ctrl.setOnApply(this::reloadGame);
-
-            dialog.showAndWait();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        LanguageDropdown.show(settingsBtn, this::reloadGame);
     }
 
     @FXML
