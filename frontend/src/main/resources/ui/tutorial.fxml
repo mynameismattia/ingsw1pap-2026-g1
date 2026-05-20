@@ -17,11 +17,14 @@
            stylesheets="@menu.css"
            prefWidth="1100" prefHeight="680">
 
-    <VBox styleClass="card" maxWidth="1000" maxHeight="600" spacing="0">
+    <VBox styleClass="card" minWidth="720" minHeight="520" maxWidth="1280" maxHeight="800" spacing="0">
 
-        <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
+        <!-- ── Title bar ───────────────────────────────────────── -->
+        <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="8">
             <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
-            <Button styleClass="icon-button" text="←" onAction="#onBack"/>
+            <Button styleClass="icon-button" text="←" onAction="#onBack">
+                <tooltip><Tooltip text="%tutorial.tooltip.back"/></tooltip>
+            </Button>
             <Region HBox.hgrow="ALWAYS"/>
             <Label text="%tutorial.title" styleClass="titlebar-title"/>
             <Region HBox.hgrow="ALWAYS"/>
@@ -32,72 +35,122 @@
 
         <Region styleClass="divider"/>
 
+        <!-- ── Scrollable body ─────────────────────────────────── -->
         <ScrollPane fitToWidth="true" styleClass="tutorial-scroll" VBox.vgrow="ALWAYS">
-            <VBox styleClass="tutorial-body" spacing="22">
+            <VBox styleClass="tutorial-body" spacing="26">
                 <padding><Insets top="28" right="36" bottom="28" left="36"/></padding>
 
-                <VBox spacing="8">
+                <!-- Hero with decorative cards -->
+                <VBox styleClass="tutorial-hero" alignment="CENTER" spacing="14">
+                    <padding><Insets top="14" bottom="20"/></padding>
+                    <HBox fx:id="heroCards" alignment="CENTER" spacing="-22"/>
+                    <Label text="%tutorial.hero.title" styleClass="tutorial-hero-title"/>
+                    <Label text="%tutorial.hero.subtitle" styleClass="tutorial-hero-subtitle"/>
+                </VBox>
+
+                <!-- ── Objective ─────────────────────────────── -->
+                <VBox styleClass="tutorial-section" spacing="10">
                     <Label text="%tutorial.objective.title" styleClass="tutorial-section-title"/>
                     <Label text="%tutorial.objective.body" styleClass="tutorial-paragraph" wrapText="true"/>
                 </VBox>
 
-                <Region styleClass="divider"/>
-
-                <VBox spacing="8">
+                <!-- ── Card values: real CardView examples ───── -->
+                <VBox styleClass="tutorial-section" spacing="12">
                     <Label text="%tutorial.values.title" styleClass="tutorial-section-title"/>
                     <Label text="%tutorial.values.body" styleClass="tutorial-paragraph" wrapText="true"/>
+                    <HBox fx:id="valuesRow" alignment="CENTER" spacing="18">
+                        <padding><Insets top="6" bottom="4"/></padding>
+                    </HBox>
                 </VBox>
 
-                <Region styleClass="divider"/>
-
-                <VBox spacing="8">
+                <!-- ── Round flow ────────────────────────────── -->
+                <VBox styleClass="tutorial-section" spacing="10">
                     <Label text="%tutorial.flow.title" styleClass="tutorial-section-title"/>
                     <Label text="%tutorial.flow.body" styleClass="tutorial-paragraph" wrapText="true"/>
                 </VBox>
 
-                <Region styleClass="divider"/>
-
-                <VBox spacing="10">
+                <!-- ── Actions ──────────────────────────────── -->
+                <VBox spacing="12">
                     <Label text="%tutorial.actions.title" styleClass="tutorial-section-title"/>
 
-                    <VBox styleClass="tutorial-action-row" spacing="2">
-                        <Label text="%tutorial.actions.hit.title" styleClass="tutorial-action-title"/>
-                        <Label text="%tutorial.actions.hit.body" styleClass="tutorial-paragraph" wrapText="true"/>
-                    </VBox>
-                    <VBox styleClass="tutorial-action-row" spacing="2">
-                        <Label text="%tutorial.actions.stand.title" styleClass="tutorial-action-title"/>
-                        <Label text="%tutorial.actions.stand.body" styleClass="tutorial-paragraph" wrapText="true"/>
-                    </VBox>
-                    <VBox styleClass="tutorial-action-row" spacing="2">
-                        <Label text="%tutorial.actions.double.title" styleClass="tutorial-action-title"/>
-                        <Label text="%tutorial.actions.double.body" styleClass="tutorial-paragraph" wrapText="true"/>
-                    </VBox>
-                    <VBox styleClass="tutorial-action-row" spacing="2">
-                        <Label text="%tutorial.actions.split.title" styleClass="tutorial-action-title"/>
-                        <Label text="%tutorial.actions.split.body" styleClass="tutorial-paragraph" wrapText="true"/>
-                    </VBox>
-                    <VBox styleClass="tutorial-action-row" spacing="2">
-                        <Label text="%tutorial.actions.insurance.title" styleClass="tutorial-action-title"/>
-                        <Label text="%tutorial.actions.insurance.body" styleClass="tutorial-paragraph" wrapText="true"/>
-                    </VBox>
+                    <HBox styleClass="tutorial-action-row" spacing="16" alignment="CENTER_LEFT">
+                        <HBox fx:id="exampleHit" styleClass="tutorial-action-cards" spacing="-26" alignment="CENTER" minWidth="120"/>
+                        <VBox spacing="3" HBox.hgrow="ALWAYS">
+                            <Label text="%tutorial.actions.hit.title" styleClass="tutorial-action-title"/>
+                            <Label text="%tutorial.actions.hit.body" styleClass="tutorial-paragraph" wrapText="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox styleClass="tutorial-action-row" spacing="16" alignment="CENTER_LEFT">
+                        <HBox fx:id="exampleStand" styleClass="tutorial-action-cards" spacing="-26" alignment="CENTER" minWidth="120"/>
+                        <VBox spacing="3" HBox.hgrow="ALWAYS">
+                            <Label text="%tutorial.actions.stand.title" styleClass="tutorial-action-title"/>
+                            <Label text="%tutorial.actions.stand.body" styleClass="tutorial-paragraph" wrapText="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox styleClass="tutorial-action-row" spacing="16" alignment="CENTER_LEFT">
+                        <HBox fx:id="exampleDouble" styleClass="tutorial-action-cards" spacing="-26" alignment="CENTER" minWidth="120"/>
+                        <VBox spacing="3" HBox.hgrow="ALWAYS">
+                            <Label text="%tutorial.actions.double.title" styleClass="tutorial-action-title"/>
+                            <Label text="%tutorial.actions.double.body" styleClass="tutorial-paragraph" wrapText="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox styleClass="tutorial-action-row" spacing="16" alignment="CENTER_LEFT">
+                        <HBox fx:id="exampleSplit" styleClass="tutorial-action-cards" spacing="6" alignment="CENTER" minWidth="120"/>
+                        <VBox spacing="3" HBox.hgrow="ALWAYS">
+                            <Label text="%tutorial.actions.split.title" styleClass="tutorial-action-title"/>
+                            <Label text="%tutorial.actions.split.body" styleClass="tutorial-paragraph" wrapText="true"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox styleClass="tutorial-action-row" spacing="16" alignment="CENTER_LEFT">
+                        <HBox fx:id="exampleInsurance" styleClass="tutorial-action-cards" spacing="-26" alignment="CENTER" minWidth="120"/>
+                        <VBox spacing="3" HBox.hgrow="ALWAYS">
+                            <Label text="%tutorial.actions.insurance.title" styleClass="tutorial-action-title"/>
+                            <Label text="%tutorial.actions.insurance.body" styleClass="tutorial-paragraph" wrapText="true"/>
+                        </VBox>
+                    </HBox>
                 </VBox>
 
-                <Region styleClass="divider"/>
-
-                <VBox spacing="8">
+                <!-- ── Dealer rules ──────────────────────────── -->
+                <VBox styleClass="tutorial-section" spacing="10">
                     <Label text="%tutorial.dealer.title" styleClass="tutorial-section-title"/>
                     <Label text="%tutorial.dealer.body" styleClass="tutorial-paragraph" wrapText="true"/>
                 </VBox>
 
-                <Region styleClass="divider"/>
-
-                <VBox spacing="8">
+                <!-- ── Payouts ──────────────────────────────── -->
+                <VBox styleClass="tutorial-section" spacing="10">
                     <Label text="%tutorial.payouts.title" styleClass="tutorial-section-title"/>
-                    <Label text="%tutorial.payouts.body" styleClass="tutorial-paragraph" wrapText="true"/>
+                    <HBox styleClass="tutorial-payout-grid" spacing="10">
+                        <VBox styleClass="tutorial-payout-cell" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="2">
+                            <Label text="3 : 2" styleClass="tutorial-payout-value"/>
+                            <Label text="%tutorial.payouts.blackjack" styleClass="tutorial-payout-label"/>
+                        </VBox>
+                        <VBox styleClass="tutorial-payout-cell" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="2">
+                            <Label text="1 : 1" styleClass="tutorial-payout-value"/>
+                            <Label text="%tutorial.payouts.win" styleClass="tutorial-payout-label"/>
+                        </VBox>
+                        <VBox styleClass="tutorial-payout-cell" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="2">
+                            <Label text="2 : 1" styleClass="tutorial-payout-value"/>
+                            <Label text="%tutorial.payouts.insurance" styleClass="tutorial-payout-label"/>
+                        </VBox>
+                        <VBox styleClass="tutorial-payout-cell" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="2">
+                            <Label text="=" styleClass="tutorial-payout-value"/>
+                            <Label text="%tutorial.payouts.push" styleClass="tutorial-payout-label"/>
+                        </VBox>
+                        <VBox styleClass="tutorial-payout-cell, tutorial-payout-cell-loss" HBox.hgrow="ALWAYS" alignment="CENTER" spacing="2">
+                            <Label text="−" styleClass="tutorial-payout-value"/>
+                            <Label text="%tutorial.payouts.loss" styleClass="tutorial-payout-label"/>
+                        </VBox>
+                    </HBox>
                 </VBox>
 
-                <Region prefHeight="12"/>
-                <Button fx:id="startBtn" text="%tutorial.action.start" onAction="#onStartGame" styleClass="primary-button" maxWidth="Infinity"/>
+                <Region prefHeight="6"/>
+                <Button fx:id="startBtn" text="%tutorial.action.start" onAction="#onStartGame" styleClass="primary-button" maxWidth="Infinity">
+                    <tooltip><Tooltip text="%tutorial.tooltip.start"/></tooltip>
+                </Button>
             </VBox>
         </ScrollPane>
 

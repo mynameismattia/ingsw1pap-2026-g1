@@ -1,13 +1,102 @@
 package ch.supsi.dti.frontend.controller;
 
+import ch.supsi.dti.backend.model.Card;
+import ch.supsi.dti.backend.model.Rank;
+import ch.supsi.dti.backend.model.Suit;
+import ch.supsi.dti.frontend.view.CardView;
 import javafx.fxml.FXML;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 
 public class TutorialController {
 
     @FXML private Button startBtn;
     @FXML private Button settingsBtn;
+
+    // Card example slots — populated in initialize().
+    @FXML private HBox heroCards;
+    @FXML private HBox valuesRow;
+    @FXML private HBox exampleHit;
+    @FXML private HBox exampleStand;
+    @FXML private HBox exampleDouble;
+    @FXML private HBox exampleSplit;
+    @FXML private HBox exampleInsurance;
+
+    @FXML
+    private void initialize() {
+        renderHeroCards();
+        renderCardValues();
+        renderActionExamples();
+    }
+
+    // ── Visuals ─────────────────────────────────────────────────
+
+    /** Fanned-out trio of cards as decorative hero element. */
+    private void renderHeroCards() {
+        CardView c1 = new CardView(new Card(Suit.SPADES, Rank.ACE));
+        CardView c2 = new CardView(new Card(Suit.HEARTS, Rank.KING));
+        CardView c3 = new CardView(new Card(Suit.DIAMONDS, Rank.QUEEN));
+        c1.getTransforms().add(new Rotate(-10));
+        c3.getTransforms().add(new Rotate(10));
+        heroCards.getChildren().addAll(c1, c2, c3);
+    }
+
+    /** Row of example cards with the value rendered under each. */
+    private void renderCardValues() {
+        valuesRow.getChildren().addAll(
+                cardWithCaption(new Card(Suit.HEARTS, Rank.TWO), "2"),
+                cardWithCaption(new Card(Suit.DIAMONDS, Rank.SEVEN), "7"),
+                cardWithCaption(new Card(Suit.CLUBS, Rank.TEN), "10"),
+                cardWithCaption(new Card(Suit.SPADES, Rank.KING), "10"),
+                cardWithCaption(new Card(Suit.DIAMONDS, Rank.ACE), "1 / 11")
+        );
+    }
+
+    /** Small two-card scenes illustrating each action context. */
+    private void renderActionExamples() {
+        // Hit: 5 + 7 = 12, you may want one more.
+        exampleHit.getChildren().addAll(
+                new CardView(new Card(Suit.CLUBS, Rank.FIVE)),
+                new CardView(new Card(Suit.HEARTS, Rank.SEVEN))
+        );
+        // Stand: 10 + 8 = 18, stop here.
+        exampleStand.getChildren().addAll(
+                new CardView(new Card(Suit.SPADES, Rank.TEN)),
+                new CardView(new Card(Suit.HEARTS, Rank.EIGHT))
+        );
+        // Double: 5 + 6 = 11, double and take one card.
+        exampleDouble.getChildren().addAll(
+                new CardView(new Card(Suit.SPADES, Rank.FIVE)),
+                new CardView(new Card(Suit.HEARTS, Rank.SIX))
+        );
+        // Split: pair of 8s.
+        exampleSplit.getChildren().addAll(
+                new CardView(new Card(Suit.SPADES, Rank.EIGHT)),
+                new CardView(new Card(Suit.DIAMONDS, Rank.EIGHT))
+        );
+        // Insurance: dealer shows an Ace (face-up + face-down).
+        exampleInsurance.getChildren().addAll(
+                new CardView(new Card(Suit.SPADES, Rank.ACE)),
+                new CardView(null) // face-down
+        );
+    }
+
+    private static VBox cardWithCaption(Card card, String caption) {
+        VBox box = new VBox(6);
+        box.setAlignment(Pos.CENTER);
+        box.getChildren().add(new CardView(card));
+        Label label = new Label(caption);
+        label.getStyleClass().add("tutorial-value-caption");
+        box.getChildren().add(label);
+        return box;
+    }
+
+    // ── Navigation ──────────────────────────────────────────────
 
     @FXML
     private void onBack() {
@@ -16,7 +105,6 @@ public class TutorialController {
 
     @FXML
     private void onStartGame() {
-        // "Back to menu and play" → return to the menu where the user picks a configuration.
         Navigation.navigate((Stage) startBtn.getScene().getWindow(), "/ui/menu.fxml");
     }
 
