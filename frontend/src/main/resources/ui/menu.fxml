@@ -125,6 +125,10 @@
                 <Button fx:id="startBtn" text="%mainmenu.action.start" onAction="#onStartGame" styleClass="primary-button" maxWidth="Infinity">
                     <tooltip><Tooltip text="%mainmenu.tooltip.start"/></tooltip>
                 </Button>
+
+                <Button fx:id="continueBtn" text="%mainmenu.action.continue" onAction="#onContinue" styleClass="mode-pill" maxWidth="Infinity">
+                    <tooltip><Tooltip text="%mainmenu.tooltip.continue"/></tooltip>
+                </Button>
             </VBox>
 
         </HBox>

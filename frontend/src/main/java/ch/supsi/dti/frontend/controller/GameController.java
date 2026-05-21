@@ -8,6 +8,8 @@ import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.backend.model.RoundRecord;
+import ch.supsi.dti.backend.service.GameSnapshot;
+import ch.supsi.dti.backend.service.PersistenceService;
 import ch.supsi.dti.frontend.view.CardView;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -94,8 +96,15 @@ public class GameController {
     // incremented by RoundResultController when the user starts the next round.
     static int sharedRoundNumber = 1;
 
+    // If non-null when initialize() runs, the round counter is restored to this
+    // value instead of being reset to 1. Used by MenuController.onContinue().
+    static Integer pendingResumedRoundNumber;
+
     private GameManager gameManager;
     private int currentBet;
+
+    // Tracks the previous state so autosave fires exactly once per ROUND_OVER transition.
+    private GameState lastObservedState;
 
     public static void setPendingGameManager(GameManager gm) {
         pendingGameManager = gm;
@@ -118,10 +127,26 @@ public class GameController {
         gameManager = sharedGameManager;
         currentBet = 0;
         if (freshGame) {
-            sharedRoundNumber = 1;
+            sharedRoundNumber = (pendingResumedRoundNumber != null)
+                    ? pendingResumedRoundNumber : 1;
+            pendingResumedRoundNumber = null;
         }
+        lastObservedState = gameManager.getState();
         updateUI();
         tickAutoTurns(); // resume dealer/bot animation after a reload
+    }
+
+    private void autosaveIfRoundOver(GameState state) {
+        if (state != GameState.ROUND_OVER || lastObservedState == GameState.ROUND_OVER) {
+            return;
+        }
+        try {
+            GameSnapshot snap = GameSnapshot.fromGameManager(gameManager, sharedRoundNumber);
+            new PersistenceService().save(snap);
+        } catch (Exception e) {
+            // Autosave is best-effort; never crash the UI on a save failure.
+            System.err.println("Autosave failed: " + e.getMessage());
+        }
     }
 
     // ── Action handlers ──────────────────────────────────────────
@@ -378,6 +403,8 @@ public class GameController {
         MessageService msg = MessageService.getInstance();
         GameState state = gameManager.getState();
 
+        autosaveIfRoundOver(state);
+
         // Titlebar pills (parametric — set programmatically because FXML %key can't apply MessageFormat)
         roundLabel.setText(msg.getMessage("game.titlebar.round", sharedRoundNumber, TOTAL_ROUNDS));
         deckLabel.setText(msg.getMessage("game.titlebar.deck", gameManager.getDeckRemaining()));
@@ -455,6 +482,8 @@ public class GameController {
         viewResultsButton.setManaged(roundOver);
 
         historyButton.setDisable(gameManager.getHistory().isEmpty());
+
+        lastObservedState = state;
     }
 
     private void updateChip(Button chip, int value, boolean betting) {

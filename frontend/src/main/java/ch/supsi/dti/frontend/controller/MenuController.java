@@ -4,6 +4,8 @@ import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.BotNames;
 import ch.supsi.dti.backend.model.Player;
+import ch.supsi.dti.backend.service.GameSnapshot;
+import ch.supsi.dti.backend.service.PersistenceService;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -46,6 +48,7 @@ public class MenuController {
     @FXML private CheckBox soundToggle;
     @FXML private Label licenseCodeLabel;
     @FXML private Button startBtn;
+    @FXML private Button continueBtn;
     @FXML private Button settingsBtn;
 
     private Mode selectedMode = Mode.VS_CPU;
@@ -70,7 +73,35 @@ public class MenuController {
         if (saved != null) {
             licenseCodeLabel.setText(saved);
         }
+
+        continueBtn.setDisable(!new PersistenceService().exists());
+
         applyModeStyle();
+    }
+
+    @FXML
+    private void onContinue() {
+        PersistenceService ps = new PersistenceService();
+        Optional<GameSnapshot> loaded;
+        try {
+            loaded = ps.load();
+        } catch (Exception e) {
+            System.err.println("Failed to load saved game: " + e.getMessage());
+            continueBtn.setDisable(true);
+            return;
+        }
+        if (loaded.isEmpty()) {
+            continueBtn.setDisable(true);
+            return;
+        }
+        GameSnapshot snap = loaded.get();
+        List<Player> players = new ArrayList<>(snap.playersData().size());
+        for (GameSnapshot.PlayerSaveData pd : snap.playersData()) {
+            players.add(new Player(pd.name(), pd.balance(), pd.isBot()));
+        }
+        GameController.setPendingGameManager(GameManager.restore(players, snap.roundHistory()));
+        GameController.pendingResumedRoundNumber = snap.currentRoundNumber();
+        Navigation.navigate((Stage) continueBtn.getScene().getWindow(), "/ui/game.fxml");
     }
 
     @FXML

@@ -75,8 +75,6 @@
                 <HBox alignment="CENTER" spacing="10">
                     <Button text="%roundresult.action.newRound" onAction="#onNewRound"
                             styleClass="primary-button"/>
-                    <Button fx:id="saveGameButton" text="%roundresult.action.saveGame" onAction="#onSaveGame"
-                            styleClass="secondary-button"/>
                     <Button text="%roundresult.action.menu" onAction="#onBackToMenu"
                             styleClass="secondary-button"/>
                 </HBox>
