@@ -8,6 +8,7 @@ import ch.supsi.dti.backend.service.SaveSlot;
 
 import java.nio.file.Files;
 import java.util.Arrays;
+import ch.supsi.dti.frontend.service.SoundManager;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -37,10 +38,6 @@ public class MenuController {
 
     private enum Mode { VS_CPU, MULTI, TUTORIAL }
 
-    /** Sound preference — survives FXML reload (language switch). No audio system reads it yet. */
-    private static boolean soundEnabled = true;
-    public static boolean isSoundEnabled() { return soundEnabled; }
-
     @FXML private Button modeVsCpuBtn;
     @FXML private Button modeMultiBtn;
     @FXML private Button modeTutorialBtn;
@@ -68,8 +65,13 @@ public class MenuController {
             @Override public Integer fromString(String s) { return Integer.parseInt(s.replace("$", "").trim()); }
         });
 
-        soundToggle.setSelected(soundEnabled);
-        soundToggle.selectedProperty().addListener((obs, oldVal, newVal) -> soundEnabled = newVal);
+        SoundManager sound = SoundManager.getInstance();
+        soundToggle.setSelected(!sound.isMuted());
+        soundToggle.selectedProperty().addListener((obs, oldVal, newVal) -> sound.setMuted(!newVal));
+
+        SoundManager.attachSpinnerClick(humansSpinner);
+        SoundManager.attachSpinnerClick(cpusSpinner);
+        SoundManager.attachSpinnerClick(balanceSpinner);
 
         String saved = LicenseController.loadSavedLicense();
         if (saved != null) {
@@ -228,10 +230,11 @@ public class MenuController {
         cancel.setOnAction(e -> dialog.close());
 
         Scene scene = new Scene(root);
-        scene.getStylesheets().add(
-                getClass().getResource("/ui/menu.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/ui/menu.css").toExternalForm());
+        SoundManager.attachClickSfx(scene);
         dialog.setScene(scene);
         dialog.showAndWait();
+
         return Optional.ofNullable(result[0]);
     }
 
