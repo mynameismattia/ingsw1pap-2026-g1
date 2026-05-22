@@ -8,6 +8,9 @@ import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.backend.model.RoundRecord;
+import ch.supsi.dti.backend.service.GameSnapshot;
+import ch.supsi.dti.backend.service.PersistenceService;
+import ch.supsi.dti.backend.service.SaveSlot;
 import ch.supsi.dti.frontend.service.SoundManager;
 import ch.supsi.dti.frontend.service.SoundManager.SoundEvent;
 import ch.supsi.dti.frontend.view.CardView;
@@ -96,8 +99,15 @@ public class GameController {
     // incremented by RoundResultController when the user starts the next round.
     static int sharedRoundNumber = 1;
 
+    // If non-null when initialize() runs, the round counter is restored to this
+    // value instead of being reset to 1. Used by MenuController.onContinue().
+    static Integer pendingResumedRoundNumber;
+
     private GameManager gameManager;
     private int currentBet;
+    private GameState lastObservedState;
+
+    // Tracks the previous state so autosave fires exactly once per ROUND_OVER transition.
     private GameState lastObservedState;
 
     public static void setPendingGameManager(GameManager gm) {
@@ -121,10 +131,41 @@ public class GameController {
         gameManager = sharedGameManager;
         currentBet = 0;
         if (freshGame) {
-            sharedRoundNumber = 1;
+            sharedRoundNumber = (pendingResumedRoundNumber != null)
+                    ? pendingResumedRoundNumber : 1;
+            pendingResumedRoundNumber = null;
         }
+        lastObservedState = gameManager.getState();
         updateUI();
         tickAutoTurns(); // resume dealer/bot animation after a reload
+    }
+
+    private void autosaveIfRoundOver(GameState state) {
+        if (state != GameState.ROUND_OVER || lastObservedState == GameState.ROUND_OVER) {
+            return;
+        }
+        try {
+            GameSnapshot snap = GameSnapshot.fromGameManager(gameManager, sharedRoundNumber);
+            new PersistenceService(SaveSlot.AUTO).save(snap);
+        } catch (Exception e) {
+            // Autosave is best-effort; never crash the UI on a save failure.
+            System.err.println("Autosave failed: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    private void onSaveClicked() {
+        Stage stage = (Stage) sidePlayersList.getScene().getWindow();
+        SaveSlotDialog.show(stage).ifPresent(slot -> {
+            try {
+                GameSnapshot snap = GameSnapshot.fromGameManager(gameManager, sharedRoundNumber);
+                new PersistenceService(slot).save(snap);
+                messageLabel.setText(MessageService.getInstance()
+                        .getMessage("save.success", slot.name()));
+            } catch (Exception e) {
+                System.err.println("Manual save failed: " + e.getMessage());
+            }
+        });
     }
 
     // ── Action handlers ──────────────────────────────────────────
@@ -245,11 +286,6 @@ public class GameController {
     }
 
     @FXML
-    private void onPauseClicked() {
-        messageLabel.setText("⏸ " + MessageService.getInstance().getMessage("game.action.pause"));
-    }
-
-    @FXML
     private void onQuitClicked() {
         Platform.exit();
     }
@@ -294,12 +330,16 @@ public class GameController {
                 msg.getMessage(outcomeKey(d.getValue().outcome()))));
 
         table.getColumns().addAll(colTime, colPlayer, colBet, colScore, colDealer, colOutcome);
+        table.getStyleClass().add("history-table");
+        VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
 
         VBox root = new VBox(table);
-        root.setPadding(new Insets(10));
-        Scene dialogScene = new Scene(root, 640, 360);
-        SoundManager.attachClickSfx(dialogScene);
-        dialog.setScene(dialogScene);
+          root.setPadding(new Insets(16));
+          root.getStyleClass().add("dialog-root");
+          Scene scene = new Scene(root, 720, 400);
+          scene.getStylesheets().add(getClass().getResource("/ui/menu.css").toExternalForm());
+          SoundManager.attachClickSfx(scene);
+          dialog.setScene(scene);
         dialog.show();
     }
 
@@ -428,12 +468,12 @@ public class GameController {
         MessageService msg = MessageService.getInstance();
         GameState state = gameManager.getState();
 
-        if (state == GameState.ROUND_OVER
-                && lastObservedState != null
-                && lastObservedState != GameState.ROUND_OVER) {
-            playRoundOutcomeSfx();
-        }
-        lastObservedState = state;
+          autosaveIfRoundOver(state);
+          if (state == GameState.ROUND_OVER
+                  && lastObservedState != null
+                  && lastObservedState != GameState.ROUND_OVER) {
+              playRoundOutcomeSfx();
+          }
 
         // Titlebar pills (parametric — set programmatically because FXML %key can't apply MessageFormat)
         roundLabel.setText(msg.getMessage("game.titlebar.round", sharedRoundNumber, TOTAL_ROUNDS));
@@ -512,6 +552,8 @@ public class GameController {
         viewResultsButton.setManaged(roundOver);
 
         historyButton.setDisable(gameManager.getHistory().isEmpty());
+
+        lastObservedState = state;
     }
 
     private void updateChip(Button chip, int value, boolean betting) {

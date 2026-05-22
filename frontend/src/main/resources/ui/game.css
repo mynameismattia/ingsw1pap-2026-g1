@@ -189,20 +189,6 @@
     -fx-font-weight: bold;
 }
 
-/* ── Bottom-left actions ────────────────────────────────────── */
-
-.danger-button {
-    -fx-background-color: #dc2626;
-    -fx-background-radius: 9;
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 12.5px;
-    -fx-font-weight: bold;
-    -fx-padding: 10 14 10 14;
-    -fx-cursor: hand;
-}
-.danger-button:hover { -fx-background-color: #ef4444; }
-.danger-button:pressed { -fx-background-color: #b91c1c; }
-
 /* ── In-game message banner ─────────────────────────────────── */
 
 .message-banner {

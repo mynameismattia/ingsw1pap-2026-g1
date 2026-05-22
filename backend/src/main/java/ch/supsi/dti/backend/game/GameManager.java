@@ -64,6 +64,18 @@ public class GameManager {
         this.currentHandIndex = 0;
     }
 
+    /**
+     * Rebuilds a GameManager from a persisted snapshot. Saving is allowed only
+     * at GameState=ROUND_OVER, so we land directly there — the next
+     * call to startNewRound() will be into BETTING.
+     */
+    public static GameManager restore(List<Player> players, List<RoundRecord> history) {
+        GameManager gm = new GameManager(players);
+        gm.roundHistory.addAll(history);
+        gm.state = GameState.ROUND_OVER;
+        return gm;
+    }
+
     private static List<Player> buildPlayers(List<String> names, int initialBalance) {
         List<Player> list = new ArrayList<>(names.size());
         for (String name : names) {

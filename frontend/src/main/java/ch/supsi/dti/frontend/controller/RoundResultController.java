@@ -12,7 +12,6 @@ import ch.supsi.dti.backend.model.Suit;
 import ch.supsi.dti.frontend.view.CardView;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -35,7 +34,6 @@ public class RoundResultController {
     @FXML private VBox balancesList;
     @FXML private VBox outcomeList;
     @FXML private Label nextBetValue;
-    @FXML private Button saveGameButton;
 
     @FXML
     private void initialize() {
@@ -85,13 +83,6 @@ public class RoundResultController {
             GameController.sharedGameManager.startNewRound();
         }
         navigateTo("/ui/game.fxml", 1100, 680);
-    }
-
-    @FXML
-    private void onSaveGame() {
-        // UI-only: no real persistence yet. Visual feedback via button text swap.
-        saveGameButton.setText(MessageService.getInstance().getMessage("roundresult.toast.saved"));
-        saveGameButton.setDisable(true);
     }
 
     @FXML

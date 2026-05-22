@@ -4,6 +4,10 @@ import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.BotNames;
 import ch.supsi.dti.backend.model.Player;
+import ch.supsi.dti.backend.service.SaveSlot;
+
+import java.nio.file.Files;
+import java.util.Arrays;
 import ch.supsi.dti.frontend.service.SoundManager;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -43,6 +47,7 @@ public class MenuController {
     @FXML private CheckBox soundToggle;
     @FXML private Label licenseCodeLabel;
     @FXML private Button startBtn;
+    @FXML private Button continueBtn;
     @FXML private Button settingsBtn;
 
     private Mode selectedMode = Mode.VS_CPU;
@@ -72,7 +77,19 @@ public class MenuController {
         if (saved != null) {
             licenseCodeLabel.setText(saved);
         }
+
+        continueBtn.setDisable(!anySaveExists());
+
         applyModeStyle();
+    }
+
+    private static boolean anySaveExists() {
+        return Arrays.stream(SaveSlot.values()).anyMatch(s -> Files.exists(s.path()));
+    }
+
+    @FXML
+    private void onContinue() {
+        Navigation.navigate((Stage) continueBtn.getScene().getWindow(), "/ui/load.fxml");
     }
 
     @FXML
@@ -172,24 +189,30 @@ public class MenuController {
         dialog.setTitle(MessageService.getInstance().getMessage("menu.names.title"));
         dialog.setResizable(false);
 
-        VBox root = new VBox(12);
-        root.setPadding(new Insets(20));
+        VBox root = new VBox(14);
+        root.setPadding(new Insets(24));
         root.setAlignment(Pos.CENTER);
+        root.setMinWidth(360);
+        root.getStyleClass().add("dialog-root");
+
         Label header = new Label(MessageService.getInstance().getMessage("menu.names.header"));
-        header.setStyle("-fx-font-size: 14;");
+        header.getStyleClass().add("dialog-header");
         root.getChildren().add(header);
 
         List<TextField> fields = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             TextField tf = new TextField("Player " + (i + 1));
             tf.setPromptText("Player " + (i + 1));
-            tf.setPrefWidth(240);
+            tf.setPrefWidth(260);
+            tf.getStyleClass().add("text-field-dark");
             fields.add(tf);
             root.getChildren().add(tf);
         }
 
         Button ok = new Button(MessageService.getInstance().getMessage("menu.names.ok"));
+        ok.getStyleClass().add("primary-button");
         Button cancel = new Button(MessageService.getInstance().getMessage("menu.names.cancel"));
+        cancel.getStyleClass().add("secondary-button");
         HBox actions = new HBox(10, cancel, ok);
         actions.setAlignment(Pos.CENTER);
         root.getChildren().add(actions);
@@ -206,10 +229,12 @@ public class MenuController {
         });
         cancel.setOnAction(e -> dialog.close());
 
-        Scene dialogScene = new Scene(root);
-        SoundManager.attachClickSfx(dialogScene);
-        dialog.setScene(dialogScene);
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(getClass().getResource("/ui/menu.css").toExternalForm());
+        SoundManager.attachClickSfx(scene);
+        dialog.setScene(scene);
         dialog.showAndWait();
+
         return Optional.ofNullable(result[0]);
     }
 
