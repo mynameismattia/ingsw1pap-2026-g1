@@ -10,6 +10,7 @@ import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.backend.model.RoundRecord;
 import ch.supsi.dti.backend.service.GameSnapshot;
 import ch.supsi.dti.backend.service.PersistenceService;
+import ch.supsi.dti.backend.service.SaveSlot;
 import ch.supsi.dti.frontend.view.CardView;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -142,11 +143,26 @@ public class GameController {
         }
         try {
             GameSnapshot snap = GameSnapshot.fromGameManager(gameManager, sharedRoundNumber);
-            new PersistenceService().save(snap);
+            new PersistenceService(SaveSlot.AUTO).save(snap);
         } catch (Exception e) {
             // Autosave is best-effort; never crash the UI on a save failure.
             System.err.println("Autosave failed: " + e.getMessage());
         }
+    }
+
+    @FXML
+    private void onSaveClicked() {
+        Stage stage = (Stage) sidePlayersList.getScene().getWindow();
+        SaveSlotDialog.show(stage).ifPresent(slot -> {
+            try {
+                GameSnapshot snap = GameSnapshot.fromGameManager(gameManager, sharedRoundNumber);
+                new PersistenceService(slot).save(snap);
+                messageLabel.setText(MessageService.getInstance()
+                        .getMessage("save.success", slot.name()));
+            } catch (Exception e) {
+                System.err.println("Manual save failed: " + e.getMessage());
+            }
+        });
     }
 
     // ── Action handlers ──────────────────────────────────────────

@@ -4,8 +4,10 @@ import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.BotNames;
 import ch.supsi.dti.backend.model.Player;
-import ch.supsi.dti.backend.service.GameSnapshot;
-import ch.supsi.dti.backend.service.PersistenceService;
+import ch.supsi.dti.backend.service.SaveSlot;
+
+import java.nio.file.Files;
+import java.util.Arrays;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -74,34 +76,18 @@ public class MenuController {
             licenseCodeLabel.setText(saved);
         }
 
-        continueBtn.setDisable(!new PersistenceService().exists());
+        continueBtn.setDisable(!anySaveExists());
 
         applyModeStyle();
     }
 
+    private static boolean anySaveExists() {
+        return Arrays.stream(SaveSlot.values()).anyMatch(s -> Files.exists(s.path()));
+    }
+
     @FXML
     private void onContinue() {
-        PersistenceService ps = new PersistenceService();
-        Optional<GameSnapshot> loaded;
-        try {
-            loaded = ps.load();
-        } catch (Exception e) {
-            System.err.println("Failed to load saved game: " + e.getMessage());
-            continueBtn.setDisable(true);
-            return;
-        }
-        if (loaded.isEmpty()) {
-            continueBtn.setDisable(true);
-            return;
-        }
-        GameSnapshot snap = loaded.get();
-        List<Player> players = new ArrayList<>(snap.playersData().size());
-        for (GameSnapshot.PlayerSaveData pd : snap.playersData()) {
-            players.add(new Player(pd.name(), pd.balance(), pd.isBot()));
-        }
-        GameController.setPendingGameManager(GameManager.restore(players, snap.roundHistory()));
-        GameController.pendingResumedRoundNumber = snap.currentRoundNumber();
-        Navigation.navigate((Stage) continueBtn.getScene().getWindow(), "/ui/game.fxml");
+        Navigation.navigate((Stage) continueBtn.getScene().getWindow(), "/ui/load.fxml");
     }
 
     @FXML
