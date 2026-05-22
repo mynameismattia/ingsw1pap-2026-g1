@@ -280,11 +280,6 @@ public class GameController {
     }
 
     @FXML
-    private void onPauseClicked() {
-        messageLabel.setText("⏸ " + MessageService.getInstance().getMessage("game.action.pause"));
-    }
-
-    @FXML
     private void onQuitClicked() {
         Platform.exit();
     }
@@ -329,10 +324,16 @@ public class GameController {
                 msg.getMessage(outcomeKey(d.getValue().outcome()))));
 
         table.getColumns().addAll(colTime, colPlayer, colBet, colScore, colDealer, colOutcome);
+        table.getStyleClass().add("history-table");
+        VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
 
         VBox root = new VBox(table);
-        root.setPadding(new Insets(10));
-        dialog.setScene(new Scene(root, 640, 360));
+        root.setPadding(new Insets(16));
+        root.getStyleClass().add("dialog-root");
+        Scene scene = new Scene(root, 720, 400);
+        scene.getStylesheets().add(
+                getClass().getResource("/ui/menu.css").toExternalForm());
+        dialog.setScene(scene);
         dialog.show();
     }
 

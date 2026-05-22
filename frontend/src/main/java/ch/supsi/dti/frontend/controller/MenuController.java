@@ -187,24 +187,30 @@ public class MenuController {
         dialog.setTitle(MessageService.getInstance().getMessage("menu.names.title"));
         dialog.setResizable(false);
 
-        VBox root = new VBox(12);
-        root.setPadding(new Insets(20));
+        VBox root = new VBox(14);
+        root.setPadding(new Insets(24));
         root.setAlignment(Pos.CENTER);
+        root.setMinWidth(360);
+        root.getStyleClass().add("dialog-root");
+
         Label header = new Label(MessageService.getInstance().getMessage("menu.names.header"));
-        header.setStyle("-fx-font-size: 14;");
+        header.getStyleClass().add("dialog-header");
         root.getChildren().add(header);
 
         List<TextField> fields = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             TextField tf = new TextField("Player " + (i + 1));
             tf.setPromptText("Player " + (i + 1));
-            tf.setPrefWidth(240);
+            tf.setPrefWidth(260);
+            tf.getStyleClass().add("text-field-dark");
             fields.add(tf);
             root.getChildren().add(tf);
         }
 
         Button ok = new Button(MessageService.getInstance().getMessage("menu.names.ok"));
+        ok.getStyleClass().add("primary-button");
         Button cancel = new Button(MessageService.getInstance().getMessage("menu.names.cancel"));
+        cancel.getStyleClass().add("secondary-button");
         HBox actions = new HBox(10, cancel, ok);
         actions.setAlignment(Pos.CENTER);
         root.getChildren().add(actions);
@@ -221,7 +227,10 @@ public class MenuController {
         });
         cancel.setOnAction(e -> dialog.close());
 
-        dialog.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(
+                getClass().getResource("/ui/menu.css").toExternalForm());
+        dialog.setScene(scene);
         dialog.showAndWait();
         return Optional.ofNullable(result[0]);
     }

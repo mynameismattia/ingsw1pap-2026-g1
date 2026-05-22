@@ -58,8 +58,8 @@ public class LoadGameController {
         row.setPadding(new Insets(10));
 
         Label title = new Label(slotLabel(slot));
-        title.getStyleClass().add("field-label");
-        title.setMinWidth(120);
+        title.getStyleClass().add("slot-title");
+        title.setMinWidth(140);
 
         VBox details = new VBox(2);
         HBox.setHgrow(details, javafx.scene.layout.Priority.ALWAYS);
@@ -75,16 +75,20 @@ public class LoadGameController {
             String dateLine = new PersistenceService(slot).lastModified()
                     .map(DATE_FMT::format).orElse("");
 
-            details.getChildren().add(new Label(roundLine));
-            details.getChildren().add(new Label(playersLine));
+            Label roundLbl = new Label(roundLine);
+            roundLbl.getStyleClass().add("row-value");
+            Label playersLbl = new Label(playersLine);
+            playersLbl.getStyleClass().add("row-label");
+            details.getChildren().add(roundLbl);
+            details.getChildren().add(playersLbl);
             if (!dateLine.isEmpty()) {
                 Label d = new Label(dateLine);
-                d.getStyleClass().add("badge-soon");
+                d.getStyleClass().add("slot-meta");
                 details.getChildren().add(d);
             }
         } else {
             Label empty = new Label(msg("load.slot.empty"));
-            empty.getStyleClass().add("badge-soon");
+            empty.getStyleClass().add("slot-empty");
             details.getChildren().add(empty);
         }
 
@@ -147,12 +151,15 @@ public class LoadGameController {
         dialog.setResizable(false);
 
         VBox root = new VBox(14);
-        root.setPadding(new Insets(20));
+        root.setPadding(new Insets(24));
         root.setAlignment(Pos.CENTER);
+        root.setMinWidth(380);
+        root.getStyleClass().add("dialog-root");
 
         Label header = new Label(body);
         header.setWrapText(true);
         header.setMaxWidth(360);
+        header.getStyleClass().add("dialog-header");
         root.getChildren().add(header);
 
         Button ok = new Button(msg("common.confirm"));
@@ -167,7 +174,10 @@ public class LoadGameController {
         ok.setOnAction(e -> { result[0] = true; dialog.close(); });
         cancel.setOnAction(e -> dialog.close());
 
-        dialog.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(
+                getClass().getResource("/ui/menu.css").toExternalForm());
+        dialog.setScene(scene);
         dialog.showAndWait();
         return result[0];
     }

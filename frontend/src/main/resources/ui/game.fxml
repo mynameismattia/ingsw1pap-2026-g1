@@ -49,8 +49,6 @@
                         styleClass="secondary-button" maxWidth="Infinity"/>
                 <Button text="%game.action.save" onAction="#onSaveClicked"
                         styleClass="secondary-button" maxWidth="Infinity"/>
-                <Button text="%game.action.pause" onAction="#onPauseClicked"
-                        styleClass="secondary-button" maxWidth="Infinity"/>
                 <Button text="%game.action.quit" onAction="#onQuitClicked"
                         styleClass="danger-button" maxWidth="Infinity"/>
             </VBox>

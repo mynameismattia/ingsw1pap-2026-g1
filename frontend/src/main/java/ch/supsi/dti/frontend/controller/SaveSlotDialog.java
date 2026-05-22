@@ -38,12 +38,14 @@ public final class SaveSlotDialog {
         dialog.setTitle(msg("save.dialog.title"));
         dialog.setResizable(false);
 
-        VBox root = new VBox(12);
-        root.setPadding(new Insets(20));
+        VBox root = new VBox(14);
+        root.setPadding(new Insets(24));
         root.setAlignment(Pos.CENTER);
+        root.setMinWidth(440);
+        root.getStyleClass().add("dialog-root");
 
         Label header = new Label(msg("save.dialog.header"));
-        header.getStyleClass().add("field-label");
+        header.getStyleClass().add("dialog-header");
         root.getChildren().add(header);
 
         final SaveSlot[] picked = {null};
@@ -59,7 +61,10 @@ public final class SaveSlotDialog {
         actions.setAlignment(Pos.CENTER);
         root.getChildren().add(actions);
 
-        dialog.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(
+                SaveSlotDialog.class.getResource("/ui/menu.css").toExternalForm());
+        dialog.setScene(scene);
         dialog.showAndWait();
         return Optional.ofNullable(picked[0]);
     }
@@ -72,8 +77,8 @@ public final class SaveSlotDialog {
         row.setMinWidth(380);
 
         Label name = new Label(msg("load.slot.n", manualNumber(slot)));
-        name.getStyleClass().add("field-label");
-        name.setMinWidth(80);
+        name.getStyleClass().add("slot-title");
+        name.setMinWidth(100);
 
         PersistenceService ps = new PersistenceService(slot);
         VBox details = new VBox(2);
@@ -88,15 +93,17 @@ public final class SaveSlotDialog {
         boolean occupied = existing.isPresent();
         if (occupied) {
             GameSnapshot snap = existing.get();
-            details.getChildren().add(new Label(msg("load.slot.round", snap.currentRoundNumber())));
+            Label round = new Label(msg("load.slot.round", snap.currentRoundNumber()));
+            round.getStyleClass().add("row-value");
+            details.getChildren().add(round);
             ps.lastModified().ifPresent(t -> {
                 Label d = new Label(DATE_FMT.format(t));
-                d.getStyleClass().add("badge-soon");
+                d.getStyleClass().add("slot-meta");
                 details.getChildren().add(d);
             });
         } else {
             Label empty = new Label(msg("load.slot.empty"));
-            empty.getStyleClass().add("badge-soon");
+            empty.getStyleClass().add("slot-empty");
             details.getChildren().add(empty);
         }
 
@@ -131,12 +138,15 @@ public final class SaveSlotDialog {
         dialog.setResizable(false);
 
         VBox root = new VBox(14);
-        root.setPadding(new Insets(20));
+        root.setPadding(new Insets(24));
         root.setAlignment(Pos.CENTER);
+        root.setMinWidth(380);
+        root.getStyleClass().add("dialog-root");
 
         Label body = new Label(msg("save.slot.overwrite.body"));
         body.setWrapText(true);
         body.setMaxWidth(360);
+        body.getStyleClass().add("dialog-header");
         root.getChildren().add(body);
 
         Button ok = new Button(msg("common.confirm"));
@@ -151,7 +161,10 @@ public final class SaveSlotDialog {
         ok.setOnAction(e -> { result[0] = true; dialog.close(); });
         cancel.setOnAction(e -> dialog.close());
 
-        dialog.setScene(new Scene(root));
+        Scene scene = new Scene(root);
+        scene.getStylesheets().add(
+                SaveSlotDialog.class.getResource("/ui/menu.css").toExternalForm());
+        dialog.setScene(scene);
         dialog.showAndWait();
         return result[0];
     }

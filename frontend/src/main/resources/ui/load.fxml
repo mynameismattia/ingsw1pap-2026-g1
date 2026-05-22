@@ -14,9 +14,10 @@
            fx:controller="ch.supsi.dti.frontend.controller.LoadGameController"
            styleClass="root-pane"
            stylesheets="@menu.css"
-           prefWidth="1100" prefHeight="680">
+           alignment="CENTER"
+           prefWidth="1100" prefHeight="640">
 
-    <VBox styleClass="card" minWidth="720" minHeight="520" maxWidth="1280" maxHeight="800" spacing="0">
+    <VBox styleClass="card" minWidth="640" prefWidth="760" maxWidth="760" minHeight="420" maxHeight="600" spacing="0">
 
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="8">
             <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
