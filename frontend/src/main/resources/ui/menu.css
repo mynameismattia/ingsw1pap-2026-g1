@@ -300,6 +300,50 @@
     -fx-font-weight: bold;
 }
 
+/* ── Volume section dentro il dropdown impostazioni ───────────── */
+
+.lang-dropdown-volume {
+    -fx-padding: 4 14 8 14;
+    -fx-spacing: 8;
+}
+.lang-dropdown-header {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 4 0 2 0;
+}
+.lang-dropdown-volume .slider {
+    -fx-padding: 4 0 4 0;
+}
+.lang-dropdown-volume .slider .track {
+    -fx-background-color: #353a47;
+    -fx-background-radius: 8;
+    -fx-pref-height: 4;
+}
+.lang-dropdown-volume .slider .thumb {
+    -fx-background-color: #f3f4f7;
+    -fx-background-radius: 50%;
+    -fx-pref-width: 14;
+    -fx-pref-height: 14;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 6, 0, 0, 2);
+}
+.lang-dropdown-volume .slider .thumb:hover,
+.lang-dropdown-volume .slider:focused .thumb {
+    -fx-background-color: #4ade80;
+    -fx-effect: dropshadow(gaussian, rgba(74,222,128,0.55), 8, 0.2, 0, 0);
+}
+.lang-dropdown-volume-value {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-min-width: 36;
+    -fx-alignment: CENTER_RIGHT;
+}
+.lang-dropdown .menu-item.custom-volume-item:focused,
+.lang-dropdown .menu-item.custom-volume-item:hover {
+    -fx-background-color: transparent;
+}
+
 /* ── Tutorial / Rules page ───────────────────────────────────── */
 
 .tutorial-scroll {

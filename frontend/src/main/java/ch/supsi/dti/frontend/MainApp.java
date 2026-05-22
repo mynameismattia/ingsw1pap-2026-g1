@@ -3,6 +3,7 @@
   import ch.supsi.dti.backend.i18n.MessageService;
   import ch.supsi.dti.backend.license.LicenseChecker;
   import ch.supsi.dti.frontend.controller.LicenseController;
+  import ch.supsi.dti.frontend.service.SoundManager;
   import javafx.application.Application;
   import javafx.fxml.FXMLLoader;
   import javafx.scene.Parent;
@@ -16,6 +17,7 @@
 
       @Override
       public void start(Stage stage) throws Exception {
+          SoundManager.getInstance().preload();
           stage.setTitle(MessageService.getInstance().getMessage("app.title"));
           stage.getIcons().add(new Image(Objects.requireNonNull(getClass().getResourceAsStream("/ui/icon.png"))));
 
@@ -27,6 +29,7 @@
               stage.setScene(new Scene(loader.load(), 480, 550));
               stage.setResizable(false);
           }
+          SoundManager.attachClickSfx(stage.getScene());
 
           stage.show();
       }

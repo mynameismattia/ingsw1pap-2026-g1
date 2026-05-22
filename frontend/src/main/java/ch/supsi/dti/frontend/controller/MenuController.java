@@ -4,6 +4,7 @@ import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.BotNames;
 import ch.supsi.dti.backend.model.Player;
+import ch.supsi.dti.frontend.service.SoundManager;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -33,10 +34,6 @@ public class MenuController {
 
     private enum Mode { VS_CPU, MULTI, TUTORIAL }
 
-    /** Sound preference — survives FXML reload (language switch). No audio system reads it yet. */
-    private static boolean soundEnabled = true;
-    public static boolean isSoundEnabled() { return soundEnabled; }
-
     @FXML private Button modeVsCpuBtn;
     @FXML private Button modeMultiBtn;
     @FXML private Button modeTutorialBtn;
@@ -63,8 +60,13 @@ public class MenuController {
             @Override public Integer fromString(String s) { return Integer.parseInt(s.replace("$", "").trim()); }
         });
 
-        soundToggle.setSelected(soundEnabled);
-        soundToggle.selectedProperty().addListener((obs, oldVal, newVal) -> soundEnabled = newVal);
+        SoundManager sound = SoundManager.getInstance();
+        soundToggle.setSelected(!sound.isMuted());
+        soundToggle.selectedProperty().addListener((obs, oldVal, newVal) -> sound.setMuted(!newVal));
+
+        SoundManager.attachSpinnerClick(humansSpinner);
+        SoundManager.attachSpinnerClick(cpusSpinner);
+        SoundManager.attachSpinnerClick(balanceSpinner);
 
         String saved = LicenseController.loadSavedLicense();
         if (saved != null) {
@@ -204,7 +206,9 @@ public class MenuController {
         });
         cancel.setOnAction(e -> dialog.close());
 
-        dialog.setScene(new Scene(root));
+        Scene dialogScene = new Scene(root);
+        SoundManager.attachClickSfx(dialogScene);
+        dialog.setScene(dialogScene);
         dialog.showAndWait();
         return Optional.ofNullable(result[0]);
     }

@@ -80,7 +80,7 @@
 
                 <!-- Action bar -->
                 <HBox styleClass="action-bar" alignment="CENTER" spacing="8">
-                    <Button fx:id="hitButton"    text="%game.button.hit"    onAction="#onHitClicked"    styleClass="action-button"/>
+                    <Button fx:id="hitButton"    text="%game.button.hit"    onAction="#onHitClicked"    styleClass="action-button, no-click-sfx"/>
                     <Button fx:id="standButton"  text="%game.button.stand"  onAction="#onStandClicked"  styleClass="action-button"/>
                     <Button fx:id="doubleButton" text="%game.button.double" onAction="#onDoubleClicked" styleClass="action-button"/>
                     <Button fx:id="splitButton"  text="%game.button.split"  onAction="#onSplitClicked"  styleClass="action-button"/>
@@ -103,19 +103,19 @@
                 <!-- Chips: 3x2 grid -->
                 <HBox alignment="CENTER" spacing="10">
                     <Button fx:id="chip5"   text="\$5"   onAction="#onChipClicked"
-                            styleClass="chip-button, chip-5" userData="5"/>
+                            styleClass="chip-button, chip-5, no-click-sfx" userData="5"/>
                     <Button fx:id="chip10"  text="\$10"  onAction="#onChipClicked"
-                            styleClass="chip-button, chip-10" userData="10"/>
+                            styleClass="chip-button, chip-10, no-click-sfx" userData="10"/>
                     <Button fx:id="chip25"  text="\$25"  onAction="#onChipClicked"
-                            styleClass="chip-button, chip-25" userData="25"/>
+                            styleClass="chip-button, chip-25, no-click-sfx" userData="25"/>
                 </HBox>
                 <HBox alignment="CENTER" spacing="10">
                     <Button fx:id="chip50"  text="\$50"  onAction="#onChipClicked"
-                            styleClass="chip-button, chip-50" userData="50"/>
+                            styleClass="chip-button, chip-50, no-click-sfx" userData="50"/>
                     <Button fx:id="chip100" text="\$100" onAction="#onChipClicked"
-                            styleClass="chip-button, chip-100" userData="100"/>
+                            styleClass="chip-button, chip-100, no-click-sfx" userData="100"/>
                     <Button fx:id="chip250" text="\$250" onAction="#onChipClicked"
-                            styleClass="chip-button, chip-250" userData="250"/>
+                            styleClass="chip-button, chip-250, no-click-sfx" userData="250"/>
                 </HBox>
 
                 <!-- Current bet card -->
