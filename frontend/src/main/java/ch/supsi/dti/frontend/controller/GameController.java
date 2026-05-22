@@ -8,6 +8,8 @@ import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
 import ch.supsi.dti.backend.model.RoundRecord;
+import ch.supsi.dti.frontend.service.SoundManager;
+import ch.supsi.dti.frontend.service.SoundManager.SoundEvent;
 import ch.supsi.dti.frontend.view.CardView;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -96,6 +98,7 @@ public class GameController {
 
     private GameManager gameManager;
     private int currentBet;
+    private GameState lastObservedState;
 
     public static void setPendingGameManager(GameManager gm) {
         pendingGameManager = gm;
@@ -132,6 +135,7 @@ public class GameController {
         int value = Integer.parseInt(data.toString());
         if (currentBet + value <= MAX_BET) {
             currentBet += value;
+            SoundManager.getInstance().play(SoundEvent.CHIP);
             updateUI();
         }
     }
@@ -160,6 +164,7 @@ public class GameController {
             if (gameManager.currentBettingPlayerIndex() < 0) {
                 // All active players have bet → deal and possibly enter insurance / dealer turn.
                 gameManager.deal();
+                SoundManager.getInstance().play(SoundEvent.CARD);
                 tickAutoTurns();
             }
         });
@@ -169,6 +174,7 @@ public class GameController {
     private void onHitClicked() {
         runSafe(() -> {
             gameManager.hit();
+            SoundManager.getInstance().play(SoundEvent.CARD);
             tickAutoTurns();
         });
     }
@@ -291,7 +297,9 @@ public class GameController {
 
         VBox root = new VBox(table);
         root.setPadding(new Insets(10));
-        dialog.setScene(new Scene(root, 640, 360));
+        Scene dialogScene = new Scene(root, 640, 360);
+        SoundManager.attachClickSfx(dialogScene);
+        dialog.setScene(dialogScene);
         dialog.show();
     }
 
@@ -321,6 +329,41 @@ public class GameController {
         }
     }
 
+    private int totalDealtCards() {
+        int total = gameManager.getDealer().getHand().getCards().size();
+        for (Player p : gameManager.getPlayers()) {
+            for (PlayerHand ph : p.getHands()) {
+                total += ph.getHand().getCards().size();
+            }
+        }
+        return total;
+    }
+
+    // VS_CPU (1 umano): WIN/LOSE in base all'esito dell'umano, silenzio su PUSH.
+    // MULTI (>1 umani): un unico ROUND_OVER neutro — gli esiti possono divergere fra giocatori,
+    // non ha senso favorirne uno suonando "vittoria".
+    private void playRoundOutcomeSfx() {
+        int humans = 0;
+        boolean anyWin = false;
+        boolean anyLose = false;
+        for (Player p : gameManager.getPlayers()) {
+            if (p.isBot()) continue;
+            humans++;
+            for (PlayerHand ph : p.getHands()) {
+                HandOutcome o = ph.getOutcome();
+                if (o == HandOutcome.WIN || o == HandOutcome.BLACKJACK) anyWin = true;
+                else if (o == HandOutcome.LOSE) anyLose = true;
+            }
+        }
+        if (humans > 1) {
+            SoundManager.getInstance().play(SoundEvent.ROUND_OVER);
+        } else if (anyWin) {
+            SoundManager.getInstance().play(SoundEvent.WIN);
+        } else if (anyLose) {
+            SoundManager.getInstance().play(SoundEvent.LOSE);
+        }
+    }
+
     private void runSafe(Runnable action) {
         try {
             action.run();
@@ -345,6 +388,9 @@ public class GameController {
         }
         dealerTimeline = new Timeline(new KeyFrame(DEALER_STEP_DELAY, e -> {
             boolean more = gameManager.dealerTakeTurnStep();
+            if (more) {
+                SoundManager.getInstance().play(SoundEvent.CARD);
+            }
             updateUI();
             if (!more) {
                 dealerTimeline.stop();
@@ -362,7 +408,11 @@ public class GameController {
             return;
         }
         botTimeline = new Timeline(new KeyFrame(BOT_STEP_DELAY, e -> {
+            int cardsBefore = totalDealtCards();
             boolean more = gameManager.botStep();
+            if (totalDealtCards() > cardsBefore) {
+                SoundManager.getInstance().play(SoundEvent.CARD);
+            }
             updateUI();
             if (!more) {
                 botTimeline.stop();
@@ -377,6 +427,13 @@ public class GameController {
     private void updateUI() {
         MessageService msg = MessageService.getInstance();
         GameState state = gameManager.getState();
+
+        if (state == GameState.ROUND_OVER
+                && lastObservedState != null
+                && lastObservedState != GameState.ROUND_OVER) {
+            playRoundOutcomeSfx();
+        }
+        lastObservedState = state;
 
         // Titlebar pills (parametric — set programmatically because FXML %key can't apply MessageFormat)
         roundLabel.setText(msg.getMessage("game.titlebar.round", sharedRoundNumber, TOTAL_ROUNDS));

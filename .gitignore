@@ -15,4 +15,4 @@ out/
 .DS_Store
 
 # Saved runtime files
-frontend/saved/
+frontend/saved/*.json

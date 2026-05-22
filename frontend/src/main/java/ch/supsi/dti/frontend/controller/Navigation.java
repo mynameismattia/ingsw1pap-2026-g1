@@ -1,6 +1,7 @@
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.i18n.MessageService;
+import ch.supsi.dti.frontend.service.SoundManager;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -26,7 +27,9 @@ public final class Navigation {
             double h = stage.getHeight();
             FXMLLoader loader = new FXMLLoader(Navigation.class.getResource(fxml));
             loader.setResources(MessageService.getInstance().getBundle());
-            stage.setScene(new Scene(loader.load()));
+            Scene scene = new Scene(loader.load());
+            SoundManager.attachClickSfx(scene);
+            stage.setScene(scene);
             stage.setTitle(MessageService.getInstance().getMessage("app.title"));
             stage.setResizable(true);
             if (w > 0 && !Double.isNaN(w)) stage.setWidth(w);
