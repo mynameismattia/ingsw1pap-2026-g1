@@ -15,7 +15,7 @@
            stylesheets="@menu.css, @game.css"
            prefWidth="1100" prefHeight="680">
 
-    <VBox styleClass="card" maxWidth="1000" maxHeight="600" spacing="0">
+    <VBox styleClass="card" spacing="0">
 
         <!-- ── Titlebar ───────────────────────────────────────── -->
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
@@ -24,7 +24,9 @@
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="titleLabel" text="" styleClass="titlebar-title"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label text="%roundresult.saved" styleClass="license-pill, license-pill-title"/>
+            <Label text="%roundresult.saved" styleClass="saved-pill">
+                <HBox.margin><Insets right="6"/></HBox.margin>
+            </Label>
         </HBox>
 
         <Region styleClass="divider"/>
@@ -78,30 +80,6 @@
                     <Button text="%roundresult.action.menu" onAction="#onBackToMenu"
                             styleClass="secondary-button"/>
                 </HBox>
-            </VBox>
-
-            <Region styleClass="vdivider"/>
-
-            <!-- ── Right: next bet + autosave ─────────────────── -->
-            <VBox prefWidth="240" minWidth="240" spacing="14">
-                <padding><Insets top="24" right="20" bottom="24" left="20"/></padding>
-
-                <Label text="%roundresult.nextBet" styleClass="field-label"/>
-                <Label fx:id="nextBetValue" text="\$50" styleClass="next-bet-value"/>
-
-                <HBox spacing="10">
-                    <Button text="%roundresult.change" styleClass="secondary-button"
-                            maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                    <Button text="%roundresult.keep" styleClass="primary-button"
-                            maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
-                </HBox>
-
-                <Region prefHeight="20"/>
-
-                <VBox styleClass="autosave-pill" alignment="CENTER" spacing="6">
-                    <Label text="💾" styleClass="autosave-icon"/>
-                    <Label text="%roundresult.autosave" styleClass="autosave-text"/>
-                </VBox>
             </VBox>
 
         </HBox>

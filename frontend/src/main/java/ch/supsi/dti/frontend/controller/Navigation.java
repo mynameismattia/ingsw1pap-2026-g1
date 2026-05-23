@@ -2,8 +2,11 @@ package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.frontend.service.SoundManager;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -23,17 +26,37 @@ public final class Navigation {
 
     public static void navigate(Stage stage, String fxml) {
         try {
+            boolean wasMaximized = stage.isMaximized();
             double w = stage.getWidth();
             double h = stage.getHeight();
             FXMLLoader loader = new FXMLLoader(Navigation.class.getResource(fxml));
             loader.setResources(MessageService.getInstance().getBundle());
             Scene scene = new Scene(loader.load());
             SoundManager.attachClickSfx(scene);
+
+            // Senza questo lock, setScene rimpicciolisce la stage alla prefSize della
+            // nuova scene per qualche frame prima che il runLater re-maximizi, e
+            // l'utente vede un flash del desktop sotto. Usiamo getBounds() (non
+            // getVisualBounds) per allinearci al comportamento di setMaximized su
+            // stage UNDECORATED in Windows, che copre anche l'area della taskbar.
+            if (wasMaximized) {
+                Rectangle2D b = Screen.getPrimary().getBounds();
+                stage.setX(b.getMinX());
+                stage.setY(b.getMinY());
+                stage.setWidth(b.getWidth());
+                stage.setHeight(b.getHeight());
+            }
+
             stage.setScene(scene);
             stage.setTitle(MessageService.getInstance().getMessage("app.title"));
-            stage.setResizable(true);
-            if (w > 0 && !Double.isNaN(w)) stage.setWidth(w);
-            if (h > 0 && !Double.isNaN(h)) stage.setHeight(h);
+            if (wasMaximized) {
+                Platform.runLater(() -> stage.setMaximized(true));
+            } else {
+                stage.setResizable(true);
+                if (w > 0 && !Double.isNaN(w)) stage.setWidth(w);
+                if (h > 0 && !Double.isNaN(h)) stage.setHeight(h);
+            }
+            WindowControls.attach(scene, stage);
         } catch (IOException e) {
             e.printStackTrace();
         }

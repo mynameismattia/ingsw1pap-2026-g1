@@ -3,6 +3,7 @@ package ch.supsi.dti.frontend.controller;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.frontend.service.SoundManager;
 import ch.supsi.dti.frontend.service.SoundManager.SoundEvent;
+import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.control.Button;
@@ -56,10 +57,29 @@ public final class LanguageDropdown {
         Label value = new Label(formatPct(slider.getValue()));
         value.getStyleClass().add("lang-dropdown-volume-value");
 
+        Runnable updateTrackFill = () -> {
+            double pct = slider.getValue() * 100.0;
+            var track = slider.lookup(".track");
+            if (track != null) {
+                track.setStyle(String.format(Locale.US,
+                        "-fx-background-color: linear-gradient(to right, " +
+                        "#3b82f6 0%%, #3b82f6 %.2f%%, #353a47 %.2f%%, #353a47 100%%);",
+                        pct, pct));
+            }
+        };
+
         slider.valueProperty().addListener((obs, oldV, newV) -> {
             double v = newV.doubleValue();
             SoundManager.getInstance().setVolume(v);
             value.setText(formatPct(v));
+            updateTrackFill.run();
+        });
+
+        // .track non esiste finché lo skin del Slider non è stato creato.
+        slider.skinProperty().addListener((obs, oldSkin, newSkin) -> {
+            if (newSkin != null) {
+                Platform.runLater(updateTrackFill);
+            }
         });
 
         HBox row = new HBox(10, slider, value);

@@ -105,7 +105,6 @@ public class GameController {
 
     private GameManager gameManager;
     private int currentBet;
-    private GameState lastObservedState;
 
     // Tracks the previous state so autosave fires exactly once per ROUND_OVER transition.
     private GameState lastObservedState;
@@ -156,16 +155,7 @@ public class GameController {
     @FXML
     private void onSaveClicked() {
         Stage stage = (Stage) sidePlayersList.getScene().getWindow();
-        SaveSlotDialog.show(stage).ifPresent(slot -> {
-            try {
-                GameSnapshot snap = GameSnapshot.fromGameManager(gameManager, sharedRoundNumber);
-                new PersistenceService(slot).save(snap);
-                messageLabel.setText(MessageService.getInstance()
-                        .getMessage("save.success", slot.name()));
-            } catch (Exception e) {
-                System.err.println("Manual save failed: " + e.getMessage());
-            }
-        });
+        Navigation.navigate(stage, "/ui/save.fxml");
     }
 
     // ── Action handlers ──────────────────────────────────────────
@@ -176,6 +166,25 @@ public class GameController {
         int value = Integer.parseInt(data.toString());
         if (currentBet + value <= MAX_BET) {
             currentBet += value;
+            SoundManager.getInstance().play(SoundEvent.CHIP);
+            updateUI();
+        }
+    }
+
+    @FXML
+    private void onDoubleBet() {
+        int newBet = currentBet * 2;
+        if (newBet > 0 && newBet <= MAX_BET) {
+            currentBet = newBet;
+            SoundManager.getInstance().play(SoundEvent.CHIP);
+            updateUI();
+        }
+    }
+
+    @FXML
+    private void onHalfBet() {
+        if (currentBet > 0) {
+            currentBet = currentBet / 2;
             SoundManager.getInstance().play(SoundEvent.CHIP);
             updateUI();
         }
@@ -667,7 +676,7 @@ public class GameController {
         if (player.isBot()) {
             avatar.getStyleClass().add("seat-avatar-cpu");
         } else if (index > 0) {
-            avatar.getStyleClass().add("seat-avatar-bob");
+            avatar.getStyleClass().add("seat-avatar-p" + (index + 1));
         }
         String initial = player.getName().isEmpty()
                 ? "?"
@@ -683,13 +692,10 @@ public class GameController {
         info.getChildren().add(labeled("$" + player.getBalance(), "seat-balance"));
         row.getChildren().add(info);
 
-        if (isActive) {
-            boolean thinking = player.isBot()
-                    && gameManager.getState() == GameState.PLAYER_TURN
-                    && gameManager.isCurrentPlayerBot();
-            String badgeKey = thinking ? "game.panel.thinking" : "game.panel.turn";
-            String badgeStyle = thinking ? "turn-badge-bot" : "turn-badge";
-            row.getChildren().add(labeled(msg.getMessage(badgeKey), badgeStyle));
+        if (isActive && player.isBot()
+                && gameManager.getState() == GameState.PLAYER_TURN
+                && gameManager.isCurrentPlayerBot()) {
+            row.getChildren().add(labeled(msg.getMessage("game.panel.thinking"), "turn-badge-bot"));
         }
         return row;
     }

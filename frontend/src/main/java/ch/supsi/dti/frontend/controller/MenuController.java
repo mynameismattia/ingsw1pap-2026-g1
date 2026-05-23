@@ -10,24 +10,16 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import ch.supsi.dti.frontend.service.SoundManager;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
+import javafx.scene.control.Label;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 
@@ -155,19 +147,16 @@ public class MenuController {
         int botCount = cpusSpinner.getValue();
         int balance = balanceSpinner.getValue();
 
-        List<String> humanNames;
         if (humanCount > 1) {
-            Optional<List<String>> names = promptHumanNames(humanCount);
-            if (names.isEmpty()) {
-                startBtn.setDisable(false);
-                return; // user cancelled
-            }
-            humanNames = names.get();
-        } else {
-            humanNames = List.of("Player 1");
+            PlayerNamesController.pendingHumanCount = humanCount;
+            PlayerNamesController.pendingBotCount = botCount;
+            PlayerNamesController.pendingBalance = balance;
+            Navigation.navigate(stage, "/ui/playernames.fxml");
+            return;
         }
 
-        List<Player> players = new ArrayList<>(humanCount + botCount);
+        List<String> humanNames = List.of("Player 1");
+        List<Player> players = new ArrayList<>(1 + botCount);
         Set<String> taken = new HashSet<>(humanNames);
         for (String name : humanNames) {
             players.add(new Player(name, balance));
@@ -180,62 +169,6 @@ public class MenuController {
 
         GameController.setPendingGameManager(new GameManager(players));
         Navigation.navigate(stage, "/ui/game.fxml");
-    }
-
-    private Optional<List<String>> promptHumanNames(int n) {
-        Stage dialog = new Stage();
-        dialog.initOwner(startBtn.getScene().getWindow());
-        dialog.initModality(Modality.WINDOW_MODAL);
-        dialog.setTitle(MessageService.getInstance().getMessage("menu.names.title"));
-        dialog.setResizable(false);
-
-        VBox root = new VBox(14);
-        root.setPadding(new Insets(24));
-        root.setAlignment(Pos.CENTER);
-        root.setMinWidth(360);
-        root.getStyleClass().add("dialog-root");
-
-        Label header = new Label(MessageService.getInstance().getMessage("menu.names.header"));
-        header.getStyleClass().add("dialog-header");
-        root.getChildren().add(header);
-
-        List<TextField> fields = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            TextField tf = new TextField("Player " + (i + 1));
-            tf.setPromptText("Player " + (i + 1));
-            tf.setPrefWidth(260);
-            tf.getStyleClass().add("text-field-dark");
-            fields.add(tf);
-            root.getChildren().add(tf);
-        }
-
-        Button ok = new Button(MessageService.getInstance().getMessage("menu.names.ok"));
-        ok.getStyleClass().add("primary-button");
-        Button cancel = new Button(MessageService.getInstance().getMessage("menu.names.cancel"));
-        cancel.getStyleClass().add("secondary-button");
-        HBox actions = new HBox(10, cancel, ok);
-        actions.setAlignment(Pos.CENTER);
-        root.getChildren().add(actions);
-
-        final List<String>[] result = new List[]{null};
-        ok.setOnAction(e -> {
-            List<String> names = new ArrayList<>(n);
-            for (int i = 0; i < n; i++) {
-                String v = fields.get(i).getText().trim();
-                names.add(v.isEmpty() ? "Player " + (i + 1) : v);
-            }
-            result[0] = names;
-            dialog.close();
-        });
-        cancel.setOnAction(e -> dialog.close());
-
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(getClass().getResource("/ui/menu.css").toExternalForm());
-        SoundManager.attachClickSfx(scene);
-        dialog.setScene(scene);
-        dialog.showAndWait();
-
-        return Optional.ofNullable(result[0]);
     }
 
     @FXML

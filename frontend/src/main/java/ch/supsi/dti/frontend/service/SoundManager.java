@@ -36,7 +36,7 @@ public class SoundManager {
     private final Map<SoundEvent, AudioClip> registry = new EnumMap<>(SoundEvent.class);
     private boolean muted = false;
     private boolean preloaded = false;
-    private double volume = 1.0;
+    private double volume = 0.5;
 
     private SoundManager() {}
 

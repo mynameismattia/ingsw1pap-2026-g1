@@ -33,7 +33,6 @@ public class RoundResultController {
     @FXML private Label dealerScorePill;
     @FXML private VBox balancesList;
     @FXML private VBox outcomeList;
-    @FXML private Label nextBetValue;
 
     @FXML
     private void initialize() {
@@ -54,23 +53,6 @@ public class RoundResultController {
         renderWinner(gm, lastByPlayer, msg);
         renderOutcomes(gm, lastByPlayer, msg);
         renderBalances(gm, lastByPlayer);
-        renderNextBet(gm, lastByPlayer);
-    }
-
-    /** Suggests the next bet as the last bet placed by the first human player. */
-    private void renderNextBet(GameManager gm, Map<String, RoundRecord> lastByPlayer) {
-        int suggested = 50; // fallback if no human record yet
-        for (Player p : gm.getPlayers()) {
-            if (p.isBot()) {
-                continue;
-            }
-            RoundRecord r = lastByPlayer.get(p.getName());
-            if (r != null) {
-                suggested = r.bet();
-                break;
-            }
-        }
-        nextBetValue.setText("$" + suggested);
     }
 
     @FXML
@@ -95,12 +77,11 @@ public class RoundResultController {
     private void renderFallback(MessageService msg) {
         winnerLabel.setText("—");
         winnerSubtitle.setText("");
-        streakLabel.setText(msg.getMessage("roundresult.streak", 0));
+        streakLabel.setText("");
         dealerCardsBox.getChildren().addAll(
                 new CardView(new Card(Suit.SPADES, Rank.ACE)),
                 new CardView(new Card(Suit.HEARTS, Rank.SEVEN)));
         dealerScorePill.setText("18");
-        nextBetValue.setText("$50");
     }
 
     private void renderDealerCards(GameManager gm) {
@@ -153,11 +134,11 @@ public class RoundResultController {
             String outcomeText = msg.getMessage(roundresultOutcomeKey(winnerRecord.outcome()));
             winnerSubtitle.setText(outcomeText + " · +$" + winnerDelta);
             int streak = consecutiveWins(gm, winner.getName());
-            streakLabel.setText(msg.getMessage("roundresult.streak", streak));
+            streakLabel.setText(msg.getMessage("roundresult.streak", streak, winner.getName()));
         } else {
             winnerLabel.setText("—");
             winnerSubtitle.setText("");
-            streakLabel.setText(msg.getMessage("roundresult.streak", 0));
+            streakLabel.setText("");
         }
     }
 
@@ -260,7 +241,7 @@ public class RoundResultController {
         if (p.isBot()) {
             avatar.getStyleClass().add("seat-avatar-cpu");
         } else if (index > 0) {
-            avatar.getStyleClass().add("seat-avatar-bob");
+            avatar.getStyleClass().add("seat-avatar-p" + (index + 1));
         }
         String initial = p.getName().isEmpty()
                 ? "?"

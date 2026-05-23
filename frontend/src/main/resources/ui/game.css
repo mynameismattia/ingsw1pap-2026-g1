@@ -42,7 +42,9 @@
     -fx-min-width: 32; -fx-pref-width: 32; -fx-max-width: 32;
     -fx-min-height: 32; -fx-pref-height: 32; -fx-max-height: 32;
 }
-.seat-avatar-bob { -fx-background-color: #4ade80; }
+.seat-avatar-p2 { -fx-background-color: #4ade80; }
+.seat-avatar-p3 { -fx-background-color: #f59e0b; }
+.seat-avatar-p4 { -fx-background-color: #a78bfa; }
 .seat-avatar-cpu { -fx-background-color: #6b7280; }
 .seat-avatar-initial {
     -fx-text-fill: #ffffff;
@@ -347,5 +349,17 @@
     -fx-padding: 4 14 4 14;
     -fx-text-fill: #f3f4f7;
     -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+.saved-pill {
+    -fx-background-color: linear-gradient(to bottom, #224d35, #1c3f2c);
+    -fx-background-radius: 10;
+    -fx-border-color: #3a8a55;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 4 12 4 12;
+    -fx-text-fill: #d6f5e1;
+    -fx-font-size: 13px;
     -fx-font-weight: bold;
 }

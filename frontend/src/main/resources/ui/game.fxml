@@ -15,7 +15,7 @@
            stylesheets="@menu.css, @game.css"
            prefWidth="1100" prefHeight="680">
 
-    <VBox styleClass="card" maxWidth="1040" maxHeight="620" spacing="0">
+    <VBox styleClass="card" spacing="0">
 
         <!-- ── Titlebar ───────────────────────────────────────── -->
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
@@ -122,6 +122,12 @@
                 <VBox styleClass="current-bet-card" spacing="6">
                     <Label text="%game.panel.current" styleClass="field-label"/>
                     <Label fx:id="currentBetLabel" text="\$0" styleClass="current-bet-value"/>
+                    <HBox spacing="6">
+                        <Button text="½" onAction="#onHalfBet"
+                                styleClass="secondary-button, no-click-sfx" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                        <Button text="2×" onAction="#onDoubleBet"
+                                styleClass="secondary-button, no-click-sfx" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    </HBox>
                     <Button text="%game.panel.clear" onAction="#onClearBet"
                             styleClass="secondary-button" maxWidth="Infinity"/>
                 </VBox>
