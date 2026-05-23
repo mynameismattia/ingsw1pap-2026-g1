@@ -15,6 +15,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ public class MenuController {
     @FXML private Spinner<Integer> cpusSpinner;
     @FXML private Spinner<Integer> balanceSpinner;
     @FXML private CheckBox soundToggle;
+    @FXML private VBox tableSection;
     @FXML private Label licenseCodeLabel;
     @FXML private Button startBtn;
     @FXML private Button continueBtn;
@@ -104,6 +106,12 @@ public class MenuController {
         modeMultiBtn.getStyleClass().remove("mode-pill-active");
         modeTutorialBtn.getStyleClass().remove("mode-pill-active");
 
+        tableSection.setVisible(true);
+        tableSection.setManaged(true);
+        continueBtn.setVisible(true);
+        continueBtn.setManaged(true);
+        startBtn.setText(MessageService.getInstance().getMessage("mainmenu.action.start"));
+
         SpinnerValueFactory.IntegerSpinnerValueFactory hf =
                 (SpinnerValueFactory.IntegerSpinnerValueFactory) humansSpinner.getValueFactory();
         SpinnerValueFactory.IntegerSpinnerValueFactory cf =
@@ -129,7 +137,14 @@ public class MenuController {
                 cpusSpinner.setDisable(true);
                 humansSpinner.setDisable(false);
             }
-            case TUTORIAL -> modeTutorialBtn.getStyleClass().add("mode-pill-active");
+            case TUTORIAL -> {
+                modeTutorialBtn.getStyleClass().add("mode-pill-active");
+                tableSection.setVisible(false);
+                tableSection.setManaged(false);
+                continueBtn.setVisible(false);
+                continueBtn.setManaged(false);
+                startBtn.setText(MessageService.getInstance().getMessage("mainmenu.action.readManual"));
+            }
         }
     }
 

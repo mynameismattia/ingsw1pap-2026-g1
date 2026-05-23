@@ -164,8 +164,10 @@ public class GameController {
     private void onChipClicked(ActionEvent event) {
         Object data = ((Button) event.getSource()).getUserData();
         int value = Integer.parseInt(data.toString());
-        if (currentBet + value <= MAX_BET) {
-            currentBet += value;
+        int cap = Math.min(MAX_BET, currentBettingBalance());
+        int newBet = Math.min(currentBet + value, cap);
+        if (newBet > currentBet) {
+            currentBet = newBet;
             SoundManager.getInstance().play(SoundEvent.CHIP);
             updateUI();
         }
@@ -173,8 +175,9 @@ public class GameController {
 
     @FXML
     private void onDoubleBet() {
-        int newBet = currentBet * 2;
-        if (newBet > 0 && newBet <= MAX_BET) {
+        int cap = Math.min(MAX_BET, currentBettingBalance());
+        int newBet = Math.min(currentBet * 2, cap);
+        if (newBet > currentBet) {
             currentBet = newBet;
             SoundManager.getInstance().play(SoundEvent.CHIP);
             updateUI();
@@ -530,12 +533,12 @@ public class GameController {
         boolean roundOver = state == GameState.ROUND_OVER;
 
         // Chips: enabled only while betting, and only if adding wouldn't overflow MAX_BET
-        updateChip(chip5,    5,   betting);
-        updateChip(chip10,   10,  betting);
-        updateChip(chip25,   25,  betting);
-        updateChip(chip50,   50,  betting);
-        updateChip(chip100,  100, betting);
-        updateChip(chip250,  250, betting);
+        updateChip(chip5,   betting);
+        updateChip(chip10,  betting);
+        updateChip(chip25,  betting);
+        updateChip(chip50,  betting);
+        updateChip(chip100, betting);
+        updateChip(chip250, betting);
 
         dealButton.setDisable(gameOver || !betting || currentBet < MIN_BET);
         hitButton.setDisable(gameOver || !playing);
@@ -565,8 +568,17 @@ public class GameController {
         lastObservedState = state;
     }
 
-    private void updateChip(Button chip, int value, boolean betting) {
-        chip.setDisable(!betting || currentBet + value > MAX_BET);
+    private void updateChip(Button chip, boolean betting) {
+        int cap = Math.min(MAX_BET, currentBettingBalance());
+        chip.setDisable(!betting || currentBet >= cap);
+    }
+
+    private int currentBettingBalance() {
+        int idx = gameManager.currentBettingPlayerIndex();
+        if (idx < 0) {
+            return Integer.MAX_VALUE;
+        }
+        return gameManager.getPlayers().get(idx).getBalance();
     }
 
     private void renderDealer() {

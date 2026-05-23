@@ -98,27 +98,29 @@
 
                 <Region styleClass="spacer-sm"/>
 
-                <Label text="%mainmenu.section.table" styleClass="field-label"/>
+                <VBox fx:id="tableSection" spacing="14">
+                    <Label text="%mainmenu.section.table" styleClass="field-label"/>
 
-                <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
-                    <Label text="%mainmenu.table.humans" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Spinner fx:id="humansSpinner" editable="true" styleClass="row-spinner" prefWidth="78"/>
-                </HBox>
+                    <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                        <Label text="%mainmenu.table.humans" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Spinner fx:id="humansSpinner" editable="true" styleClass="row-spinner" prefWidth="78"/>
+                    </HBox>
 
-                <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
-                    <Label text="%mainmenu.table.cpus" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Spinner fx:id="cpusSpinner" editable="true" styleClass="row-spinner" prefWidth="78"/>
-                </HBox>
+                    <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                        <Label text="%mainmenu.table.cpus" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Spinner fx:id="cpusSpinner" editable="true" styleClass="row-spinner" prefWidth="78"/>
+                    </HBox>
 
-                <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
-                    <Label text="%mainmenu.table.balance" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Spinner fx:id="balanceSpinner" editable="true" styleClass="row-spinner" prefWidth="100"/>
-                </HBox>
+                    <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                        <Label text="%mainmenu.table.balance" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Spinner fx:id="balanceSpinner" editable="true" styleClass="row-spinner" prefWidth="100"/>
+                    </HBox>
 
-                <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
-                    <Label text="%mainmenu.table.sound" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <CheckBox fx:id="soundToggle" styleClass="toggle-switch" selected="true"/>
-                </HBox>
+                    <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                        <Label text="%mainmenu.table.sound" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <CheckBox fx:id="soundToggle" styleClass="toggle-switch" selected="true"/>
+                    </HBox>
+                </VBox>
 
                 <Region VBox.vgrow="ALWAYS"/>
 
