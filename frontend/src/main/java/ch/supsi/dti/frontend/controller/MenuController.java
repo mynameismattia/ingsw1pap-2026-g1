@@ -11,7 +11,6 @@ import java.util.Arrays;
 import ch.supsi.dti.frontend.service.SoundManager;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Label;
@@ -37,7 +36,6 @@ public class MenuController {
     @FXML private Spinner<Integer> humansSpinner;
     @FXML private Spinner<Integer> cpusSpinner;
     @FXML private Spinner<Integer> balanceSpinner;
-    @FXML private CheckBox soundToggle;
     @FXML private VBox tableSection;
     @FXML private Label licenseCodeLabel;
     @FXML private Button startBtn;
@@ -58,10 +56,6 @@ public class MenuController {
             @Override public String toString(Integer i) { return i == null ? "" : "$" + i; }
             @Override public Integer fromString(String s) { return Integer.parseInt(s.replace("$", "").trim()); }
         });
-
-        SoundManager sound = SoundManager.getInstance();
-        soundToggle.setSelected(!sound.isMuted());
-        soundToggle.selectedProperty().addListener((obs, oldVal, newVal) -> sound.setMuted(!newVal));
 
         SoundManager.attachSpinnerClick(humansSpinner);
         SoundManager.attachSpinnerClick(cpusSpinner);
@@ -203,7 +197,8 @@ public class MenuController {
 
     @FXML
     private void onSettings() {
-        LanguageDropdown.show(settingsBtn,
-                () -> Navigation.navigate((Stage) startBtn.getScene().getWindow(), "/ui/menu.fxml"));
+        Stage stage = (Stage) startBtn.getScene().getWindow();
+        SettingsDialog.show(stage,
+                () -> Navigation.navigate(stage, "/ui/menu.fxml"));
     }
 }

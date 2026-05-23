@@ -110,7 +110,8 @@ public class TutorialController {
 
     @FXML
     private void onSettings() {
-        LanguageDropdown.show(settingsBtn,
-                () -> Navigation.navigate((Stage) startBtn.getScene().getWindow(), "/ui/tutorial.fxml"));
+        Stage stage = (Stage) startBtn.getScene().getWindow();
+        SettingsDialog.show(stage,
+                () -> Navigation.navigate(stage, "/ui/tutorial.fxml"));
     }
 }

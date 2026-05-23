@@ -17,6 +17,7 @@ import ch.supsi.dti.frontend.view.CardView;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.ParallelTransition;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
@@ -120,13 +121,17 @@ public class GameController {
     private GameState lastObservedState;
 
     // Card counts per stable key from the previous render — used to detect which
-    // cards are NEW so only those get the deal-in animation.
-    private final Map<String, Integer> lastRenderedCardCount = new HashMap<>();
+    // cards are NEW so only those get the deal-in animation. STATIC so the map
+    // survives FXML reloads (e.g. language change). Without that, the freshly
+    // initialised controller would see all on-table cards as new and replay
+    // the staggered deal animation on every settings switch. Cleared on a
+    // genuine new game.
+    private static final Map<String, Integer> lastRenderedCardCount = new HashMap<>();
     private static final Duration DEAL_ANIM_DURATION = Duration.millis(280);
     private static final double DEAL_ANIM_OFFSET_Y = -36;
     // Spacing between consecutive cards when multiple new cards arrive in the
     // same UI tick (typical: opening deal of a round).
-    private static final Duration DEAL_STAGGER_STEP = Duration.millis(180);
+    private static final Duration DEAL_STAGGER_STEP = Duration.millis(300);
 
     // Per-render lookup of "this card slot is the Nth in the staggered deal sequence";
     // computed once at the start of updateUI() and used by renderDealer / buildTableSeat
@@ -157,6 +162,8 @@ public class GameController {
             sharedRoundNumber = (pendingResumedRoundNumber != null)
                     ? pendingResumedRoundNumber : 1;
             pendingResumedRoundNumber = null;
+            // Wipe stale per-hand counters so the opening deal of a new game animates.
+            lastRenderedCardCount.clear();
         }
         lastObservedState = gameManager.getState();
         updateUI();
@@ -237,8 +244,9 @@ public class GameController {
             currentBet = 0;
             if (gameManager.currentBettingPlayerIndex() < 0) {
                 // All active players have bet → deal and possibly enter insurance / dealer turn.
+                // Per-card CARD_DEALT cues fire from inside playDealInAnimation as each card
+                // animates in, so no single sound here.
                 gameManager.deal();
-                SoundManager.getInstance().play(SoundEvent.CARD);
                 tickAutoTurns();
             }
         });
@@ -315,7 +323,8 @@ public class GameController {
 
     @FXML
     private void onSettingsClicked() {
-        LanguageDropdown.show(settingsBtn, this::reloadGame);
+        Stage stage = (Stage) settingsBtn.getScene().getWindow();
+        SettingsDialog.show(stage, this::reloadGame);
     }
 
     @FXML
@@ -822,7 +831,11 @@ public class GameController {
         return step != null ? DEAL_STAGGER_STEP.multiply(step) : Duration.ZERO;
     }
 
-    /** Fade + slide-down from ~36px above; runs once on next layout pulse. */
+    /**
+     * Fade + slide-down from ~36px above; runs once on next layout pulse.
+     * Also fires a CARD_DEALT cue synced with the visual start, interrupting
+     * any in-flight CARD_DEALT clip so rapid-fire deals don't layer.
+     */
     private void playDealInAnimation(javafx.scene.Node node, Duration delay) {
         node.setOpacity(0);
         node.setTranslateY(DEAL_ANIM_OFFSET_Y);
@@ -837,6 +850,18 @@ public class GameController {
             anim.setDelay(delay);
         }
         anim.play();
+
+        // Per-card CARD_DEALT cue — only during the staggered opening deal
+        // (multiple new cards in the same render). Single-card events (hit,
+        // dealer step, bot step) keep their existing CARD sound played by the
+        // caller; firing CARD_DEALT here too would double up.
+        if (currentDealSchedule.size() > 1) {
+            PauseTransition audioCue = new PauseTransition(
+                    (delay != null && delay.greaterThan(Duration.ZERO)) ? delay : Duration.millis(1));
+            audioCue.setOnFinished(e ->
+                    SoundManager.getInstance().playInterrupting(SoundEvent.CARD_DEALT));
+            audioCue.play();
+        }
     }
 
     private void renderPlayers(MessageService msg, GameState state) {

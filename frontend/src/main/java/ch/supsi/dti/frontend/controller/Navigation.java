@@ -57,8 +57,21 @@ public final class Navigation {
                 if (h > 0 && !Double.isNaN(h)) stage.setHeight(h);
             }
             WindowControls.attach(scene, stage);
+            SoundManager.getInstance().playMusic(musicFor(fxml));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Which looping track plays on each scene. {@code null} = silence.
+     * Round-result and license deliberately stay quiet.
+     */
+    private static SoundManager.MusicTrack musicFor(String fxml) {
+        return switch (fxml) {
+            case "/ui/game.fxml" -> SoundManager.MusicTrack.GAME;
+            case "/ui/roundresult.fxml", "/ui/license.fxml" -> null;
+            default -> SoundManager.MusicTrack.MENU;
+        };
     }
 }

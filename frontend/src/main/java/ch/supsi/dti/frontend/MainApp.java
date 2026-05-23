@@ -26,7 +26,8 @@
           stage.setMaximized(true);
 
           String saved = LicenseController.loadSavedLicense();
-          if (saved != null && new LicenseChecker().verifyLicense(saved)) {
+          boolean licensed = saved != null && new LicenseChecker().verifyLicense(saved);
+          if (licensed) {
               stage.setScene(new Scene(loadMenuRoot(), 1100, 680));
           } else {
               FXMLLoader loader = new FXMLLoader(getClass().getResource("/ui/license.fxml"));
@@ -36,6 +37,11 @@
           WindowControls.attach(stage.getScene(), stage);
 
           stage.show();
+
+          // License screen stays silent; menu kicks off the looping background music.
+          if (licensed) {
+              SoundManager.getInstance().playMusic(SoundManager.MusicTrack.MENU);
+          }
       }
 
       private static Parent loadMenuRoot() throws Exception {
