@@ -14,16 +14,17 @@ import ch.supsi.dti.backend.service.SaveSlot;
 import ch.supsi.dti.frontend.service.SoundManager;
 import ch.supsi.dti.frontend.service.SoundManager.SoundEvent;
 import ch.supsi.dti.frontend.view.CardView;
+import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
+import javafx.animation.ParallelTransition;
 import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
@@ -32,13 +33,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GameController {
 
@@ -55,6 +57,7 @@ public class GameController {
     // Titlebar
     @FXML private Label roundLabel;
     @FXML private Label deckLabel;
+    @FXML private Label phaseLabel;
 
     // Left panel
     @FXML private VBox sidePlayersList;
@@ -64,8 +67,7 @@ public class GameController {
     @FXML private HBox dealerCardsBox;
     @FXML private Label dealerScoreLabel;
     @FXML private HBox playersRow;
-    @FXML private Label messageLabel;
-    @FXML private Label bettingPromptLabel;
+    @FXML private Label hintLabel;
 
     // Action bar
     @FXML private Button hitButton;
@@ -84,9 +86,17 @@ public class GameController {
     @FXML private Button chip100;
     @FXML private Button chip250;
     @FXML private Label currentBetLabel;
+    @FXML private Label balanceLabel;
+    @FXML private Label balanceOwnerLabel;
     @FXML private Button dealButton;
     @FXML private Button settingsBtn;
     @FXML private VBox lastRoundsList;
+
+    // In-scene history overlay
+    @FXML private StackPane historyOverlay;
+    @FXML private VBox historyCard;
+    @FXML private Label historyTitleLabel;
+    @FXML private TableView<RoundRecord> historyTable;
 
     // Survives FXML reloads (e.g. language change) so the active game isn't lost.
     // Package-private so RoundResultController.onNewRound can call startNewRound() on it.
@@ -108,6 +118,20 @@ public class GameController {
 
     // Tracks the previous state so autosave fires exactly once per ROUND_OVER transition.
     private GameState lastObservedState;
+
+    // Card counts per stable key from the previous render — used to detect which
+    // cards are NEW so only those get the deal-in animation.
+    private final Map<String, Integer> lastRenderedCardCount = new HashMap<>();
+    private static final Duration DEAL_ANIM_DURATION = Duration.millis(280);
+    private static final double DEAL_ANIM_OFFSET_Y = -36;
+    // Spacing between consecutive cards when multiple new cards arrive in the
+    // same UI tick (typical: opening deal of a round).
+    private static final Duration DEAL_STAGGER_STEP = Duration.millis(180);
+
+    // Per-render lookup of "this card slot is the Nth in the staggered deal sequence";
+    // computed once at the start of updateUI() and used by renderDealer / buildTableSeat
+    // to pick the right per-card delay. Key format: "<containerKey>@<cardIndex>".
+    private Map<String, Integer> currentDealSchedule = java.util.Collections.emptyMap();
 
     public static void setPendingGameManager(GameManager gm) {
         pendingGameManager = gm;
@@ -152,12 +176,6 @@ public class GameController {
         }
     }
 
-    @FXML
-    private void onSaveClicked() {
-        Stage stage = (Stage) sidePlayersList.getScene().getWindow();
-        Navigation.navigate(stage, "/ui/save.fxml");
-    }
-
     // ── Action handlers ──────────────────────────────────────────
 
     @FXML
@@ -195,14 +213,17 @@ public class GameController {
 
     @FXML
     private void onClearBet() {
-        currentBet = 0;
-        updateUI();
+        if (currentBet > 0) {
+            currentBet = 0;
+            SoundManager.getInstance().play(SoundEvent.CHIP);
+            updateUI();
+        }
     }
 
     @FXML
     private void onDealClicked() {
         if (currentBet < MIN_BET) {
-            messageLabel.setText("⚠ " + MessageService.getInstance().getMessage("game.message.placeBet")
+            hintLabel.setText("⚠ " + MessageService.getInstance().getMessage("game.message.placeBet")
                     + " (min $" + MIN_BET + ")");
             return;
         }
@@ -305,14 +326,11 @@ public class GameController {
     @FXML
     private void onHistoryClicked() {
         MessageService msg = MessageService.getInstance();
-        Stage dialog = new Stage();
-        dialog.initOwner(playersRow.getScene().getWindow());
-        dialog.initModality(Modality.WINDOW_MODAL);
-        dialog.setTitle(msg.getMessage("game.history.title"));
+        historyTitleLabel.setText(msg.getMessage("game.history.title"));
 
-        TableView<RoundRecord> table = new TableView<>(
-                FXCollections.observableArrayList(gameManager.getHistory()));
-        table.setPlaceholder(new Label(msg.getMessage("game.history.empty")));
+        historyTable.getColumns().clear();
+        historyTable.setItems(FXCollections.observableArrayList(gameManager.getHistory()));
+        historyTable.setPlaceholder(new Label(msg.getMessage("game.history.empty")));
 
         DateTimeFormatter tf = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault());
 
@@ -336,23 +354,60 @@ public class GameController {
                 msg.getMessage("game.history.col.dealer"));
         colDealer.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(d.getValue().dealerScore()));
 
+        TableColumn<RoundRecord, String> colNet = new TableColumn<>(
+                msg.getMessage("game.history.col.net"));
+        colNet.setCellValueFactory(d -> {
+            int delta = computeDelta(d.getValue().bet(), d.getValue().outcome());
+            String text = delta > 0 ? "+$" + delta
+                        : delta < 0 ? "-$" + Math.abs(delta)
+                                    : "$0";
+            return new ReadOnlyObjectWrapper<>(text);
+        });
+        colNet.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
+            @Override
+            protected void updateItem(String value, boolean empty) {
+                super.updateItem(value, empty);
+                getStyleClass().removeAll("delta-pos", "delta-neg");
+                if (empty || value == null) {
+                    setText(null);
+                } else {
+                    setText(value);
+                    if (value.startsWith("+")) {
+                        getStyleClass().add("delta-pos");
+                    } else if (value.startsWith("-")) {
+                        getStyleClass().add("delta-neg");
+                    }
+                }
+            }
+        });
+
         TableColumn<RoundRecord, String> colOutcome = new TableColumn<>(
                 msg.getMessage("game.history.col.outcome"));
         colOutcome.setCellValueFactory(d -> new ReadOnlyObjectWrapper<>(
                 msg.getMessage(outcomeKey(d.getValue().outcome()))));
 
-        table.getColumns().addAll(colTime, colPlayer, colBet, colScore, colDealer, colOutcome);
-        table.getStyleClass().add("history-table");
-        VBox.setVgrow(table, javafx.scene.layout.Priority.ALWAYS);
+        historyTable.getColumns().addAll(colTime, colPlayer, colBet, colScore, colDealer, colNet, colOutcome);
 
-        VBox root = new VBox(table);
-          root.setPadding(new Insets(16));
-          root.getStyleClass().add("dialog-root");
-          Scene scene = new Scene(root, 720, 400);
-          scene.getStylesheets().add(getClass().getResource("/ui/menu.css").toExternalForm());
-          SoundManager.attachClickSfx(scene);
-          dialog.setScene(scene);
-        dialog.show();
+        historyOverlay.setVisible(true);
+        historyOverlay.setManaged(true);
+    }
+
+    @FXML
+    private void onHideHistoryClicked() {
+        hideHistory();
+    }
+
+    @FXML
+    private void onHistoryBackdropClicked(javafx.scene.input.MouseEvent e) {
+        // Only dismiss when the click lands on the backdrop itself, not on the card.
+        if (e.getTarget() == historyOverlay) {
+            hideHistory();
+        }
+    }
+
+    private void hideHistory() {
+        historyOverlay.setVisible(false);
+        historyOverlay.setManaged(false);
     }
 
     // ── Helpers ──────────────────────────────────────────────────
@@ -421,7 +476,7 @@ public class GameController {
             action.run();
             updateUI();
         } catch (RuntimeException e) {
-            messageLabel.setText("⚠ " + e.getMessage());
+            hintLabel.setText("⚠ " + e.getMessage());
         }
     }
 
@@ -491,40 +546,16 @@ public class GameController {
         roundLabel.setText(msg.getMessage("game.titlebar.round", sharedRoundNumber, TOTAL_ROUNDS));
         deckLabel.setText(msg.getMessage("game.titlebar.deck", gameManager.getDeckRemaining()));
 
+        currentDealSchedule = computeDealSchedule();
         renderDealer();
         renderPlayers(msg, state);
         renderLastRounds();
 
         currentBetLabel.setText("$" + currentBet);
 
-        // PLAYER_TURN on a bot → show "🤖 X is thinking…" instead of generic prompt.
-        if (state == GameState.PLAYER_TURN && gameManager.isCurrentPlayerBot()) {
-            Player bot = gameManager.getCurrentPlayer();
-            messageLabel.setText(msg.getMessage("game.message.botThinking",
-                    bot != null ? bot.getName() : ""));
-        } else {
-            messageLabel.setText(switch (state) {
-                case WAITING, BETTING       -> msg.getMessage("game.message.placeBet");
-                case DEALING, PLAYER_TURN   -> msg.getMessage("game.message.playerTurn");
-                case INSURANCE_OFFER        -> msg.getMessage("game.message.offerInsurance");
-                case DEALER_TURN, RESOLVING -> msg.getMessage("game.message.dealerTurn");
-                case ROUND_OVER             -> "";
-                case GAME_OVER              -> msg.getMessage("game.message.gameOver");
-            });
-        }
+        renderBalanceHero(msg, state);
 
-        // Per-turn prompt (who is betting / answering insurance)
-        int bettingIdx = gameManager.currentBettingPlayerIndex();
-        int insuranceIdx = gameManager.currentInsurancePlayerIndex();
-        if (state == GameState.BETTING && bettingIdx >= 0) {
-            String name = gameManager.getPlayers().get(bettingIdx).getName();
-            bettingPromptLabel.setText(msg.getMessage("game.message.bettingTurn", name));
-        } else if (state == GameState.INSURANCE_OFFER && insuranceIdx >= 0) {
-            String name = gameManager.getPlayers().get(insuranceIdx).getName();
-            bettingPromptLabel.setText(name);
-        } else {
-            bettingPromptLabel.setText("");
-        }
+        updatePhaseChrome(msg, state);
 
         boolean gameOver  = state == GameState.GAME_OVER;
         boolean betting   = state == GameState.BETTING;
@@ -581,13 +612,137 @@ public class GameController {
         return gameManager.getPlayers().get(idx).getBalance();
     }
 
+    /**
+     * Drives the right-panel balance hero. Shows the *active* player's balance
+     * (whoever is currently betting / playing / answering insurance). When no
+     * one is actively up — dealer turn, results — falls back to the first human.
+     * In multi-player the owner caption shows the player's name so the change
+     * isn't silent.
+     */
+    private void renderBalanceHero(MessageService msg, GameState state) {
+        List<Player> players = gameManager.getPlayers();
+        int activeIdx = activePlayerIndex(state);
+        Player target = (activeIdx >= 0) ? players.get(activeIdx) : firstHumanOrNull();
+        if (target == null && !players.isEmpty()) {
+            target = players.get(0);
+        }
+
+        int balance = (target != null) ? target.getBalance() : 0;
+        balanceLabel.setText("$" + balance);
+
+        String caption = msg.getMessage("game.panel.balance");
+        if (players.size() > 1 && target != null) {
+            caption = caption + " · " + (target.isBot() ? "🤖 " : "") + target.getName();
+        }
+        balanceOwnerLabel.setText(caption);
+    }
+
+    private Player firstHumanOrNull() {
+        for (Player p : gameManager.getPlayers()) {
+            if (!p.isBot()) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    private boolean isHuman(int idx) {
+        if (idx < 0 || idx >= gameManager.getPlayers().size()) return false;
+        return !gameManager.getPlayers().get(idx).isBot();
+    }
+
+    /**
+     * Drives the titlebar phase pill and the hint banner above the seats.
+     * One source of truth for "what phase + what should I do".
+     */
+    private void updatePhaseChrome(MessageService msg, GameState state) {
+        // Strip any previous phase variant class.
+        phaseLabel.getStyleClass().removeAll(
+                "phase-pill-bet", "phase-pill-play", "phase-pill-dealer", "phase-pill-result");
+
+        String phaseText = "";
+        String phaseClass = null;
+        String hint = "";
+
+        switch (state) {
+            case WAITING, BETTING -> {
+                phaseText = msg.getMessage("game.phase.bet");
+                phaseClass = "phase-pill-bet";
+                int bIdx = gameManager.currentBettingPlayerIndex();
+                if (bIdx >= 0) {
+                    String name = gameManager.getPlayers().get(bIdx).getName();
+                    hint = isHuman(bIdx)
+                            ? msg.getMessage("game.hint.bet.self")
+                            : msg.getMessage("game.hint.bet.other", name);
+                } else {
+                    hint = msg.getMessage("game.hint.bet.self");
+                }
+            }
+            case DEALING, PLAYER_TURN -> {
+                Player current = gameManager.getCurrentPlayer();
+                String name = current != null ? current.getName() : "";
+                phaseText = msg.getMessage("game.phase.play", name);
+                phaseClass = "phase-pill-play";
+                if (gameManager.isCurrentPlayerBot()) {
+                    hint = msg.getMessage("game.hint.botThinking", name);
+                } else {
+                    int cIdx = gameManager.getPlayers().indexOf(current);
+                    hint = isHuman(cIdx)
+                            ? msg.getMessage("game.hint.play.self")
+                            : msg.getMessage("game.hint.play.other", name);
+                }
+            }
+            case INSURANCE_OFFER -> {
+                phaseText = msg.getMessage("game.phase.play",
+                        currentInsuranceName());
+                phaseClass = "phase-pill-play";
+                hint = msg.getMessage("game.hint.insurance");
+            }
+            case DEALER_TURN, RESOLVING -> {
+                phaseText = msg.getMessage("game.phase.dealer");
+                phaseClass = "phase-pill-dealer";
+                hint = msg.getMessage("game.hint.dealer");
+            }
+            case ROUND_OVER -> {
+                phaseText = msg.getMessage("game.phase.result");
+                phaseClass = "phase-pill-result";
+                hint = msg.getMessage("game.hint.roundOver");
+            }
+            case GAME_OVER -> {
+                phaseText = msg.getMessage("game.phase.result");
+                phaseClass = "phase-pill-result";
+                hint = msg.getMessage("game.message.gameOver");
+            }
+        }
+
+        phaseLabel.setText(phaseText);
+        if (phaseClass != null) {
+            phaseLabel.getStyleClass().add(phaseClass);
+        }
+        boolean show = !phaseText.isEmpty();
+        phaseLabel.setVisible(show);
+        phaseLabel.setManaged(show);
+
+        hintLabel.setText(hint);
+    }
+
+    private String currentInsuranceName() {
+        int idx = gameManager.currentInsurancePlayerIndex();
+        return (idx >= 0) ? gameManager.getPlayers().get(idx).getName() : "";
+    }
+
     private void renderDealer() {
         dealerCardsBox.getChildren().clear();
         boolean revealed = gameManager.getDealer().isHandRevealed();
         List<Card> dealerCards = gameManager.getDealer().getHand().getCards();
+        int animateFrom = animateFromIndex("dealer", dealerCards.size());
         for (int i = 0; i < dealerCards.size(); i++) {
             Card visible = (i == 1 && !revealed) ? null : dealerCards.get(i);
-            dealerCardsBox.getChildren().add(new CardView(visible));
+            CardView cv = new CardView(visible);
+            if (i >= animateFrom) {
+                playDealInAnimation(cv, dealDelayFor("dealer", i));
+            }
+            dealerCardsBox.getChildren().add(cv);
         }
         if (revealed && !dealerCards.isEmpty()) {
             dealerScoreLabel.setText(String.valueOf(gameManager.getDealer().getHand().getScore()));
@@ -598,6 +753,90 @@ public class GameController {
             dealerScoreLabel.setVisible(false);
             dealerScoreLabel.setManaged(false);
         }
+    }
+
+    /**
+     * Returns the first card index that should be animated for a given hand
+     * (dealer or per-player) given how many cards it had on the previous
+     * render. Cards already shown last time keep their static look; only the
+     * newly-arrived tail fades in from above. Also updates the tracker.
+     * Returns {@code Integer.MAX_VALUE} (no animation) when the hand has not
+     * grown — e.g. a round reset, an unrelated UI tick like a chip click, or
+     * the initial render after a controller reload.
+     */
+    private int animateFromIndex(String key, int currentCount) {
+        int prev = lastRenderedCardCount.getOrDefault(key, 0);
+        lastRenderedCardCount.put(key, currentCount);
+        return currentCount > prev ? prev : Integer.MAX_VALUE;
+    }
+
+    /**
+     * Builds the deal-order schedule for the upcoming render: each newly-arrived
+     * card gets a sequential step index, so multiple cards appearing in the same
+     * tick (the opening deal of a round) animate one after the other instead of
+     * all at once. Order matches a real-life dealer: round-by-round, each player
+     * in seat order, with the dealer last in every round.
+     *
+     * Must be called BEFORE renderDealer/renderPlayers since those mutate
+     * {@link #lastRenderedCardCount} via {@link #animateFromIndex}.
+     */
+    private Map<String, Integer> computeDealSchedule() {
+        List<Player> players = gameManager.getPlayers();
+        int dealerCount = gameManager.getDealer().getHand().getCards().size();
+        int dealerPrev  = lastRenderedCardCount.getOrDefault("dealer", 0);
+
+        int maxIdx = dealerCount;
+        for (Player p : players) {
+            for (PlayerHand ph : p.getHands()) {
+                maxIdx = Math.max(maxIdx, ph.getHand().getCards().size());
+            }
+        }
+
+        Map<String, Integer> schedule = new HashMap<>();
+        int step = 0;
+        for (int cardIdx = 0; cardIdx < maxIdx; cardIdx++) {
+            // Players (in seat order) for this round.
+            for (Player p : players) {
+                int handIdx = 0;
+                for (PlayerHand ph : p.getHands()) {
+                    String key  = "p:" + p.getName() + "#" + handIdx;
+                    int prev = lastRenderedCardCount.getOrDefault(key, 0);
+                    int curr = ph.getHand().getCards().size();
+                    if (cardIdx >= prev && cardIdx < curr) {
+                        schedule.put(key + "@" + cardIdx, step++);
+                    }
+                    handIdx++;
+                }
+            }
+            // Dealer goes last in each round.
+            if (cardIdx >= dealerPrev && cardIdx < dealerCount) {
+                schedule.put("dealer@" + cardIdx, step++);
+            }
+        }
+        return schedule;
+    }
+
+    /** Per-card animation delay derived from the current deal schedule. */
+    private Duration dealDelayFor(String containerKey, int cardIndex) {
+        Integer step = currentDealSchedule.get(containerKey + "@" + cardIndex);
+        return step != null ? DEAL_STAGGER_STEP.multiply(step) : Duration.ZERO;
+    }
+
+    /** Fade + slide-down from ~36px above; runs once on next layout pulse. */
+    private void playDealInAnimation(javafx.scene.Node node, Duration delay) {
+        node.setOpacity(0);
+        node.setTranslateY(DEAL_ANIM_OFFSET_Y);
+        FadeTransition fade = new FadeTransition(DEAL_ANIM_DURATION, node);
+        fade.setFromValue(0);
+        fade.setToValue(1);
+        TranslateTransition slide = new TranslateTransition(DEAL_ANIM_DURATION, node);
+        slide.setFromY(DEAL_ANIM_OFFSET_Y);
+        slide.setToY(0);
+        ParallelTransition anim = new ParallelTransition(fade, slide);
+        if (delay != null && delay.greaterThan(Duration.ZERO)) {
+            anim.setDelay(delay);
+        }
+        anim.play();
     }
 
     private void renderPlayers(MessageService msg, GameState state) {
@@ -646,14 +885,23 @@ public class GameController {
         PlayerHand activeHand = gameManager.getCurrentHand();
         HBox handsRow = new HBox(12);
         handsRow.setAlignment(Pos.CENTER);
+        int handIdx = 0;
         for (PlayerHand ph : player.getHands()) {
             VBox handBox = new VBox(4);
             handBox.setAlignment(Pos.CENTER);
             HBox cardsRow = new HBox(4);
             cardsRow.setAlignment(Pos.CENTER);
-            for (Card c : ph.getHand().getCards()) {
-                cardsRow.getChildren().add(new CardView(c));
+            List<Card> handCards = ph.getHand().getCards();
+            String key = "p:" + player.getName() + "#" + handIdx;
+            int animateFrom = animateFromIndex(key, handCards.size());
+            for (int i = 0; i < handCards.size(); i++) {
+                CardView cv = new CardView(handCards.get(i));
+                if (i >= animateFrom) {
+                    playDealInAnimation(cv, dealDelayFor(key, i));
+                }
+                cardsRow.getChildren().add(cv);
             }
+            handIdx++;
             handBox.getChildren().add(cardsRow);
             if (!ph.getHand().getCards().isEmpty()) {
                 String text = String.valueOf(ph.getHand().getScore()) + "  ($" + ph.getBet() + ")";

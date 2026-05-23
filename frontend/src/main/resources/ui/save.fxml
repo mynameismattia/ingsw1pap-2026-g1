@@ -38,4 +38,19 @@
 
     </VBox>
 
+    <!-- ── In-scene overwrite confirmation ─────────────────────────── -->
+    <StackPane fx:id="confirmOverlay" styleClass="overlay-backdrop"
+               visible="false" managed="false" onMouseClicked="#onConfirmBackdropClicked">
+        <VBox styleClass="overlay-card" spacing="14"
+              maxWidth="420" maxHeight="-Infinity" alignment="CENTER">
+            <padding><Insets top="22" right="22" bottom="22" left="22"/></padding>
+            <Label fx:id="confirmBody" text="" styleClass="dialog-header"
+                   wrapText="true" maxWidth="360"/>
+            <HBox spacing="10" alignment="CENTER">
+                <Button fx:id="confirmCancel" text="%common.cancel" styleClass="secondary-button"/>
+                <Button fx:id="confirmOk" text="%common.confirm" styleClass="danger-button"/>
+            </HBox>
+        </VBox>
+    </StackPane>
+
 </StackPane>

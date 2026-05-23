@@ -7,13 +7,13 @@ import ch.supsi.dti.backend.service.SaveSlot;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import java.time.ZoneId;
@@ -28,15 +28,29 @@ public class SaveGameController {
 
     @FXML private VBox slotsContainer;
 
+    // Overwrite confirmation overlay
+    @FXML private StackPane confirmOverlay;
+    @FXML private Label confirmBody;
+    @FXML private Button confirmOk;
+    @FXML private Button confirmCancel;
+
+    private Runnable pendingConfirm;
+
     @FXML
     private void initialize() {
         refresh();
+        confirmCancel.setOnAction(e -> hideConfirm());
+        confirmOk.setOnAction(e -> {
+            Runnable r = pendingConfirm;
+            hideConfirm();
+            if (r != null) r.run();
+        });
     }
 
     @FXML
     private void onBack() {
         Stage stage = (Stage) slotsContainer.getScene().getWindow();
-        Navigation.navigate(stage, "/ui/game.fxml");
+        Navigation.navigate(stage, "/ui/roundresult.fxml");
     }
 
     private void refresh() {
@@ -80,10 +94,11 @@ public class SaveGameController {
         Button save = new Button(occupied ? msg("save.action.overwrite") : msg("save.action.saveHere"));
         save.getStyleClass().add(occupied ? "danger-button" : "primary-button");
         save.setOnAction(e -> {
-            if (occupied && !confirmOverwrite()) {
-                return;
+            if (occupied) {
+                askOverwrite(() -> doSave(slot));
+            } else {
+                doSave(slot);
             }
-            doSave(slot);
         });
 
         row.getChildren().addAll(title, details, save);
@@ -100,7 +115,7 @@ public class SaveGameController {
             System.err.println("Manual save failed: " + ex.getMessage());
         }
         Stage stage = (Stage) slotsContainer.getScene().getWindow();
-        Navigation.navigate(stage, "/ui/game.fxml");
+        Navigation.navigate(stage, "/ui/roundresult.fxml");
     }
 
     private String slotLabel(SaveSlot slot) {
@@ -116,42 +131,24 @@ public class SaveGameController {
         return MessageService.getInstance().getMessage(key, args);
     }
 
-    private boolean confirmOverwrite() {
-        Stage dialog = new Stage();
-        dialog.initOwner(slotsContainer.getScene().getWindow());
-        dialog.initModality(Modality.WINDOW_MODAL);
-        dialog.setTitle(msg("save.slot.overwrite.title"));
-        dialog.setResizable(false);
+    private void askOverwrite(Runnable onConfirm) {
+        confirmBody.setText(msg("save.slot.overwrite.body"));
+        pendingConfirm = onConfirm;
+        confirmOverlay.setVisible(true);
+        confirmOverlay.setManaged(true);
+    }
 
-        VBox root = new VBox(14);
-        root.setPadding(new Insets(24));
-        root.setAlignment(Pos.CENTER);
-        root.setMinWidth(380);
-        root.getStyleClass().add("dialog-root");
+    @FXML
+    private void onConfirmBackdropClicked(MouseEvent e) {
+        // Only dismiss when the click lands on the backdrop itself, not on the card.
+        if (e.getTarget() == confirmOverlay) {
+            hideConfirm();
+        }
+    }
 
-        Label body = new Label(msg("save.slot.overwrite.body"));
-        body.setWrapText(true);
-        body.setMaxWidth(360);
-        body.getStyleClass().add("dialog-header");
-        root.getChildren().add(body);
-
-        Button ok = new Button(msg("common.confirm"));
-        ok.getStyleClass().add("danger-button");
-        Button cancel = new Button(msg("common.cancel"));
-        cancel.getStyleClass().add("secondary-button");
-        HBox actions = new HBox(10, cancel, ok);
-        actions.setAlignment(Pos.CENTER);
-        root.getChildren().add(actions);
-
-        final boolean[] result = {false};
-        ok.setOnAction(e -> { result[0] = true; dialog.close(); });
-        cancel.setOnAction(e -> dialog.close());
-
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(
-                getClass().getResource("/ui/menu.css").toExternalForm());
-        dialog.setScene(scene);
-        dialog.showAndWait();
-        return result[0];
+    private void hideConfirm() {
+        pendingConfirm = null;
+        confirmOverlay.setVisible(false);
+        confirmOverlay.setManaged(false);
     }
 }

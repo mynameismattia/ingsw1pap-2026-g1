@@ -72,6 +72,11 @@ public class RoundResultController {
         navigateTo("/ui/menu.fxml", 1100, 680);
     }
 
+    @FXML
+    private void onSaveClicked() {
+        navigateTo("/ui/save.fxml", 1100, 680);
+    }
+
     // ── Rendering helpers ────────────────────────────────────────
 
     private void renderFallback(MessageService msg) {

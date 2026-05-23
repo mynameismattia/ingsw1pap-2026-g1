@@ -32,8 +32,10 @@
     -fx-padding: 8 12 8 10;
 }
 .seat-row-active {
+    -fx-background-color: linear-gradient(to right, rgba(59,130,246,0.18) 0%, #1e2029 70%);
     -fx-border-color: #3b82f6;
-    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.35), 12, 0.4, 0, 0);
+    -fx-border-width: 1 1 1 3;
+    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.45), 14, 0.5, 0, 0);
 }
 
 .seat-avatar {
@@ -58,8 +60,9 @@
     -fx-font-weight: bold;
 }
 .seat-balance {
-    -fx-text-fill: #9ca3af;
-    -fx-font-size: 11px;
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
 }
 
 .turn-badge {
@@ -93,8 +96,10 @@
     -fx-padding: 10;
 }
 .seat-card-active {
+    -fx-background-color: linear-gradient(to bottom, rgba(59,130,246,0.12) 0%, #1c1f26 70%);
     -fx-border-color: #3b82f6;
-    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.35), 14, 0.4, 0, 0);
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.55), 18, 0.5, 0, 0);
 }
 .seat-card-ghost {
     -fx-opacity: 0.85;
@@ -128,30 +133,45 @@
     -fx-font-weight: bold;
 }
 
+/* Phase pill: declares the current game phase (BET / TURN / DEALER / RESULT).
+   A single colour variant class swaps tint per phase. */
+.phase-pill {
+    -fx-background-radius: 8;
+    -fx-padding: 4 12 4 12;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.phase-pill-bet    { -fx-background-color: #3b82f6; }
+.phase-pill-play   { -fx-background-color: #10b981; }
+.phase-pill-dealer { -fx-background-color: #6b7280; }
+.phase-pill-result { -fx-background-color: #f59e0b; -fx-text-fill: #1a1a1a; }
+
 /* ── Chip buttons (right column) ────────────────────────────── */
 
 .chip-button {
-    -fx-background-radius: 100;
-    -fx-min-width: 56; -fx-pref-width: 56; -fx-max-width: 56;
-    -fx-min-height: 56; -fx-pref-height: 56; -fx-max-height: 56;
-    -fx-border-color: #ffffff;
-    -fx-border-width: 2;
-    -fx-border-radius: 100;
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-min-width: 64; -fx-pref-width: 64; -fx-max-width: 64;
+    -fx-min-height: 64; -fx-pref-height: 64; -fx-max-height: 64;
+    -fx-padding: 0;
+    -fx-content-display: graphic-only;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: contain;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 6, 0.2, 0, 2);
 }
-.chip-button:hover  { -fx-scale-x: 1.06; -fx-scale-y: 1.06; }
-.chip-button:disabled { -fx-opacity: 0.30; }
+.chip-button:hover     { -fx-scale-x: 1.06; -fx-scale-y: 1.06; }
+.chip-button:disabled  { -fx-opacity: 0.30; }
 
-.chip-5    { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #9ca3af 0%, #6b7280 100%); }
-.chip-10   { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #4ade80 0%, #16a34a 100%); }
-.chip-25   { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #5b9bff 0%, #2563eb 100%); }
-.chip-50   { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #a78bfa 0%, #7c3aed 100%); }
-.chip-100  { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #fb923c 0%, #ea580c 100%); }
-.chip-250  { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #f87171 0%, #dc2626 100%); }
+.chip-5    { -fx-background-image: url("chips/5_dollars_chip.png"); }
+.chip-10   { -fx-background-image: url("chips/10_dollars_chip.png"); }
+.chip-25   { -fx-background-image: url("chips/25_dollars_chip.png"); }
+.chip-50   { -fx-background-image: url("chips/50_dollars_chip.png"); }
+.chip-100  { -fx-background-image: url("chips/100_dollars_chip.png"); }
+.chip-250  { -fx-background-image: url("chips/250_dollars_chip.png"); }
 
 /* ── Current bet card ───────────────────────────────────────── */
 
@@ -191,18 +211,34 @@
     -fx-font-weight: bold;
 }
 
-/* ── In-game message banner ─────────────────────────────────── */
+/* ── In-game hint banner (single source of truth for "what to do") ── */
 
-.message-banner {
-    -fx-text-fill: #fbbf24;
-    -fx-font-size: 14px;
+.hint-banner {
+    -fx-background-color: rgba(0, 0, 0, 0.35);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 17px;
     -fx-font-weight: bold;
+    -fx-padding: 10 16 10 16;
 }
 
-.betting-prompt {
-    -fx-text-fill: #c9ccd4;
-    -fx-font-size: 12px;
-    -fx-font-style: italic;
+/* ── Balance hero (right column top) ─────────────────────────── */
+
+.balance-card {
+    -fx-background-color: #252934;
+    -fx-background-radius: 10;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 10 14 10 14;
+}
+.balance-hero {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
 }
 
 /* ── Action bar (hit/stand/double/split/insure under table) ─ */

@@ -7,24 +7,24 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 
 public class CardView extends Label {
-    private static final double CARD_WIDTH = 60;
-    private static final double CARD_HEIGHT = 90;
+    private static final double CARD_WIDTH = 76;
+    private static final double CARD_HEIGHT = 112;
 
     private static final String STYLE_FACE_UP =
             "-fx-background-color: white;" +
                     "-fx-border-color: black;" +
                     "-fx-border-width: 1;" +
-                    "-fx-border-radius: 6;" +
-                    "-fx-background-radius: 6;" +
-                    "-fx-font-size: 18px;" +
+                    "-fx-border-radius: 7;" +
+                    "-fx-background-radius: 7;" +
+                    "-fx-font-size: 22px;" +
                     "-fx-font-weight: bold;";
 
     private static final String STYLE_FACE_DOWN =
             "-fx-background-color: #1a3a8a;" +
                     "-fx-border-color: white;" +
                     "-fx-border-width: 2;" +
-                    "-fx-border-radius: 6;" +
-                    "-fx-background-radius: 6;";
+                    "-fx-border-radius: 7;" +
+                    "-fx-background-radius: 7;";
 
     private Card card;
 

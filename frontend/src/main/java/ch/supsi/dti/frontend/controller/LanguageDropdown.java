@@ -29,9 +29,28 @@ public final class LanguageDropdown {
 
     private LanguageDropdown() {}
 
+    private static ContextMenu openMenu;
+    private static long lastHiddenAt;
+
     public static void show(Button anchor, Runnable onChanged) {
+        if (openMenu != null && openMenu.isShowing()) {
+            openMenu.hide();
+            return;
+        }
+        // Clicking the anchor while open auto-hides the menu first, then fires
+        // the button action. Suppress reopen within the autohide window.
+        if (System.currentTimeMillis() - lastHiddenAt < 250) {
+            return;
+        }
+
         ContextMenu menu = new ContextMenu();
         menu.getStyleClass().add("lang-dropdown");
+        menu.setOnHidden(e -> {
+            if (openMenu == menu) {
+                openMenu = null;
+                lastHiddenAt = System.currentTimeMillis();
+            }
+        });
 
         Locale current = MessageService.getInstance().getLocale();
         MessageService msg = MessageService.getInstance();
@@ -41,6 +60,7 @@ public final class LanguageDropdown {
         menu.getItems().add(new SeparatorMenuItem());
         menu.getItems().add(buildVolumeItem(msg));
 
+        openMenu = menu;
         // Anchor the menu just below the button.
         menu.show(anchor, Side.BOTTOM, 0, 6);
     }
