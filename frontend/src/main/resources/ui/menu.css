@@ -493,6 +493,77 @@
     -fx-background-color: linear-gradient(to bottom, #6b7280, #4b5563);
 }
 
+/* ── Seat avatars (shared between game felt + lobby dialog) ─── */
+
+.seat-avatar {
+    -fx-background-color: #3b82f6;
+    -fx-background-radius: 50;
+    -fx-min-width: 32; -fx-pref-width: 32; -fx-max-width: 32;
+    -fx-min-height: 32; -fx-pref-height: 32; -fx-max-height: 32;
+}
+.seat-avatar-p2 { -fx-background-color: #4ade80; }
+.seat-avatar-p3 { -fx-background-color: #f59e0b; }
+.seat-avatar-p4 { -fx-background-color: #a78bfa; }
+.seat-avatar-cpu { -fx-background-color: #6b7280; }
+.seat-avatar-initial {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+}
+
+/* ── Player-names lobby (Option A roster) ────────────────────── */
+
+.lobby-summary {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 13px;
+    -fx-font-style: italic;
+}
+
+/* One per human, side-by-side. Wider than tall, with the avatar pinned top. */
+.lobby-seat {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 12;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-padding: 20 18 20 18;
+    -fx-min-width: 200;
+    -fx-pref-width: 220;
+}
+.lobby-seat-label {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 11.5px;
+    -fx-font-weight: bold;
+}
+
+/* Bigger variant of the seat-avatar base (which defaults to 32×32 in game.css). */
+.lobby-avatar {
+    -fx-min-width: 56; -fx-pref-width: 56; -fx-max-width: 56;
+    -fx-min-height: 56; -fx-pref-height: 56; -fx-max-height: 56;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0.2, 0, 2);
+}
+.lobby-avatar .seat-avatar-initial {
+    -fx-font-size: 24px;
+}
+
+/* Read-only bot name chip in the strip below the seats. */
+.bot-chip {
+    -fx-background-color: #252934;
+    -fx-background-radius: 14;
+    -fx-border-color: #4a5568;
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-padding: 6 14 6 12;
+}
+.bot-chip-icon {
+    -fx-font-size: 14px;
+}
+.bot-chip-name {
+    -fx-text-fill: #d8dbe2;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: bold;
+}
+
 /* ── Cards (CardView) ────────────────────────────────────────── */
 
 /* Card surface is provided by the artwork PNGs; the StackPane just stretches

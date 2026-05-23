@@ -38,21 +38,9 @@
     -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.45), 14, 0.5, 0, 0);
 }
 
-.seat-avatar {
-    -fx-background-color: #3b82f6;
-    -fx-background-radius: 50;
-    -fx-min-width: 32; -fx-pref-width: 32; -fx-max-width: 32;
-    -fx-min-height: 32; -fx-pref-height: 32; -fx-max-height: 32;
-}
-.seat-avatar-p2 { -fx-background-color: #4ade80; }
-.seat-avatar-p3 { -fx-background-color: #f59e0b; }
-.seat-avatar-p4 { -fx-background-color: #a78bfa; }
-.seat-avatar-cpu { -fx-background-color: #6b7280; }
-.seat-avatar-initial {
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-}
+/* Note: .seat-avatar* palette lives in menu.css so the multiplayer-lobby
+   dialog (rendered on top of menu.fxml, which loads only menu.css) can use
+   the same colours that show up here on the felt. */
 
 .seat-name {
     -fx-text-fill: #f3f4f7;
@@ -489,4 +477,193 @@
     -fx-text-fill: #d6f5e1;
     -fx-font-size: 13px;
     -fx-font-weight: bold;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Round Result revamp — hero net-delta, progress dots,
+   session band. The trophy/winner-circle styles above are
+   legacy and unused by the new layout.
+   ────────────────────────────────────────────────────────────── */
+
+/* Round 10/10 — title gets a gold accent. */
+.titlebar-title-final {
+    -fx-text-fill: #fbbf24;
+}
+
+/* Tiny dots in the titlebar showing session progress. */
+.progress-dot {
+    -fx-text-fill: #353a47;
+    -fx-font-size: 12px;
+}
+.progress-dot-done    { -fx-text-fill: #4ade80; }
+.progress-dot-current { -fx-text-fill: #fbbf24; -fx-font-size: 14px; }
+
+/* Sub-titlebar band with the cumulative session line. */
+.session-band {
+    -fx-background-color: #161a22;
+}
+.session-line {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12.5px;
+    -fx-font-style: italic;
+}
+
+/* Dealer outcome banner above the heroes — gives the round its headline. */
+.dealer-banner {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 12 18 12 18;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+.dealer-banner-bust {
+    -fx-background-color: linear-gradient(to bottom, #4a1414, #2e0d0d);
+    -fx-border-color: #f87171;
+    -fx-text-fill: #fecaca;
+    -fx-effect: dropshadow(gaussian, rgba(248,113,113,0.35), 16, 0.3, 0, 0);
+}
+.dealer-banner-stand {
+    -fx-background-color: linear-gradient(to bottom, #1f2937, #161c25);
+    -fx-border-color: #4a5568;
+    -fx-text-fill: #e5e7eb;
+}
+.dealer-banner-blackjack {
+    -fx-background-color: linear-gradient(to bottom, #4a3a10, #2e2509);
+    -fx-border-color: #fbbf24;
+    -fx-text-fill: #fde68a;
+    -fx-effect: dropshadow(gaussian, rgba(251,191,36,0.4), 18, 0.35, 0, 0);
+}
+
+.round-meta {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+}
+
+/* Hero net-delta block — one per human player.
+   A coloured 3px top stripe + a faint tinted background pull the block into
+   a card. Seat-colour matches the avatar palette so seat 1 here = the blue
+   you see on the felt and in the lobby. */
+.hero-block {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 10;
+    /* top right bottom left — top edge is the seat-colour stripe (3px),
+       other sides keep the muted neutral border (1px) */
+    -fx-border-color: #3b82f6 #353a47 #353a47 #353a47;
+    -fx-border-width: 3 1 1 1;
+    -fx-border-radius: 10;
+    -fx-padding: 14 22 18 22;
+    -fx-min-width: 170;
+    -fx-spacing: 4;
+}
+.hero-block-seat1 { -fx-border-color: #3b82f6 #353a47 #353a47 #353a47; }
+.hero-block-seat2 { -fx-border-color: #4ade80 #353a47 #353a47 #353a47; }
+.hero-block-seat3 { -fx-border-color: #f59e0b #353a47 #353a47 #353a47; }
+.hero-block-seat4 { -fx-border-color: #a78bfa #353a47 #353a47 #353a47; }
+
+.hero-name {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: bold;
+}
+.hero-delta-pos {
+    -fx-text-fill: #4ade80;
+    -fx-font-size: 52px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(74,222,128,0.45), 14, 0.35, 0, 0);
+}
+.hero-delta-neg {
+    -fx-text-fill: #f87171;
+    -fx-font-size: 52px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(248,113,113,0.45), 14, 0.35, 0, 0);
+}
+.hero-delta-neutral {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 52px;
+    -fx-font-weight: bold;
+}
+
+/* ── Balance-over-rounds chart ─────────────────────────────── */
+
+.chart-container {
+    -fx-background-color: #15181f;
+    -fx-background-radius: 10;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 10;
+}
+.balance-chart {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.balance-chart .chart-content {
+    -fx-padding: 0;
+}
+.balance-chart .chart-plot-background {
+    -fx-background-color: transparent;
+}
+.balance-chart .chart-vertical-grid-lines,
+.balance-chart .chart-horizontal-grid-lines {
+    -fx-stroke: rgba(255,255,255,0.05);
+}
+.balance-chart .chart-alternative-row-fill,
+.balance-chart .chart-alternative-column-fill {
+    -fx-fill: transparent;
+}
+.balance-chart .axis {
+    -fx-tick-label-fill: #9ca3af;
+    -fx-tick-mark-stroke: #353a47;
+    -fx-minor-tick-mark-stroke: #353a47;
+    -fx-font-size: 10.5px;
+}
+.balance-chart .axis-label {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 11px;
+}
+.balance-chart .chart-legend {
+    -fx-background-color: transparent;
+    -fx-padding: 4 0 0 0;
+}
+.balance-chart .chart-legend-item {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 11px;
+}
+
+/* Dealer round-by-round score history (left column). */
+.dealer-history-row {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 6;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 4 10 4 10;
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 11.5px;
+}
+.dealer-history-row-bust {
+    -fx-border-color: #7f1d1d;
+    -fx-text-fill: #fecaca;
+}
+.dealer-history-row-blackjack {
+    -fx-border-color: #b45309;
+    -fx-text-fill: #fde68a;
+}
+
+/* W/L badge under each player's name in the right-column balances list. */
+.balance-mini-stats {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+}
+.hero-headline {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+.hero-detail {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 12.5px;
 }

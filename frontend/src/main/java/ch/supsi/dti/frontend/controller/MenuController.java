@@ -157,10 +157,11 @@ public class MenuController {
         int balance = balanceSpinner.getValue();
 
         if (humanCount > 1) {
-            PlayerNamesController.pendingHumanCount = humanCount;
-            PlayerNamesController.pendingBotCount = botCount;
-            PlayerNamesController.pendingBalance = balance;
-            Navigation.navigate(stage, "/ui/playernames.fxml");
+            // Multiplayer: open the lobby as an in-scene overlay over the menu
+            // (matches SettingsDialog / history dialog pattern — no separate scene).
+            // Re-enable the Start button if the user cancels so they can retry.
+            PlayerNamesDialog.show(stage, humanCount, botCount, balance,
+                    () -> startBtn.setDisable(false));
             return;
         }
 
