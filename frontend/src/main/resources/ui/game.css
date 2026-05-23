@@ -101,6 +101,20 @@
     -fx-border-width: 2;
     -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.55), 18, 0.5, 0, 0);
 }
+
+/* Benched seat — no cards, dimmed, nudged lower in the row via translateY in
+   Java. Background pulled toward the felt and text muted so the seat reads
+   as "out for now, not part of this round". */
+.seat-card-sitting-out {
+    -fx-background-color: #15181f;
+    -fx-border-color: #2a2e38;
+    -fx-opacity: 0.55;
+    -fx-padding: 6 14 6 14;
+}
+.seat-card-sitting-out .seat-card-name,
+.seat-card-sitting-out .seat-card-score {
+    -fx-text-fill: #6b7280;
+}
 .seat-card-ghost {
     -fx-opacity: 0.85;
 }
@@ -262,6 +276,83 @@
 }
 .action-button:hover  { -fx-background-color: #2c313d; }
 .action-button:disabled { -fx-opacity: 0.4; }
+
+/* Per-action colour palette — gives users a quick semantic read of each
+   button (green = take a card, red = stop, amber = risk, etc.).  Rules sit
+   after the neutral .action-button base so source-order wins for same
+   specificity; no need for !important. */
+
+.action-hit {
+    -fx-background-color: linear-gradient(to bottom, #22c55e, #16a34a);
+    -fx-border-color: #15803d;
+    -fx-text-fill: white;
+}
+.action-hit:hover {
+    -fx-background-color: linear-gradient(to bottom, #4ade80, #22c55e);
+}
+.action-hit:pressed {
+    -fx-background-color: linear-gradient(to bottom, #16a34a, #15803d);
+}
+
+.action-stand {
+    -fx-background-color: linear-gradient(to bottom, #ef4444, #dc2626);
+    -fx-border-color: #b91c1c;
+    -fx-text-fill: white;
+}
+.action-stand:hover {
+    -fx-background-color: linear-gradient(to bottom, #f87171, #ef4444);
+}
+.action-stand:pressed {
+    -fx-background-color: linear-gradient(to bottom, #dc2626, #b91c1c);
+}
+
+.action-double {
+    -fx-background-color: linear-gradient(to bottom, #f59e0b, #d97706);
+    -fx-border-color: #b45309;
+    -fx-text-fill: white;
+}
+.action-double:hover {
+    -fx-background-color: linear-gradient(to bottom, #fbbf24, #f59e0b);
+}
+.action-double:pressed {
+    -fx-background-color: linear-gradient(to bottom, #d97706, #b45309);
+}
+
+.action-split {
+    -fx-background-color: linear-gradient(to bottom, #a78bfa, #7c3aed);
+    -fx-border-color: #6d28d9;
+    -fx-text-fill: white;
+}
+.action-split:hover {
+    -fx-background-color: linear-gradient(to bottom, #c4b5fd, #a78bfa);
+}
+.action-split:pressed {
+    -fx-background-color: linear-gradient(to bottom, #7c3aed, #6d28d9);
+}
+
+.action-insure {
+    -fx-background-color: linear-gradient(to bottom, #eab308, #ca8a04);
+    -fx-border-color: #a16207;
+    -fx-text-fill: #1a1a1a;
+}
+.action-insure:hover {
+    -fx-background-color: linear-gradient(to bottom, #facc15, #eab308);
+}
+.action-insure:pressed {
+    -fx-background-color: linear-gradient(to bottom, #ca8a04, #a16207);
+}
+
+/* Decline is the passive "no thanks" — stays muted so the colourful Insure
+   button reads as the encouraged choice and Decline as the way out. */
+.action-decline {
+    -fx-background-color: #252934;
+    -fx-border-color: #4b5563;
+    -fx-text-fill: #9ca3af;
+}
+.action-decline:hover {
+    -fx-background-color: #2c313d;
+    -fx-text-fill: #c9ccd4;
+}
 
 /* ──────────────────────────────────────────────────────────────
    Round Result screen (Mockup04) — defined here so a single

@@ -168,6 +168,30 @@ public class GameController {
         lastObservedState = gameManager.getState();
         updateUI();
         tickAutoTurns(); // resume dealer/bot animation after a reload
+        installKeyboardGuard();
+    }
+
+    /**
+     * Consumes SPACE / ENTER on the game-scene root so the currently-focused
+     * button can't re-fire its onAction via keyboard activation. Holding space
+     * after clicking, say, Hit would otherwise spam {@code gameManager.hit()}
+     * in states where it's invalid — each call throws IllegalStateException,
+     * leaking exception logs to stderr and partially mutating round state.
+     * The filter lives on the FXML root (this game scene's StackPane), so it
+     * disappears automatically when Navigation swaps the root for another scene.
+     */
+    private void installKeyboardGuard() {
+        Platform.runLater(() -> {
+            javafx.scene.Scene scene = dealButton.getScene();
+            if (scene == null || scene.getRoot() == null) return;
+            scene.getRoot().addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+                javafx.scene.input.KeyCode code = e.getCode();
+                if (code == javafx.scene.input.KeyCode.SPACE
+                        || code == javafx.scene.input.KeyCode.ENTER) {
+                    e.consume();
+                }
+            });
+        });
     }
 
     private void autosaveIfRoundOver(GameState state) {
@@ -897,15 +921,22 @@ public class GameController {
         String displayName = (player.isBot() ? "🤖 " : "") + player.getName();
 
         if (player.isSittingOut()) {
-            HBox cards = new HBox(4);
-            cards.setAlignment(Pos.CENTER);
-            cards.getChildren().addAll(new CardView(null), new CardView(null));
-            seat.getChildren().add(cards);
+            // Benched: no cards rendered, seat is dimmed and nudged slightly
+            // lower so it visually sits below the active players' card row
+            // without crowding the action bar underneath.
+            seat.getStyleClass().add("seat-card-sitting-out");
+            seat.setTranslateY(18);
             seat.getChildren().add(labeled(displayName, "seat-card-name"));
             seat.getChildren().add(labeled("⏸ " + msg.getMessage("game.message.sittingOut"),
                     "seat-card-score"));
             return seat;
         }
+
+        // Reserve the size the seat will need once two cards are dealt, so the
+        // layout doesn't snap from a tiny name-only box into a card-sized one
+        // when betting ends. Width = 2 cards (92×2) + spacing + padding; height
+        // = card (130) + score label + name label + padding.
+        seat.setMinSize(214, 192);
 
         PlayerHand activeHand = gameManager.getCurrentHand();
         HBox handsRow = new HBox(12);

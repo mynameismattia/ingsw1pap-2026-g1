@@ -70,24 +70,29 @@
                     <Label fx:id="dealerScoreLabel" text="" styleClass="dealer-score-pill"/>
                 </HBox>
 
-                <!-- Flexible spacer pushes the seats down into the felt's centre -->
-                <Region VBox.vgrow="ALWAYS"/>
+                <!-- Flexible spacer above the seats (≈ 1 unit of growth). -->
+                <Region prefHeight="80" VBox.vgrow="ALWAYS"/>
 
                 <!-- Player seats row -->
                 <HBox fx:id="playersRow" alignment="CENTER" spacing="20"/>
 
-                <!-- Small bottom spacer so the seats don't hug the action bar -->
-                <Region minHeight="8" prefHeight="8"/>
+                <!-- Flexible spacer below the seats (≈ 2 units of growth). The
+                     1:2 ratio with the top spacer positions the seat row at
+                     roughly one-third from the top of the available space —
+                     close enough to the dealer to feel connected, far enough
+                     from the action bar that a sitting-out seat can hang below
+                     without crowding the controls. -->
+                <Region prefHeight="160" VBox.vgrow="ALWAYS"/>
 
                 <!-- Action bar -->
                 <HBox styleClass="action-bar" alignment="CENTER" spacing="8">
-                    <Button fx:id="hitButton"    text="%game.button.hit"    onAction="#onHitClicked"    styleClass="action-button, no-click-sfx"/>
-                    <Button fx:id="standButton"  text="%game.button.stand"  onAction="#onStandClicked"  styleClass="action-button"/>
-                    <Button fx:id="doubleButton" text="%game.button.double" onAction="#onDoubleClicked" styleClass="action-button"/>
-                    <Button fx:id="splitButton"  text="%game.button.split"  onAction="#onSplitClicked"  styleClass="action-button"/>
-                    <Button fx:id="insureButton" text="%game.button.insure" onAction="#onInsureClicked" styleClass="action-button"/>
+                    <Button fx:id="hitButton"    text="%game.button.hit"    onAction="#onHitClicked"    styleClass="action-button, action-hit, no-click-sfx"/>
+                    <Button fx:id="standButton"  text="%game.button.stand"  onAction="#onStandClicked"  styleClass="action-button, action-stand"/>
+                    <Button fx:id="doubleButton" text="%game.button.double" onAction="#onDoubleClicked" styleClass="action-button, action-double"/>
+                    <Button fx:id="splitButton"  text="%game.button.split"  onAction="#onSplitClicked"  styleClass="action-button, action-split"/>
+                    <Button fx:id="insureButton" text="%game.button.insure" onAction="#onInsureClicked" styleClass="action-button, action-insure"/>
                     <Button fx:id="declineInsuranceButton" text="%game.button.declineInsurance"
-                            onAction="#onDeclineInsuranceClicked" styleClass="action-button"/>
+                            onAction="#onDeclineInsuranceClicked" styleClass="action-button, action-decline"/>
                     <Button fx:id="viewResultsButton" text="%game.action.viewResults"
                             onAction="#onViewResultsClicked" styleClass="primary-button"/>
                 </HBox>

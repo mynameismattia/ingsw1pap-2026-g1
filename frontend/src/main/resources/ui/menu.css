@@ -493,6 +493,46 @@
     -fx-background-color: linear-gradient(to bottom, #6b7280, #4b5563);
 }
 
+/* ── Cards (CardView) ────────────────────────────────────────── */
+
+/* Card surface is provided by the artwork PNGs; the StackPane just stretches
+   the image to its set size and overlays text on the face. No border, no
+   background colour — the asset already has the ornate filigree frame. */
+.card-view {
+    -fx-background-color: transparent;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: 100% 100%;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.45), 6, 0.18, 0, 2);
+}
+
+.card-view.card-face {
+    -fx-background-image: url("front_blank_card.png");
+}
+.card-view.card-back {
+    -fx-background-image: url("cards/back_card.png");
+}
+
+/* Centre-only layout: rank above, suit pip below — both centred inside the
+   filigree frame. Serif type so it sits naturally on the cream cardstock. */
+.card-rank {
+    -fx-font-family: "Georgia";
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+.card-suit {
+    -fx-font-family: "Georgia";
+    -fx-font-size: 36px;
+}
+.card-suit-red .card-rank,
+.card-suit-red .card-suit {
+    -fx-text-fill: #b91c1c;
+}
+.card-suit-black .card-rank,
+.card-suit-black .card-suit {
+    -fx-text-fill: #0e1a3a;
+}
+
 /* ── Language dropdown (anchored to the topbar ⚙) ─────────────── */
 
 .lang-dropdown {
