@@ -12,6 +12,20 @@
     -fx-border-width: 0 1 0 1;
 }
 
+/* Image-backed felt — uses the bundled blackjack_table.png so the felt
+   carries its own painted "Just 21" + rules text and a printed chip-slot
+   rectangle near the bottom. The image is stretched to fill the column
+   so the slot stays in the same proportional position at any window size. */
+.table-felt-img {
+    -fx-background-color: #0a1f12;          /* fallback while image loads */
+    -fx-background-image: url("blackjack_table.png");
+    -fx-background-size: 100% 100%;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-border-color: #2a2e38;
+    -fx-border-width: 0 1 0 1;
+}
+
 .table-oval {
     -fx-background-color: rgba(255,255,255,0.04);
     -fx-background-radius: 200;
@@ -75,16 +89,19 @@
 
 /* ── Seat cards (center table players) ──────────────────────── */
 
+/* Translucent so the painted felt still reads through. The dark tint keeps
+   the cards + name label legible against the bright "Just 21" graphic. */
 .seat-card {
-    -fx-background-color: #1c1f26;
+    -fx-background-color: rgba(15, 18, 24, 0.45);
     -fx-background-radius: 10;
-    -fx-border-color: #2a2e38;
+    -fx-border-color: rgba(255, 255, 255, 0.10);
     -fx-border-radius: 10;
     -fx-border-width: 1;
     -fx-padding: 10;
 }
 .seat-card-active {
-    -fx-background-color: linear-gradient(to bottom, rgba(59,130,246,0.12) 0%, #1c1f26 70%);
+    -fx-background-color: linear-gradient(to bottom,
+            rgba(59, 130, 246, 0.20) 0%, rgba(15, 18, 24, 0.45) 70%);
     -fx-border-color: #3b82f6;
     -fx-border-width: 2;
     -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.55), 18, 0.5, 0, 0);

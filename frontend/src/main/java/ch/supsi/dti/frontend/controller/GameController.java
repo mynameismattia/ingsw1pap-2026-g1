@@ -69,6 +69,9 @@ public class GameController {
     @FXML private Label dealerScoreLabel;
     @FXML private HBox playersRow;
     @FXML private Label hintLabel;
+    @FXML private StackPane bottomSlot;
+    @FXML private HBox chipsSlot;
+    @FXML private HBox actionBar;
 
     // Action bar
     @FXML private Button hitButton;
@@ -595,6 +598,14 @@ public class GameController {
         boolean playing   = state == GameState.PLAYER_TURN;
         boolean insurance = state == GameState.INSURANCE_OFFER;
         boolean roundOver = state == GameState.ROUND_OVER;
+
+        // Chips and action bar share the same painted slot at the bottom of
+        // the felt. Show one at a time — chips when the user is placing a bet,
+        // the action buttons (hit / stand / etc.) otherwise.
+        chipsSlot.setVisible(betting);
+        chipsSlot.setManaged(betting);
+        actionBar.setVisible(!betting);
+        actionBar.setManaged(!betting);
 
         // Chips: enabled only while betting, and only if adding wouldn't overflow MAX_BET
         updateChip(chip5,   betting);
