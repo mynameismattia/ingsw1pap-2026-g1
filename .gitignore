@@ -16,3 +16,6 @@ out/
 
 # Saved runtime files
 frontend/saved/*.json
+
+# Local Claude Code config
+.claude/
