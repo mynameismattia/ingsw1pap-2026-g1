@@ -17,6 +17,7 @@ import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -46,7 +47,7 @@ public class RoundResultController {
     @FXML private Button primaryActionBtn;
     @FXML private StackPane chartContainer;
     @FXML private Label dealerHistoryHeader;
-    @FXML private VBox dealerHistoryList;
+    @FXML private FlowPane dealerHistoryList;
 
     @FXML
     private void initialize() {
@@ -648,17 +649,37 @@ public class RoundResultController {
         for (RoundRecord r : gm.getHistory()) {
             if (!r.playerName().equals(anchor.getName())) continue;
             round++;
-            int score = r.dealerScore();
-            String key;
-            if (score > 21) key = "roundresult.dealer.history.row.bust";
-            else if (score == 21) key = "roundresult.dealer.history.row.blackjack";
-            else key = "roundresult.dealer.history.row";
-            Label row = new Label(msg.getMessage(key, round, score));
-            row.getStyleClass().add("dealer-history-row");
-            if (score > 21) row.getStyleClass().add("dealer-history-row-bust");
-            else if (score == 21) row.getStyleClass().add("dealer-history-row-blackjack");
-            dealerHistoryList.getChildren().add(row);
+            dealerHistoryList.getChildren().add(buildDealerHistoryTile(round, r.dealerScore(), msg));
         }
+    }
+
+    /** One round tile for the dealer-history grid: round label, big score, outcome tag. */
+    private VBox buildDealerHistoryTile(int round, int score, MessageService msg) {
+        boolean bust = score > 21;
+        boolean blackjack = score == 21;
+
+        VBox tile = new VBox(2);
+        tile.setAlignment(Pos.CENTER);
+        tile.getStyleClass().add("dealer-history-tile");
+        if (bust) tile.getStyleClass().add("dealer-history-tile-bust");
+        else if (blackjack) tile.getStyleClass().add("dealer-history-tile-blackjack");
+
+        Label roundLbl = new Label(msg.getMessage("roundresult.dealer.history.tile.round", round));
+        roundLbl.getStyleClass().add("dealer-history-tile-round");
+
+        Label scoreLbl = new Label(String.valueOf(score));
+        scoreLbl.getStyleClass().add("dealer-history-tile-score");
+
+        tile.getChildren().addAll(roundLbl, scoreLbl);
+
+        if (bust || blackjack) {
+            Label tag = new Label(msg.getMessage(
+                    bust ? "roundresult.dealer.history.tile.bust"
+                         : "roundresult.dealer.history.tile.blackjack"));
+            tag.getStyleClass().add("dealer-history-tile-tag");
+            tile.getChildren().add(tag);
+        }
+        return tile;
     }
 
     // ── Misc helpers ─────────────────────────────────────────────

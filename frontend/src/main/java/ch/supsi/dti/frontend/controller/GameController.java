@@ -94,13 +94,21 @@ public class GameController {
     @FXML private Label balanceOwnerLabel;
     @FXML private Button dealButton;
     @FXML private Button settingsBtn;
-    @FXML private VBox lastRoundsList;
 
     // In-scene history overlay
     @FXML private StackPane historyOverlay;
     @FXML private VBox historyCard;
     @FXML private Label historyTitleLabel;
     @FXML private TableView<RoundRecord> historyTable;
+
+    // In-scene game-over overlay
+    @FXML private StackPane gameOverOverlay;
+    @FXML private Label gameOverEyebrow;
+    @FXML private Label gameOverTitle;
+    @FXML private Label gameOverBody;
+    @FXML private Label gameOverStandingsHeader;
+    @FXML private VBox gameOverBalances;
+    @FXML private Label gameOverFooter;
 
     // Survives FXML reloads (e.g. language change) so the active game isn't lost.
     // Package-private so RoundResultController.onNewRound can call startNewRound() on it.
@@ -141,6 +149,15 @@ public class GameController {
     // to pick the right per-card delay. Key format: "<containerKey>@<cardIndex>".
     private Map<String, Integer> currentDealSchedule = java.util.Collections.emptyMap();
 
+    /**
+     * Number of opening-deal card animations currently in flight. While > 0,
+     * action buttons are forced disabled so a mid-deal click can't (a) skip
+     * the visual stagger by triggering an immediate updateUI() that orphans
+     * the in-flight transitions, and (b) corrupt the round by interleaving
+     * with the staggered deal.
+     */
+    private int dealAnimsRunning = 0;
+
     public static void setPendingGameManager(GameManager gm) {
         pendingGameManager = gm;
     }
@@ -161,6 +178,9 @@ public class GameController {
         }
         gameManager = sharedGameManager;
         currentBet = 0;
+        // Old animations from a previous controller can't reach this instance's
+        // counter, so reset it explicitly to avoid a stuck-disabled action bar.
+        dealAnimsRunning = 0;
         if (freshGame) {
             sharedRoundNumber = (pendingResumedRoundNumber != null)
                     ? pendingResumedRoundNumber : 1;
@@ -446,6 +466,89 @@ public class GameController {
         historyOverlay.setManaged(false);
     }
 
+    // ── Game-over overlay ────────────────────────────────────────
+
+    /** All human players are below the table minimum — the game can't progress meaningfully. */
+    private boolean isHumansBroke(GameState state) {
+        // Mid-round play must finish before we declare game-over.
+        if (state != GameState.BETTING && state != GameState.WAITING
+                && state != GameState.ROUND_OVER && state != GameState.GAME_OVER) {
+            return false;
+        }
+        boolean anyHuman = false;
+        for (Player p : gameManager.getPlayers()) {
+            if (p.isBot()) continue;
+            anyHuman = true;
+            if (p.getBalance() >= MIN_BET) return false;
+        }
+        return anyHuman;
+    }
+
+    private static final String[] PODIUM_MEDALS = {"🥇", "🥈", "🥉"};
+
+    private void renderGameOverOverlay(MessageService msg, boolean gameOver) {
+        if (!gameOver) {
+            gameOverOverlay.setVisible(false);
+            gameOverOverlay.setManaged(false);
+            return;
+        }
+
+        boolean backendOver = gameManager.getState() == GameState.GAME_OVER;
+        gameOverEyebrow.setText(msg.getMessage("game.gameover.eyebrow"));
+        gameOverTitle.setText(msg.getMessage("game.gameover.title"));
+        gameOverBody.setText(msg.getMessage(backendOver
+                ? "game.gameover.body.all"
+                : "game.gameover.body.humans"));
+        gameOverStandingsHeader.setText(msg.getMessage("game.gameover.standings"));
+
+        // Final standings — sort by balance desc, give the top three medals.
+        gameOverBalances.getChildren().clear();
+        List<Player> ranked = new java.util.ArrayList<>(gameManager.getPlayers());
+        ranked.sort((a, b) -> Integer.compare(b.getBalance(), a.getBalance()));
+        int topBalance = ranked.isEmpty() ? 0 : ranked.get(0).getBalance();
+        for (int i = 0; i < ranked.size(); i++) {
+            gameOverBalances.getChildren().add(buildStandingRow(ranked.get(i), i, topBalance));
+        }
+
+        // Session footer — rounds played and biggest pot from history.
+        int roundsPlayed = Math.max(0, sharedRoundNumber - 1);
+        int biggestPot = 0;
+        for (RoundRecord r : gameManager.getHistory()) {
+            if (r.bet() > biggestPot) biggestPot = r.bet();
+        }
+        gameOverFooter.setText(msg.getMessage(
+                "game.gameover.footer", roundsPlayed, TOTAL_ROUNDS, biggestPot));
+
+        gameOverOverlay.setVisible(true);
+        gameOverOverlay.setManaged(true);
+        gameOverOverlay.toFront();
+    }
+
+    private HBox buildStandingRow(Player p, int rank, int topBalance) {
+        HBox row = new HBox(12);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add("gameover-row");
+        if (rank == 0 && topBalance > 0) {
+            row.getStyleClass().add("gameover-row-winner");
+        }
+
+        Label medal = new Label(rank < PODIUM_MEDALS.length ? PODIUM_MEDALS[rank] : "  ");
+        medal.getStyleClass().add("gameover-row-medal");
+
+        Label name = new Label((p.isBot() ? "🤖 " : "") + p.getName());
+        name.getStyleClass().add("gameover-row-name");
+        HBox.setHgrow(name, Priority.ALWAYS);
+        name.setMaxWidth(Double.MAX_VALUE);
+
+        Label bal = new Label("$" + p.getBalance());
+        bal.getStyleClass().add(p.getBalance() < MIN_BET
+                ? "gameover-row-broke"
+                : "gameover-row-balance");
+
+        row.getChildren().addAll(medal, name, bal);
+        return row;
+    }
+
     // ── Helpers ──────────────────────────────────────────────────
 
     private void navigateTo(String fxml, int w, int h) {
@@ -505,6 +608,17 @@ public class GameController {
         } else if (anyLose) {
             SoundManager.getInstance().play(SoundEvent.LOSE);
         }
+    }
+
+    /**
+     * Called when the opening-deal animation counter drains to zero. Re-runs
+     * updateUI() so the button gating is recomputed (dealingAnim now false).
+     * Cheap: updateUI is idempotent and the schedule will produce zero new
+     * card animations for this pass.
+     */
+    private void refreshActionAvailability() {
+        if (gameManager == null) return;
+        updateUI();
     }
 
     private void runSafe(Runnable action) {
@@ -585,7 +699,6 @@ public class GameController {
         currentDealSchedule = computeDealSchedule();
         renderDealer();
         renderPlayers(msg, state);
-        renderLastRounds();
 
         currentBetLabel.setText("$" + currentBet);
 
@@ -593,11 +706,13 @@ public class GameController {
 
         updatePhaseChrome(msg, state);
 
-        boolean gameOver  = state == GameState.GAME_OVER;
+        boolean gameOver  = state == GameState.GAME_OVER || isHumansBroke(state);
         boolean betting   = state == GameState.BETTING;
         boolean playing   = state == GameState.PLAYER_TURN;
         boolean insurance = state == GameState.INSURANCE_OFFER;
         boolean roundOver = state == GameState.ROUND_OVER;
+
+        renderGameOverOverlay(msg, gameOver);
 
         // Chips and action bar share the same painted slot at the bottom of
         // the felt. Show one at a time — chips when the user is placing a bet,
@@ -615,23 +730,31 @@ public class GameController {
         updateChip(chip100, betting);
         updateChip(chip250, betting);
 
-        dealButton.setDisable(gameOver || !betting || currentBet < MIN_BET);
-        hitButton.setDisable(gameOver || !playing);
-        standButton.setDisable(gameOver || !playing);
+        // Human-only gating. Bot turns auto-play via botTimeline; if the action
+        // bar is left clickable during a bot's hand the user can call hit() on
+        // the bot's behalf, which races the timeline and floods stderr with
+        // IllegalStateException once state advances past PLAYER_TURN.
+        boolean botActive = gameManager.isCurrentPlayerBot();
+        boolean dealingAnim = dealAnimsRunning > 0;
+        boolean humanCanAct = playing && !botActive && !dealingAnim;
 
-        doubleButton.setDisable(gameOver || !gameManager.canDoubleDown());
+        dealButton.setDisable(gameOver || dealingAnim || !betting || currentBet < MIN_BET);
+        hitButton.setDisable(gameOver || !humanCanAct);
+        standButton.setDisable(gameOver || !humanCanAct);
+
+        doubleButton.setDisable(gameOver || dealingAnim || botActive || !gameManager.canDoubleDown());
         doubleButton.setVisible(playing);
         doubleButton.setManaged(playing);
 
-        splitButton.setDisable(gameOver || !gameManager.canSplit());
+        splitButton.setDisable(gameOver || dealingAnim || botActive || !gameManager.canSplit());
         splitButton.setVisible(playing);
         splitButton.setManaged(playing);
 
-        insureButton.setDisable(gameOver || !insurance);
+        insureButton.setDisable(gameOver || dealingAnim || !insurance || botActive);
         insureButton.setVisible(insurance);
         insureButton.setManaged(insurance);
 
-        declineInsuranceButton.setDisable(gameOver || !insurance);
+        declineInsuranceButton.setDisable(gameOver || dealingAnim || !insurance || botActive);
         declineInsuranceButton.setVisible(insurance);
         declineInsuranceButton.setManaged(insurance);
 
@@ -884,6 +1007,19 @@ public class GameController {
         if (delay != null && delay.greaterThan(Duration.ZERO)) {
             anim.setDelay(delay);
         }
+
+        // Only gate the action bar on multi-card opening deals — a one-off Hit
+        // or dealer draw shouldn't lock the UI for a 280ms fade.
+        boolean isOpeningDeal = currentDealSchedule.size() > 1;
+        if (isOpeningDeal) {
+            dealAnimsRunning++;
+            anim.setOnFinished(e -> {
+                dealAnimsRunning = Math.max(0, dealAnimsRunning - 1);
+                if (dealAnimsRunning == 0) {
+                    refreshActionAvailability();
+                }
+            });
+        }
         anim.play();
 
         // Per-card CARD_DEALT cue — only during the staggered opening deal
@@ -1040,63 +1176,6 @@ public class GameController {
             case PUSH      -> "game.message.push";
             case BLACKJACK -> "game.message.blackjack";
         };
-    }
-
-    /** Populates the right-panel "Last rounds" list with the human player's recent records. */
-    private void renderLastRounds() {
-        lastRoundsList.getChildren().clear();
-        String humanName = gameManager.getPlayers().stream()
-                .filter(p -> !p.isBot())
-                .map(Player::getName)
-                .findFirst()
-                .orElse(null);
-        if (humanName == null) {
-            return;
-        }
-
-        List<RoundRecord> history = gameManager.getHistory();
-        int totalForHuman = 0;
-        for (RoundRecord r : history) {
-            if (r.playerName().equals(humanName)) {
-                totalForHuman++;
-            }
-        }
-        // Walk in reverse chronological order; collect up to 3 of the human's records.
-        java.util.ArrayList<RoundRecord> recent = new java.util.ArrayList<>(3);
-        for (int i = history.size() - 1; i >= 0 && recent.size() < 3; i--) {
-            RoundRecord r = history.get(i);
-            if (r.playerName().equals(humanName)) {
-                recent.add(r);
-            }
-        }
-
-        // Build rows in the order they appear (latest first).
-        for (int idx = 0; idx < recent.size(); idx++) {
-            RoundRecord r = recent.get(idx);
-            int displayRound = totalForHuman - idx;
-            int delta = computeDelta(r.bet(), r.outcome());
-
-            HBox row = new HBox();
-            row.getStyleClass().add("mini-round-row");
-            row.setAlignment(Pos.CENTER_LEFT);
-
-            Label nameLbl = labeled("Round " + displayRound, "mini-round-label");
-            HBox.setHgrow(nameLbl, Priority.ALWAYS);
-            nameLbl.setMaxWidth(Double.MAX_VALUE);
-            row.getChildren().add(nameLbl);
-
-            Label deltaLbl;
-            if (delta > 0) {
-                deltaLbl = labeled("+$" + delta, "delta-pos");
-            } else if (delta < 0) {
-                deltaLbl = labeled("-$" + Math.abs(delta), "delta-neg");
-            } else {
-                deltaLbl = labeled("$0", "mini-round-label");
-            }
-            row.getChildren().add(deltaLbl);
-
-            lastRoundsList.getChildren().add(row);
-        }
     }
 
     private static int computeDelta(int bet, HandOutcome outcome) {

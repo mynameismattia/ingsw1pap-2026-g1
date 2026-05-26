@@ -143,21 +143,15 @@
                     </VBox>
                 </VBox>
 
+                <!-- Deal button pinned to the bottom-right of the felt. -->
+                <VBox alignment="BOTTOM_RIGHT" maxWidth="220" maxHeight="80"
+                      StackPane.alignment="BOTTOM_RIGHT">
+                    <StackPane.margin><Insets bottom="20" right="20"/></StackPane.margin>
+                    <Button fx:id="dealButton" text="%game.button.deal" onAction="#onDealClicked"
+                            styleClass="deal-button" maxWidth="Infinity"/>
+                </VBox>
+
             </StackPane>
-
-            <Region styleClass="vdivider"/>
-
-            <!-- ── Right column: deal + last-rounds list ──────── -->
-            <VBox prefWidth="240" minWidth="240" spacing="12">
-                <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
-
-                <Button fx:id="dealButton" text="%game.button.deal" onAction="#onDealClicked"
-                        styleClass="primary-button" maxWidth="Infinity"/>
-
-                <Label text="%game.panel.lastRounds" styleClass="field-label"/>
-
-                <VBox fx:id="lastRoundsList" spacing="6"/>
-            </VBox>
 
         </HBox>
 
@@ -177,6 +171,45 @@
             </HBox>
 
             <TableView fx:id="historyTable" styleClass="history-table" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </StackPane>
+
+    <!-- ── In-scene game-over overlay ─────────────────────────────── -->
+    <StackPane fx:id="gameOverOverlay" styleClass="overlay-backdrop"
+               visible="false" managed="false">
+        <VBox styleClass="overlay-card, gameover-card" spacing="18"
+              alignment="TOP_CENTER" maxWidth="560" maxHeight="540">
+            <padding><Insets top="32" right="36" bottom="28" left="36"/></padding>
+
+            <!-- Headline block -->
+            <VBox alignment="CENTER" spacing="6">
+                <Label fx:id="gameOverEyebrow" text="%game.gameover.eyebrow"
+                       styleClass="gameover-eyebrow"/>
+                <Label fx:id="gameOverTitle" text="%game.gameover.title"
+                       styleClass="gameover-title"/>
+                <Label fx:id="gameOverBody" text="" styleClass="gameover-body"
+                       wrapText="true"/>
+            </VBox>
+
+            <Region styleClass="gameover-divider" prefHeight="1" maxHeight="1"/>
+
+            <!-- Final standings — players sorted by balance, with medals -->
+            <VBox spacing="8" maxWidth="Infinity">
+                <Label fx:id="gameOverStandingsHeader" text="%game.gameover.standings"
+                       styleClass="gameover-section-label"/>
+                <VBox fx:id="gameOverBalances" spacing="6"/>
+            </VBox>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <!-- Session footer -->
+            <Label fx:id="gameOverFooter" text="" styleClass="gameover-footer"
+                   alignment="CENTER" maxWidth="Infinity"/>
+
+            <HBox spacing="10" alignment="CENTER">
+                <Button text="%game.gameover.menu" onAction="#onBackToMenuClicked"
+                        styleClass="gameover-cta"/>
+            </HBox>
         </VBox>
     </StackPane>
 

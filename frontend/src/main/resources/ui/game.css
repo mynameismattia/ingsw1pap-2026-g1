@@ -244,6 +244,35 @@
     -fx-padding: 10 16 10 16;
 }
 
+/* ── Deal button (bottom-right of the felt) ─────────────────
+   Tuned to match the painted "Just 21" gold banner rather than
+   the lobby's bright blue primary — translucent dark base, gold
+   border and text so it reads as "part of the table". */
+
+.deal-button {
+    -fx-background-color: rgba(0, 0, 0, 0.42);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(212, 175, 102, 0.55);
+    -fx-border-radius: 10;
+    -fx-border-width: 1.2;
+    -fx-text-fill: #e9d8a6;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 22 12 22;
+    -fx-cursor: hand;
+}
+.deal-button:hover {
+    -fx-background-color: rgba(0, 0, 0, 0.55);
+    -fx-border-color: rgba(232, 200, 120, 0.85);
+    -fx-text-fill: #f3e2b3;
+}
+.deal-button:pressed {
+    -fx-background-color: rgba(0, 0, 0, 0.65);
+}
+.deal-button:disabled {
+    -fx-opacity: 0.45;
+}
+
 /* ── Balance hero (right column top) ─────────────────────────── */
 
 .balance-card {
@@ -649,24 +678,63 @@
     -fx-font-size: 11px;
 }
 
-/* Dealer round-by-round score history (left column). */
-.dealer-history-row {
-    -fx-background-color: #1c1f26;
-    -fx-background-radius: 6;
-    -fx-border-color: #2a2e38;
-    -fx-border-radius: 6;
-    -fx-border-width: 1;
-    -fx-padding: 4 10 4 10;
-    -fx-text-fill: #c9ccd4;
-    -fx-font-size: 11.5px;
+/* Dealer round-by-round score history (left column).
+   Tile grid: each round is a small card with round label + big score +
+   optional outcome tag. Color-coded by outcome so the eye can scan for
+   busts and blackjacks at a glance. */
+.dealer-history-grid {
+    -fx-padding: 2 0 2 0;
 }
-.dealer-history-row-bust {
-    -fx-border-color: #7f1d1d;
+
+.dealer-history-tile {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 8;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 6 10 6 10;
+    -fx-min-width: 78;
+    -fx-pref-width: 78;
+}
+.dealer-history-tile-round {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 9.5px;
+    -fx-font-weight: bold;
+}
+.dealer-history-tile-score {
+    -fx-text-fill: #e5e7eb;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+.dealer-history-tile-tag {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 0 0 0;
+}
+
+/* Bust: red tint + red score so the eye lands on the failed rounds first. */
+.dealer-history-tile-bust {
+    -fx-background-color: rgba(127, 29, 29, 0.22);
+    -fx-border-color: rgba(248, 113, 113, 0.55);
+}
+.dealer-history-tile-bust .dealer-history-tile-score {
     -fx-text-fill: #fecaca;
 }
-.dealer-history-row-blackjack {
-    -fx-border-color: #b45309;
+.dealer-history-tile-bust .dealer-history-tile-tag {
+    -fx-text-fill: #f87171;
+}
+
+/* Natural 21 / blackjack: gold tint matching the painted-felt palette. */
+.dealer-history-tile-blackjack {
+    -fx-background-color: rgba(180, 83, 9, 0.22);
+    -fx-border-color: rgba(232, 200, 120, 0.65);
+}
+.dealer-history-tile-blackjack .dealer-history-tile-score {
     -fx-text-fill: #fde68a;
+}
+.dealer-history-tile-blackjack .dealer-history-tile-tag {
+    -fx-text-fill: #e9d8a6;
 }
 
 /* W/L badge under each player's name in the right-column balances list. */

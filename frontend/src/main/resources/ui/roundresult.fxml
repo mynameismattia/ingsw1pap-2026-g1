@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -60,7 +61,8 @@
 
                 <Label fx:id="dealerHistoryHeader" text="%roundresult.dealer.history"
                        styleClass="field-label"/>
-                <VBox fx:id="dealerHistoryList" spacing="4"/>
+                <FlowPane fx:id="dealerHistoryList" styleClass="dealer-history-grid"
+                          hgap="6" vgap="6" prefWrapLength="260"/>
 
                 <Region VBox.vgrow="ALWAYS"/>
             </VBox>
