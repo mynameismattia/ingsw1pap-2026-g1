@@ -201,13 +201,9 @@ public class LicenseController {
     }
 
     private void launchMenu() {
-        // First-time transition from the small license window (480×550, non-resizable)
-        // up to the menu — explicitly grow the stage, then navigate. From the menu
-        // onward, Navigation.navigate preserves whatever size the user picked.
         Stage stage = (Stage) licenseField.getScene().getWindow();
         stage.setResizable(true);
-        stage.setWidth(1100);
-        stage.setHeight(680);
+        stage.setMaximized(true);
         Navigation.navigate(stage, "/ui/menu.fxml");
     }
 

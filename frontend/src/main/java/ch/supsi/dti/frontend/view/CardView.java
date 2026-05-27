@@ -5,26 +5,29 @@ import ch.supsi.dti.backend.model.Rank;
 import ch.supsi.dti.backend.model.Suit;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 
-public class CardView extends Label {
-    private static final double CARD_WIDTH = 60;
-    private static final double CARD_HEIGHT = 90;
+/**
+ * Uses the bundled artwork as the card surface:
+ * <ul>
+ *   <li>face → {@code /ui/front_blank_card.png} (cream cardstock with navy filigree border)</li>
+ *   <li>back → {@code /ui/cards/back_card.png} (navy lattice + central compass ornament)</li>
+ * </ul>
+ *
+ * <p>On the face, the controller overlays rank + suit text in the top-left and
+ * the bottom-right (rotated 180° — real playing-card anatomy) plus a large suit
+ * symbol in the centre, all positioned inside the printed filigree frame.
+ * Suit-coloured: deep red for ♥/♦, dark navy for ♠/♣ — matches the border ink.</p>
+ *
+ * <p>All visual styling lives in {@code menu.css} so future tweaks are a
+ * single-file edit; menu.css is the universally-loaded stylesheet across every
+ * scene that displays a card.</p>
+ */
+public class CardView extends StackPane {
 
-    private static final String STYLE_FACE_UP =
-            "-fx-background-color: white;" +
-                    "-fx-border-color: black;" +
-                    "-fx-border-width: 1;" +
-                    "-fx-border-radius: 6;" +
-                    "-fx-background-radius: 6;" +
-                    "-fx-font-size: 18px;" +
-                    "-fx-font-weight: bold;";
-
-    private static final String STYLE_FACE_DOWN =
-            "-fx-background-color: #1a3a8a;" +
-                    "-fx-border-color: white;" +
-                    "-fx-border-width: 2;" +
-                    "-fx-border-radius: 6;" +
-                    "-fx-background-radius: 6;";
+    private static final double CARD_WIDTH = 92;
+    private static final double CARD_HEIGHT = 130;
 
     private Card card;
 
@@ -32,24 +35,45 @@ public class CardView extends Label {
         setMinSize(CARD_WIDTH, CARD_HEIGHT);
         setPrefSize(CARD_WIDTH, CARD_HEIGHT);
         setMaxSize(CARD_WIDTH, CARD_HEIGHT);
-        setAlignment(Pos.CENTER);
+        getStyleClass().add("card-view");
         setCard(card);
     }
 
     public void setCard(Card card) {
         this.card = card;
+        getChildren().clear();
+        getStyleClass().removeAll("card-face", "card-back",
+                "card-suit-red", "card-suit-black");
         if (card == null) {
-            setText("");
-            setStyle(STYLE_FACE_DOWN);
+            // Back is a single self-contained PNG — no overlay needed.
+            getStyleClass().add("card-back");
         } else {
-            setText(rankSymbol(card.getRank()) + suitSymbol(card.getSuit()));
-            String color = isRed(card.getSuit()) ? "red" : "black";
-            setStyle(STYLE_FACE_UP + "-fx-text-fill: " + color + ";");
+            getStyleClass().addAll("card-face",
+                    isRed(card.getSuit()) ? "card-suit-red" : "card-suit-black");
+            renderFaceOverlay(card);
         }
     }
+
     public Card getCard() {
         return card;
     }
+
+    // ── Face overlay ────────────────────────────────────────────────
+
+    private void renderFaceOverlay(Card c) {
+        Label rankLbl = new Label(rankSymbol(c.getRank()));
+        rankLbl.getStyleClass().add("card-rank");
+
+        Label suitLbl = new Label(suitSymbol(c.getSuit()));
+        suitLbl.getStyleClass().add("card-suit");
+
+        VBox content = new VBox(2, rankLbl, suitLbl);
+        content.setAlignment(Pos.CENTER);
+        StackPane.setAlignment(content, Pos.CENTER);
+        getChildren().add(content);
+    }
+
+    // ── Glyph maps ──────────────────────────────────────────────────
 
     private static String rankSymbol(Rank rank) {
         return switch (rank) {
@@ -71,10 +95,10 @@ public class CardView extends Label {
 
     private static String suitSymbol(Suit suit) {
         return switch (suit) {
-            case HEARTS   -> "\u2665"; // ♥
-            case DIAMONDS -> "\u2666"; // ♦
-            case CLUBS    -> "\u2663"; // ♣
-            case SPADES   -> "\u2660"; // ♠
+            case HEARTS   -> "♥";
+            case DIAMONDS -> "♦";
+            case CLUBS    -> "♣";
+            case SPADES   -> "♠";
         };
     }
 

@@ -12,6 +12,20 @@
     -fx-border-width: 0 1 0 1;
 }
 
+/* Image-backed felt — uses the bundled blackjack_table.png so the felt
+   carries its own painted "Just 21" + rules text and a printed chip-slot
+   rectangle near the bottom. The image is stretched to fill the column
+   so the slot stays in the same proportional position at any window size. */
+.table-felt-img {
+    -fx-background-color: #0a1f12;          /* fallback while image loads */
+    -fx-background-image: url("blackjack_table.png");
+    -fx-background-size: 100% 100%;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-border-color: #2a2e38;
+    -fx-border-width: 0 1 0 1;
+}
+
 .table-oval {
     -fx-background-color: rgba(255,255,255,0.04);
     -fx-background-radius: 200;
@@ -32,23 +46,15 @@
     -fx-padding: 8 12 8 10;
 }
 .seat-row-active {
+    -fx-background-color: linear-gradient(to right, rgba(59,130,246,0.18) 0%, #1e2029 70%);
     -fx-border-color: #3b82f6;
-    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.35), 12, 0.4, 0, 0);
+    -fx-border-width: 1 1 1 3;
+    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.45), 14, 0.5, 0, 0);
 }
 
-.seat-avatar {
-    -fx-background-color: #3b82f6;
-    -fx-background-radius: 50;
-    -fx-min-width: 32; -fx-pref-width: 32; -fx-max-width: 32;
-    -fx-min-height: 32; -fx-pref-height: 32; -fx-max-height: 32;
-}
-.seat-avatar-bob { -fx-background-color: #4ade80; }
-.seat-avatar-cpu { -fx-background-color: #6b7280; }
-.seat-avatar-initial {
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 14px;
-    -fx-font-weight: bold;
-}
+/* Note: .seat-avatar* palette lives in menu.css so the multiplayer-lobby
+   dialog (rendered on top of menu.fxml, which loads only menu.css) can use
+   the same colours that show up here on the felt. */
 
 .seat-name {
     -fx-text-fill: #f3f4f7;
@@ -56,8 +62,9 @@
     -fx-font-weight: bold;
 }
 .seat-balance {
-    -fx-text-fill: #9ca3af;
-    -fx-font-size: 11px;
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
 }
 
 .turn-badge {
@@ -82,17 +89,36 @@
 
 /* ── Seat cards (center table players) ──────────────────────── */
 
+/* Translucent so the painted felt still reads through. The dark tint keeps
+   the cards + name label legible against the bright "Just 21" graphic. */
 .seat-card {
-    -fx-background-color: #1c1f26;
+    -fx-background-color: rgba(15, 18, 24, 0.45);
     -fx-background-radius: 10;
-    -fx-border-color: #2a2e38;
+    -fx-border-color: rgba(255, 255, 255, 0.10);
     -fx-border-radius: 10;
     -fx-border-width: 1;
     -fx-padding: 10;
 }
 .seat-card-active {
+    -fx-background-color: linear-gradient(to bottom,
+            rgba(59, 130, 246, 0.20) 0%, rgba(15, 18, 24, 0.45) 70%);
     -fx-border-color: #3b82f6;
-    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.35), 14, 0.4, 0, 0);
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(59,130,246,0.55), 18, 0.5, 0, 0);
+}
+
+/* Benched seat — no cards, dimmed, nudged lower in the row via translateY in
+   Java. Background pulled toward the felt and text muted so the seat reads
+   as "out for now, not part of this round". */
+.seat-card-sitting-out {
+    -fx-background-color: #15181f;
+    -fx-border-color: #2a2e38;
+    -fx-opacity: 0.55;
+    -fx-padding: 6 14 6 14;
+}
+.seat-card-sitting-out .seat-card-name,
+.seat-card-sitting-out .seat-card-score {
+    -fx-text-fill: #6b7280;
 }
 .seat-card-ghost {
     -fx-opacity: 0.85;
@@ -126,30 +152,45 @@
     -fx-font-weight: bold;
 }
 
+/* Phase pill: declares the current game phase (BET / TURN / DEALER / RESULT).
+   A single colour variant class swaps tint per phase. */
+.phase-pill {
+    -fx-background-radius: 8;
+    -fx-padding: 4 12 4 12;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+.phase-pill-bet    { -fx-background-color: #3b82f6; }
+.phase-pill-play   { -fx-background-color: #10b981; }
+.phase-pill-dealer { -fx-background-color: #6b7280; }
+.phase-pill-result { -fx-background-color: #f59e0b; -fx-text-fill: #1a1a1a; }
+
 /* ── Chip buttons (right column) ────────────────────────────── */
 
 .chip-button {
-    -fx-background-radius: 100;
-    -fx-min-width: 56; -fx-pref-width: 56; -fx-max-width: 56;
-    -fx-min-height: 56; -fx-pref-height: 56; -fx-max-height: 56;
-    -fx-border-color: #ffffff;
-    -fx-border-width: 2;
-    -fx-border-radius: 100;
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 13px;
-    -fx-font-weight: bold;
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-min-width: 64; -fx-pref-width: 64; -fx-max-width: 64;
+    -fx-min-height: 64; -fx-pref-height: 64; -fx-max-height: 64;
+    -fx-padding: 0;
+    -fx-content-display: graphic-only;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center center;
+    -fx-background-size: contain;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 6, 0.2, 0, 2);
 }
-.chip-button:hover  { -fx-scale-x: 1.06; -fx-scale-y: 1.06; }
-.chip-button:disabled { -fx-opacity: 0.30; }
+.chip-button:hover     { -fx-scale-x: 1.06; -fx-scale-y: 1.06; }
+.chip-button:disabled  { -fx-opacity: 0.30; }
 
-.chip-5    { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #9ca3af 0%, #6b7280 100%); }
-.chip-10   { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #4ade80 0%, #16a34a 100%); }
-.chip-25   { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #5b9bff 0%, #2563eb 100%); }
-.chip-50   { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #a78bfa 0%, #7c3aed 100%); }
-.chip-100  { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #fb923c 0%, #ea580c 100%); }
-.chip-250  { -fx-background-color: radial-gradient(center 50% 50%, radius 60%, #f87171 0%, #dc2626 100%); }
+.chip-5    { -fx-background-image: url("chips/5_dollars_chip.png"); }
+.chip-10   { -fx-background-image: url("chips/10_dollars_chip.png"); }
+.chip-25   { -fx-background-image: url("chips/25_dollars_chip.png"); }
+.chip-50   { -fx-background-image: url("chips/50_dollars_chip.png"); }
+.chip-100  { -fx-background-image: url("chips/100_dollars_chip.png"); }
+.chip-250  { -fx-background-image: url("chips/250_dollars_chip.png"); }
 
 /* ── Current bet card ───────────────────────────────────────── */
 
@@ -189,18 +230,63 @@
     -fx-font-weight: bold;
 }
 
-/* ── In-game message banner ─────────────────────────────────── */
+/* ── In-game hint banner (single source of truth for "what to do") ── */
 
-.message-banner {
-    -fx-text-fill: #fbbf24;
-    -fx-font-size: 14px;
+.hint-banner {
+    -fx-background-color: rgba(0, 0, 0, 0.35);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(255, 255, 255, 0.08);
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 17px;
     -fx-font-weight: bold;
+    -fx-padding: 10 16 10 16;
 }
 
-.betting-prompt {
-    -fx-text-fill: #c9ccd4;
-    -fx-font-size: 12px;
-    -fx-font-style: italic;
+/* ── Deal button (bottom-right of the felt) ─────────────────
+   Tuned to match the painted "Just 21" gold banner rather than
+   the lobby's bright blue primary — translucent dark base, gold
+   border and text so it reads as "part of the table". */
+
+.deal-button {
+    -fx-background-color: rgba(0, 0, 0, 0.42);
+    -fx-background-radius: 10;
+    -fx-border-color: rgba(212, 175, 102, 0.55);
+    -fx-border-radius: 10;
+    -fx-border-width: 1.2;
+    -fx-text-fill: #e9d8a6;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 22 12 22;
+    -fx-cursor: hand;
+}
+.deal-button:hover {
+    -fx-background-color: rgba(0, 0, 0, 0.55);
+    -fx-border-color: rgba(232, 200, 120, 0.85);
+    -fx-text-fill: #f3e2b3;
+}
+.deal-button:pressed {
+    -fx-background-color: rgba(0, 0, 0, 0.65);
+}
+.deal-button:disabled {
+    -fx-opacity: 0.45;
+}
+
+/* ── Balance hero (right column top) ─────────────────────────── */
+
+.balance-card {
+    -fx-background-color: #252934;
+    -fx-background-radius: 10;
+    -fx-border-color: #353a47;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 10 14 10 14;
+}
+.balance-hero {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
 }
 
 /* ── Action bar (hit/stand/double/split/insure under table) ─ */
@@ -224,6 +310,83 @@
 }
 .action-button:hover  { -fx-background-color: #2c313d; }
 .action-button:disabled { -fx-opacity: 0.4; }
+
+/* Per-action colour palette — gives users a quick semantic read of each
+   button (green = take a card, red = stop, amber = risk, etc.).  Rules sit
+   after the neutral .action-button base so source-order wins for same
+   specificity; no need for !important. */
+
+.action-hit {
+    -fx-background-color: linear-gradient(to bottom, #22c55e, #16a34a);
+    -fx-border-color: #15803d;
+    -fx-text-fill: white;
+}
+.action-hit:hover {
+    -fx-background-color: linear-gradient(to bottom, #4ade80, #22c55e);
+}
+.action-hit:pressed {
+    -fx-background-color: linear-gradient(to bottom, #16a34a, #15803d);
+}
+
+.action-stand {
+    -fx-background-color: linear-gradient(to bottom, #ef4444, #dc2626);
+    -fx-border-color: #b91c1c;
+    -fx-text-fill: white;
+}
+.action-stand:hover {
+    -fx-background-color: linear-gradient(to bottom, #f87171, #ef4444);
+}
+.action-stand:pressed {
+    -fx-background-color: linear-gradient(to bottom, #dc2626, #b91c1c);
+}
+
+.action-double {
+    -fx-background-color: linear-gradient(to bottom, #f59e0b, #d97706);
+    -fx-border-color: #b45309;
+    -fx-text-fill: white;
+}
+.action-double:hover {
+    -fx-background-color: linear-gradient(to bottom, #fbbf24, #f59e0b);
+}
+.action-double:pressed {
+    -fx-background-color: linear-gradient(to bottom, #d97706, #b45309);
+}
+
+.action-split {
+    -fx-background-color: linear-gradient(to bottom, #a78bfa, #7c3aed);
+    -fx-border-color: #6d28d9;
+    -fx-text-fill: white;
+}
+.action-split:hover {
+    -fx-background-color: linear-gradient(to bottom, #c4b5fd, #a78bfa);
+}
+.action-split:pressed {
+    -fx-background-color: linear-gradient(to bottom, #7c3aed, #6d28d9);
+}
+
+.action-insure {
+    -fx-background-color: linear-gradient(to bottom, #eab308, #ca8a04);
+    -fx-border-color: #a16207;
+    -fx-text-fill: #1a1a1a;
+}
+.action-insure:hover {
+    -fx-background-color: linear-gradient(to bottom, #facc15, #eab308);
+}
+.action-insure:pressed {
+    -fx-background-color: linear-gradient(to bottom, #ca8a04, #a16207);
+}
+
+/* Decline is the passive "no thanks" — stays muted so the colourful Insure
+   button reads as the encouraged choice and Decline as the way out. */
+.action-decline {
+    -fx-background-color: #252934;
+    -fx-border-color: #4b5563;
+    -fx-text-fill: #9ca3af;
+}
+.action-decline:hover {
+    -fx-background-color: #2c313d;
+    -fx-text-fill: #c9ccd4;
+}
 
 /* ──────────────────────────────────────────────────────────────
    Round Result screen (Mockup04) — defined here so a single
@@ -348,4 +511,244 @@
     -fx-text-fill: #f3f4f7;
     -fx-font-size: 14px;
     -fx-font-weight: bold;
+}
+
+.saved-pill {
+    -fx-background-color: linear-gradient(to bottom, #224d35, #1c3f2c);
+    -fx-background-radius: 10;
+    -fx-border-color: #3a8a55;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 4 12 4 12;
+    -fx-text-fill: #d6f5e1;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Round Result revamp — hero net-delta, progress dots,
+   session band. The trophy/winner-circle styles above are
+   legacy and unused by the new layout.
+   ────────────────────────────────────────────────────────────── */
+
+/* Round 10/10 — title gets a gold accent. */
+.titlebar-title-final {
+    -fx-text-fill: #fbbf24;
+}
+
+/* Tiny dots in the titlebar showing session progress. */
+.progress-dot {
+    -fx-text-fill: #353a47;
+    -fx-font-size: 12px;
+}
+.progress-dot-done    { -fx-text-fill: #4ade80; }
+.progress-dot-current { -fx-text-fill: #fbbf24; -fx-font-size: 14px; }
+
+/* Sub-titlebar band with the cumulative session line. */
+.session-band {
+    -fx-background-color: #161a22;
+}
+.session-line {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12.5px;
+    -fx-font-style: italic;
+}
+
+/* Dealer outcome banner above the heroes — gives the round its headline. */
+.dealer-banner {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 12 18 12 18;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+.dealer-banner-bust {
+    -fx-background-color: linear-gradient(to bottom, #4a1414, #2e0d0d);
+    -fx-border-color: #f87171;
+    -fx-text-fill: #fecaca;
+    -fx-effect: dropshadow(gaussian, rgba(248,113,113,0.35), 16, 0.3, 0, 0);
+}
+.dealer-banner-stand {
+    -fx-background-color: linear-gradient(to bottom, #1f2937, #161c25);
+    -fx-border-color: #4a5568;
+    -fx-text-fill: #e5e7eb;
+}
+.dealer-banner-blackjack {
+    -fx-background-color: linear-gradient(to bottom, #4a3a10, #2e2509);
+    -fx-border-color: #fbbf24;
+    -fx-text-fill: #fde68a;
+    -fx-effect: dropshadow(gaussian, rgba(251,191,36,0.4), 18, 0.35, 0, 0);
+}
+
+.round-meta {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 12px;
+    -fx-font-style: italic;
+}
+
+/* Hero net-delta block — one per human player.
+   A coloured 3px top stripe + a faint tinted background pull the block into
+   a card. Seat-colour matches the avatar palette so seat 1 here = the blue
+   you see on the felt and in the lobby. */
+.hero-block {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 10;
+    /* top right bottom left — top edge is the seat-colour stripe (3px),
+       other sides keep the muted neutral border (1px) */
+    -fx-border-color: #3b82f6 #353a47 #353a47 #353a47;
+    -fx-border-width: 3 1 1 1;
+    -fx-border-radius: 10;
+    -fx-padding: 14 22 18 22;
+    -fx-min-width: 170;
+    -fx-spacing: 4;
+}
+.hero-block-seat1 { -fx-border-color: #3b82f6 #353a47 #353a47 #353a47; }
+.hero-block-seat2 { -fx-border-color: #4ade80 #353a47 #353a47 #353a47; }
+.hero-block-seat3 { -fx-border-color: #f59e0b #353a47 #353a47 #353a47; }
+.hero-block-seat4 { -fx-border-color: #a78bfa #353a47 #353a47 #353a47; }
+
+.hero-name {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 12.5px;
+    -fx-font-weight: bold;
+}
+.hero-delta-pos {
+    -fx-text-fill: #4ade80;
+    -fx-font-size: 52px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(74,222,128,0.45), 14, 0.35, 0, 0);
+}
+.hero-delta-neg {
+    -fx-text-fill: #f87171;
+    -fx-font-size: 52px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(248,113,113,0.45), 14, 0.35, 0, 0);
+}
+.hero-delta-neutral {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 52px;
+    -fx-font-weight: bold;
+}
+
+/* ── Balance-over-rounds chart ─────────────────────────────── */
+
+.chart-container {
+    -fx-background-color: #15181f;
+    -fx-background-radius: 10;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 10;
+    -fx-border-width: 1;
+    -fx-padding: 10;
+}
+.balance-chart {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.balance-chart .chart-content {
+    -fx-padding: 0;
+}
+.balance-chart .chart-plot-background {
+    -fx-background-color: transparent;
+}
+.balance-chart .chart-vertical-grid-lines,
+.balance-chart .chart-horizontal-grid-lines {
+    -fx-stroke: rgba(255,255,255,0.05);
+}
+.balance-chart .chart-alternative-row-fill,
+.balance-chart .chart-alternative-column-fill {
+    -fx-fill: transparent;
+}
+.balance-chart .axis {
+    -fx-tick-label-fill: #9ca3af;
+    -fx-tick-mark-stroke: #353a47;
+    -fx-minor-tick-mark-stroke: #353a47;
+    -fx-font-size: 10.5px;
+}
+.balance-chart .axis-label {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 11px;
+}
+.balance-chart .chart-legend {
+    -fx-background-color: transparent;
+    -fx-padding: 4 0 0 0;
+}
+.balance-chart .chart-legend-item {
+    -fx-text-fill: #c9ccd4;
+    -fx-font-size: 11px;
+}
+
+/* Dealer round-by-round score history (left column).
+   Tile grid: each round is a small card with round label + big score +
+   optional outcome tag. Color-coded by outcome so the eye can scan for
+   busts and blackjacks at a glance. */
+.dealer-history-grid {
+    -fx-padding: 2 0 2 0;
+}
+
+.dealer-history-tile {
+    -fx-background-color: #1c1f26;
+    -fx-background-radius: 8;
+    -fx-border-color: #2a2e38;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 6 10 6 10;
+    -fx-min-width: 78;
+    -fx-pref-width: 78;
+}
+.dealer-history-tile-round {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 9.5px;
+    -fx-font-weight: bold;
+}
+.dealer-history-tile-score {
+    -fx-text-fill: #e5e7eb;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+.dealer-history-tile-tag {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+    -fx-padding: 1 0 0 0;
+}
+
+/* Bust: red tint + red score so the eye lands on the failed rounds first. */
+.dealer-history-tile-bust {
+    -fx-background-color: rgba(127, 29, 29, 0.22);
+    -fx-border-color: rgba(248, 113, 113, 0.55);
+}
+.dealer-history-tile-bust .dealer-history-tile-score {
+    -fx-text-fill: #fecaca;
+}
+.dealer-history-tile-bust .dealer-history-tile-tag {
+    -fx-text-fill: #f87171;
+}
+
+/* Natural 21 / blackjack: gold tint matching the painted-felt palette. */
+.dealer-history-tile-blackjack {
+    -fx-background-color: rgba(180, 83, 9, 0.22);
+    -fx-border-color: rgba(232, 200, 120, 0.65);
+}
+.dealer-history-tile-blackjack .dealer-history-tile-score {
+    -fx-text-fill: #fde68a;
+}
+.dealer-history-tile-blackjack .dealer-history-tile-tag {
+    -fx-text-fill: #e9d8a6;
+}
+
+/* W/L badge under each player's name in the right-column balances list. */
+.balance-mini-stats {
+    -fx-text-fill: #6b7280;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+}
+.hero-headline {
+    -fx-text-fill: #f3f4f7;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+.hero-detail {
+    -fx-text-fill: #9ca3af;
+    -fx-font-size: 12.5px;
 }

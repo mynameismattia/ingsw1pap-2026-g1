@@ -1,106 +1,126 @@
 {
-  "currentRoundNumber" : 1,
-  "remainingDeckCards" : 295,
+  "currentRoundNumber" : 10,
+  "remainingDeckCards" : 304,
   "playersData" : [ {
-    "name" : "Player 1",
+    "name" : "Felice",
     "balance" : 0,
     "isBot" : false
   }, {
-    "name" : "Croupier Carl",
-    "balance" : 67,
-    "isBot" : true
-  }, {
-    "name" : "Lucky Lou",
-    "balance" : 57,
-    "isBot" : true
-  }, {
-    "name" : "Diamond Doris",
-    "balance" : 45,
-    "isBot" : true
+    "name" : "Mattia",
+    "balance" : 8000,
+    "isBot" : false
   } ],
   "roundHistory" : [ {
-    "playerName" : "Croupier Carl",
-    "bet" : 5,
-    "outcome" : "BLACKJACK",
-    "playerScore" : 21,
-    "dealerScore" : 7,
-    "timestamp" : "2026-05-20T22:01:26.535460900Z"
+    "playerName" : "Felice",
+    "bet" : 1000,
+    "outcome" : "WIN",
+    "playerScore" : 19,
+    "dealerScore" : 18,
+    "timestamp" : "2026-05-26T17:18:27.329001600Z"
   }, {
-    "playerName" : "Lucky Lou",
-    "bet" : 5,
-    "outcome" : "BLACKJACK",
+    "playerName" : "Mattia",
+    "bet" : 1000,
+    "outcome" : "WIN",
     "playerScore" : 21,
-    "dealerScore" : 7,
-    "timestamp" : "2026-05-20T22:01:26.535460900Z"
+    "dealerScore" : 18,
+    "timestamp" : "2026-05-26T17:18:27.329001600Z"
   }, {
-    "playerName" : "Player 1",
-    "bet" : 10,
+    "playerName" : "Felice",
+    "bet" : 1000,
     "outcome" : "LOSE",
     "playerScore" : 16,
-    "dealerScore" : 18,
-    "timestamp" : "2026-05-20T22:01:34.866553500Z"
+    "dealerScore" : 17,
+    "timestamp" : "2026-05-26T17:18:45.009136400Z"
   }, {
-    "playerName" : "Diamond Doris",
-    "bet" : 5,
-    "outcome" : "LOSE",
-    "playerScore" : 23,
-    "dealerScore" : 18,
-    "timestamp" : "2026-05-20T22:01:34.866553500Z"
-  }, {
-    "playerName" : "Player 1",
-    "bet" : 25,
+    "playerName" : "Mattia",
+    "bet" : 1000,
     "outcome" : "WIN",
-    "playerScore" : 16,
-    "dealerScore" : 23,
-    "timestamp" : "2026-05-20T22:02:00.562746600Z"
+    "playerScore" : 18,
+    "dealerScore" : 17,
+    "timestamp" : "2026-05-26T17:18:45.009136400Z"
   }, {
-    "playerName" : "Croupier Carl",
-    "bet" : 5,
-    "outcome" : "WIN",
+    "playerName" : "Felice",
+    "bet" : 500,
+    "outcome" : "PUSH",
     "playerScore" : 20,
-    "dealerScore" : 23,
-    "timestamp" : "2026-05-20T22:02:00.562746600Z"
+    "dealerScore" : 20,
+    "timestamp" : "2026-05-26T17:19:05.952788400Z"
   }, {
-    "playerName" : "Lucky Lou",
-    "bet" : 5,
+    "playerName" : "Mattia",
+    "bet" : 1000,
     "outcome" : "LOSE",
     "playerScore" : 23,
-    "dealerScore" : 23,
-    "timestamp" : "2026-05-20T22:02:00.562746600Z"
+    "dealerScore" : 20,
+    "timestamp" : "2026-05-26T17:19:05.952788400Z"
   }, {
-    "playerName" : "Diamond Doris",
-    "bet" : 5,
+    "playerName" : "Felice",
+    "bet" : 500,
     "outcome" : "WIN",
     "playerScore" : 17,
+    "dealerScore" : 22,
+    "timestamp" : "2026-05-26T17:19:17.728956400Z"
+  }, {
+    "playerName" : "Mattia",
+    "bet" : 1000,
+    "outcome" : "WIN",
+    "playerScore" : 16,
+    "dealerScore" : 22,
+    "timestamp" : "2026-05-26T17:19:17.728956400Z"
+  }, {
+    "playerName" : "Felice",
+    "bet" : 1000,
+    "outcome" : "LOSE",
+    "playerScore" : 24,
+    "dealerScore" : 17,
+    "timestamp" : "2026-05-26T17:19:31.489255300Z"
+  }, {
+    "playerName" : "Mattia",
+    "bet" : 1000,
+    "outcome" : "WIN",
+    "playerScore" : 19,
+    "dealerScore" : 17,
+    "timestamp" : "2026-05-26T17:19:31.489255300Z"
+  }, {
+    "playerName" : "Mattia",
+    "bet" : 1000,
+    "outcome" : "WIN",
+    "playerScore" : 20,
+    "dealerScore" : 25,
+    "timestamp" : "2026-05-26T17:19:42.752775100Z"
+  }, {
+    "playerName" : "Mattia",
+    "bet" : 1000,
+    "outcome" : "WIN",
+    "playerScore" : 20,
+    "dealerScore" : 17,
+    "timestamp" : "2026-05-26T17:20:06.305035700Z"
+  }, {
+    "playerName" : "Mattia",
+    "bet" : 1000,
+    "outcome" : "LOSE",
+    "playerScore" : 13,
+    "dealerScore" : 17,
+    "timestamp" : "2026-05-26T17:20:18.800920100Z"
+  }, {
+    "playerName" : "Mattia",
+    "bet" : 2000,
+    "outcome" : "WIN",
+    "playerScore" : 16,
+    "dealerScore" : 22,
+    "timestamp" : "2026-05-26T17:20:27.889019300Z"
+  }, {
+    "playerName" : "Mattia",
+    "bet" : 1000,
+    "outcome" : "WIN",
+    "playerScore" : 20,
     "dealerScore" : 23,
-    "timestamp" : "2026-05-20T22:02:00.562746600Z"
+    "timestamp" : "2026-05-26T17:20:36.352741700Z"
   }, {
-    "playerName" : "Player 1",
-    "bet" : 65,
-    "outcome" : "LOSE",
-    "playerScore" : 14,
-    "dealerScore" : 18,
-    "timestamp" : "2026-05-20T22:02:44.167646300Z"
-  }, {
-    "playerName" : "Croupier Carl",
-    "bet" : 5,
+    "playerName" : "Mattia",
+    "bet" : 1000,
     "outcome" : "WIN",
-    "playerScore" : 20,
+    "playerScore" : 19,
     "dealerScore" : 18,
-    "timestamp" : "2026-05-20T22:02:44.167646300Z"
-  }, {
-    "playerName" : "Lucky Lou",
-    "bet" : 5,
-    "outcome" : "WIN",
-    "playerScore" : 20,
-    "dealerScore" : 18,
-    "timestamp" : "2026-05-20T22:02:44.167646300Z"
-  }, {
-    "playerName" : "Diamond Doris",
-    "bet" : 5,
-    "outcome" : "LOSE",
-    "playerScore" : 26,
-    "dealerScore" : 18,
-    "timestamp" : "2026-05-20T22:02:44.167646300Z"
+    "timestamp" : "2026-05-26T17:20:49.969710Z"
   } ]
 }

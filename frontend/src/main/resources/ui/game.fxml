@@ -3,6 +3,7 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TableView?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
@@ -15,7 +16,7 @@
            stylesheets="@menu.css, @game.css"
            prefWidth="1100" prefHeight="680">
 
-    <VBox styleClass="card" maxWidth="1040" maxHeight="620" spacing="0">
+    <VBox styleClass="card" spacing="0">
 
         <!-- ── Titlebar ───────────────────────────────────────── -->
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
@@ -24,6 +25,7 @@
             <Button text="%game.titlebar.menu" onAction="#onBackToMenuClicked" styleClass="icon-button"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="roundLabel" text="" styleClass="round-pill"/>
+            <Label fx:id="phaseLabel" text="" styleClass="phase-pill" visible="false" managed="false"/>
             <Label fx:id="deckLabel"  text="" styleClass="deck-pill"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Button fx:id="settingsBtn" text="⚙" onAction="#onSettingsClicked" styleClass="icon-button"/>
@@ -47,95 +49,168 @@
 
                 <Button fx:id="historyButton" text="%game.button.history" onAction="#onHistoryClicked"
                         styleClass="secondary-button" maxWidth="Infinity"/>
-                <Button text="%game.action.save" onAction="#onSaveClicked"
-                        styleClass="secondary-button" maxWidth="Infinity"/>
                 <Button text="%game.action.quit" onAction="#onQuitClicked"
                         styleClass="danger-button" maxWidth="Infinity"/>
             </VBox>
 
             <Region styleClass="vdivider"/>
 
-            <!-- ── Center column: green table ─────────────────── -->
-            <VBox HBox.hgrow="ALWAYS" styleClass="table-felt" spacing="10">
-                <padding><Insets top="20" right="24" bottom="20" left="24"/></padding>
+            <!-- ── Center column: painted felt + positioned overlays ── -->
+            <StackPane HBox.hgrow="ALWAYS" styleClass="table-felt-img">
 
-                <!-- Dealer section -->
-                <Label text="%game.dealer" styleClass="seat-card-name" alignment="CENTER" maxWidth="Infinity"/>
-                <HBox fx:id="dealerCardsBox" alignment="CENTER" spacing="6" minHeight="100"/>
-                <HBox alignment="CENTER">
-                    <Label fx:id="dealerScoreLabel" text="" styleClass="dealer-score-pill"/>
-                </HBox>
+                <!-- Main vertical flow: hint → dealer → seats → chip slot. -->
+                <VBox spacing="6">
+                    <padding><Insets top="10" right="24" bottom="14" left="24"/></padding>
 
-                <!-- Decorative table oval -->
-                <Region VBox.vgrow="ALWAYS" styleClass="table-oval" maxWidth="Infinity"/>
+                    <!-- Hint banner at the top — single source of truth for "what to do" -->
+                    <Label fx:id="hintLabel" text="" styleClass="hint-banner"
+                           alignment="CENTER" maxWidth="Infinity"/>
 
-                <!-- Player seats row -->
-                <HBox fx:id="playersRow" alignment="CENTER" spacing="20"/>
+                    <!-- Dealer cards in a seat-card tray, matching the player
+                         seats' translucent dark background. -->
+                    <HBox alignment="CENTER">
+                        <VBox fx:id="dealerTray" styleClass="seat-card" alignment="CENTER" spacing="6">
+                            <HBox fx:id="dealerCardsBox" alignment="CENTER" spacing="6" minHeight="120"/>
+                            <HBox alignment="CENTER">
+                                <Label fx:id="dealerScoreLabel" text="" styleClass="dealer-score-pill"/>
+                            </HBox>
+                        </VBox>
+                    </HBox>
 
-                <!-- Status message + sequential betting prompt -->
-                <Label fx:id="messageLabel" text="" styleClass="message-banner"
-                       alignment="CENTER" maxWidth="Infinity"/>
-                <Label fx:id="bettingPromptLabel" text="" styleClass="betting-prompt"
-                       alignment="CENTER" maxWidth="Infinity"/>
+                    <!-- Spacer that lets the painted "Just 21" + rules text show
+                         through the felt. Bumped so seats sit slightly lower. -->
+                    <Region prefHeight="165" VBox.vgrow="ALWAYS"/>
 
-                <!-- Action bar -->
-                <HBox styleClass="action-bar" alignment="CENTER" spacing="8">
-                    <Button fx:id="hitButton"    text="%game.button.hit"    onAction="#onHitClicked"    styleClass="action-button, no-click-sfx"/>
-                    <Button fx:id="standButton"  text="%game.button.stand"  onAction="#onStandClicked"  styleClass="action-button"/>
-                    <Button fx:id="doubleButton" text="%game.button.double" onAction="#onDoubleClicked" styleClass="action-button"/>
-                    <Button fx:id="splitButton"  text="%game.button.split"  onAction="#onSplitClicked"  styleClass="action-button"/>
-                    <Button fx:id="insureButton" text="%game.button.insure" onAction="#onInsureClicked" styleClass="action-button"/>
-                    <Button fx:id="declineInsuranceButton" text="%game.button.declineInsurance"
-                            onAction="#onDeclineInsuranceClicked" styleClass="action-button"/>
-                    <Button fx:id="viewResultsButton" text="%game.action.viewResults"
-                            onAction="#onViewResultsClicked" styleClass="primary-button"/>
-                </HBox>
-            </VBox>
+                    <!-- Player seats row, between painted text and chip slot. -->
+                    <HBox fx:id="playersRow" alignment="CENTER" spacing="20"/>
 
-            <Region styleClass="vdivider"/>
+                    <Region prefHeight="50" VBox.vgrow="ALWAYS"/>
 
-            <!-- ── Right column: bet + chips ──────────────────── -->
-            <VBox prefWidth="240" minWidth="240" spacing="12">
-                <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                    <!-- Chip slot: chips during BETTING / action bar otherwise. -->
+                    <StackPane fx:id="bottomSlot">
+                        <HBox fx:id="chipsSlot" alignment="CENTER" spacing="10">
+                            <Button fx:id="chip5"   onAction="#onChipClicked"
+                                    styleClass="chip-button, chip-5, no-click-sfx" userData="5"/>
+                            <Button fx:id="chip10"  onAction="#onChipClicked"
+                                    styleClass="chip-button, chip-10, no-click-sfx" userData="10"/>
+                            <Button fx:id="chip25"  onAction="#onChipClicked"
+                                    styleClass="chip-button, chip-25, no-click-sfx" userData="25"/>
+                            <Button fx:id="chip50"  onAction="#onChipClicked"
+                                    styleClass="chip-button, chip-50, no-click-sfx" userData="50"/>
+                            <Button fx:id="chip100" onAction="#onChipClicked"
+                                    styleClass="chip-button, chip-100, no-click-sfx" userData="100"/>
+                            <Button fx:id="chip250" onAction="#onChipClicked"
+                                    styleClass="chip-button, chip-250, no-click-sfx" userData="250"/>
+                        </HBox>
+                        <HBox fx:id="actionBar" styleClass="action-bar" alignment="CENTER" spacing="8">
+                            <Button fx:id="hitButton"    text="%game.button.hit"    onAction="#onHitClicked"    styleClass="action-button, action-hit, no-click-sfx"/>
+                            <Button fx:id="standButton"  text="%game.button.stand"  onAction="#onStandClicked"  styleClass="action-button, action-stand"/>
+                            <Button fx:id="doubleButton" text="%game.button.double" onAction="#onDoubleClicked" styleClass="action-button, action-double"/>
+                            <Button fx:id="splitButton"  text="%game.button.split"  onAction="#onSplitClicked"  styleClass="action-button, action-split"/>
+                            <Button fx:id="insureButton" text="%game.button.insure" onAction="#onInsureClicked" styleClass="action-button, action-insure"/>
+                            <Button fx:id="declineInsuranceButton" text="%game.button.declineInsurance"
+                                    onAction="#onDeclineInsuranceClicked" styleClass="action-button, action-decline"/>
+                            <Button fx:id="viewResultsButton" text="%game.action.viewResults"
+                                    onAction="#onViewResultsClicked" styleClass="primary-button"/>
+                        </HBox>
+                    </StackPane>
 
-                <Label text="%game.panel.bet" styleClass="field-label"/>
-
-                <!-- Chips: 3x2 grid -->
-                <HBox alignment="CENTER" spacing="10">
-                    <Button fx:id="chip5"   text="\$5"   onAction="#onChipClicked"
-                            styleClass="chip-button, chip-5, no-click-sfx" userData="5"/>
-                    <Button fx:id="chip10"  text="\$10"  onAction="#onChipClicked"
-                            styleClass="chip-button, chip-10, no-click-sfx" userData="10"/>
-                    <Button fx:id="chip25"  text="\$25"  onAction="#onChipClicked"
-                            styleClass="chip-button, chip-25, no-click-sfx" userData="25"/>
-                </HBox>
-                <HBox alignment="CENTER" spacing="10">
-                    <Button fx:id="chip50"  text="\$50"  onAction="#onChipClicked"
-                            styleClass="chip-button, chip-50, no-click-sfx" userData="50"/>
-                    <Button fx:id="chip100" text="\$100" onAction="#onChipClicked"
-                            styleClass="chip-button, chip-100, no-click-sfx" userData="100"/>
-                    <Button fx:id="chip250" text="\$250" onAction="#onChipClicked"
-                            styleClass="chip-button, chip-250, no-click-sfx" userData="250"/>
-                </HBox>
-
-                <!-- Current bet card -->
-                <VBox styleClass="current-bet-card" spacing="6">
-                    <Label text="%game.panel.current" styleClass="field-label"/>
-                    <Label fx:id="currentBetLabel" text="\$0" styleClass="current-bet-value"/>
-                    <Button text="%game.panel.clear" onAction="#onClearBet"
-                            styleClass="secondary-button" maxWidth="Infinity"/>
+                    <!-- Lifts the chip slot up into the painted rectangle. -->
+                    <Region prefHeight="70"/>
                 </VBox>
 
-                <Button fx:id="dealButton" text="%game.button.deal" onAction="#onDealClicked"
-                        styleClass="primary-button" maxWidth="Infinity"/>
+                <!-- Saldo + Puntata pinned to the bottom-left of the felt. -->
+                <VBox spacing="10" maxWidth="220" maxHeight="220"
+                      StackPane.alignment="BOTTOM_LEFT">
+                    <StackPane.margin><Insets bottom="20" left="20"/></StackPane.margin>
 
-                <Label text="%game.panel.lastRounds" styleClass="field-label"/>
+                    <VBox styleClass="balance-card" spacing="2">
+                        <Label fx:id="balanceOwnerLabel" text="%game.panel.balance" styleClass="field-label"/>
+                        <Label fx:id="balanceLabel" text="\$0" styleClass="balance-hero"/>
+                    </VBox>
 
-                <VBox fx:id="lastRoundsList" spacing="6"/>
-            </VBox>
+                    <VBox styleClass="current-bet-card" spacing="6">
+                        <Label text="%game.panel.current" styleClass="field-label"/>
+                        <Label fx:id="currentBetLabel" text="\$0" styleClass="current-bet-value"/>
+                        <HBox spacing="6">
+                            <Button text="½" onAction="#onHalfBet"
+                                    styleClass="secondary-button, no-click-sfx" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                            <Button text="2×" onAction="#onDoubleBet"
+                                    styleClass="secondary-button, no-click-sfx" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                        </HBox>
+                        <Button text="%game.panel.clear" onAction="#onClearBet"
+                                styleClass="secondary-button, no-click-sfx" maxWidth="Infinity"/>
+                    </VBox>
+                </VBox>
+
+                <!-- Deal button pinned to the bottom-right of the felt. -->
+                <VBox alignment="BOTTOM_RIGHT" maxWidth="220" maxHeight="80"
+                      StackPane.alignment="BOTTOM_RIGHT">
+                    <StackPane.margin><Insets bottom="20" right="20"/></StackPane.margin>
+                    <Button fx:id="dealButton" text="%game.button.deal" onAction="#onDealClicked"
+                            styleClass="deal-button" maxWidth="Infinity"/>
+                </VBox>
+
+            </StackPane>
 
         </HBox>
 
     </VBox>
+
+    <!-- ── In-scene history overlay ───────────────────────────────── -->
+    <StackPane fx:id="historyOverlay" styleClass="overlay-backdrop"
+               visible="false" managed="false" onMouseClicked="#onHistoryBackdropClicked">
+        <VBox fx:id="historyCard" styleClass="overlay-card" spacing="12"
+              maxWidth="720" maxHeight="440">
+            <padding><Insets top="18" right="18" bottom="18" left="18"/></padding>
+
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Label fx:id="historyTitleLabel" text="%game.history.title" styleClass="dialog-header"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="✕" onAction="#onHideHistoryClicked" styleClass="icon-button"/>
+            </HBox>
+
+            <TableView fx:id="historyTable" styleClass="history-table" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </StackPane>
+
+    <!-- ── In-scene game-over overlay ─────────────────────────────── -->
+    <StackPane fx:id="gameOverOverlay" styleClass="overlay-backdrop"
+               visible="false" managed="false">
+        <VBox styleClass="overlay-card, gameover-card" spacing="18"
+              alignment="TOP_CENTER" maxWidth="560" maxHeight="540">
+            <padding><Insets top="32" right="36" bottom="28" left="36"/></padding>
+
+            <!-- Headline block -->
+            <VBox alignment="CENTER" spacing="6">
+                <Label fx:id="gameOverEyebrow" text="%game.gameover.eyebrow"
+                       styleClass="gameover-eyebrow"/>
+                <Label fx:id="gameOverTitle" text="%game.gameover.title"
+                       styleClass="gameover-title"/>
+                <Label fx:id="gameOverBody" text="" styleClass="gameover-body"
+                       wrapText="true"/>
+            </VBox>
+
+            <Region styleClass="gameover-divider" prefHeight="1" maxHeight="1"/>
+
+            <!-- Final standings — players sorted by balance, with medals -->
+            <VBox spacing="8" maxWidth="Infinity">
+                <Label fx:id="gameOverStandingsHeader" text="%game.gameover.standings"
+                       styleClass="gameover-section-label"/>
+                <VBox fx:id="gameOverBalances" spacing="6"/>
+            </VBox>
+
+            <Region VBox.vgrow="ALWAYS"/>
+
+            <!-- Session footer -->
+            <Label fx:id="gameOverFooter" text="" styleClass="gameover-footer"
+                   alignment="CENTER" maxWidth="Infinity"/>
+
+            <HBox spacing="10" alignment="CENTER">
+                <Button text="%game.gameover.menu" onAction="#onBackToMenuClicked"
+                        styleClass="gameover-cta"/>
+            </HBox>
+        </VBox>
+    </StackPane>
 
 </StackPane>

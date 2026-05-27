@@ -15,7 +15,7 @@
            stylesheets="@menu.css"
            prefWidth="1100" prefHeight="680">
 
-    <VBox styleClass="card" maxWidth="1000" maxHeight="600" spacing="0">
+    <VBox styleClass="card" spacing="0">
 
         <!-- Titlebar -->
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
