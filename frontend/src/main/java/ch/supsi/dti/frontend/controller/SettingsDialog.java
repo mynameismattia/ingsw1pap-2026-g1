@@ -124,6 +124,14 @@ public final class SettingsDialog {
         done.setMaxWidth(Double.MAX_VALUE);
         done.setOnAction(e -> closeOverlay.run());
 
+        Button quit = new Button(msg.getMessage("settings.quit"));
+        quit.getStyleClass().add("danger-button");
+        quit.setMaxWidth(Double.MAX_VALUE);
+        quit.setOnAction(e -> {
+            SoundManager.getInstance().play(SoundManager.SoundEvent.CLICK);
+            Platform.exit();
+        });
+
         card.getChildren().addAll(
                 header,
                 divider(),
@@ -133,7 +141,8 @@ public final class SettingsDialog {
                 divider(),
                 display,
                 divider(),
-                done
+                done,
+                quit
         );
         return card;
     }
