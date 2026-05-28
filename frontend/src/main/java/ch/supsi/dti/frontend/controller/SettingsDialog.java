@@ -1,7 +1,11 @@
+// Popup impostazioni: lingua (it/en), volumi (musica, effetti), modalità display (windowed/fullscreen).
+// Costruito programmaticamente in Java, niente FXML.
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.frontend.service.SoundManager;
+import ch.supsi.dti.frontend.view.Icons;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -23,24 +27,10 @@ import javafx.stage.Stage;
 
 import java.util.Locale;
 
-/**
- * In-scene settings overlay. Matches the visual language of the in-game
- * history overlay: a dimmed backdrop plus a centred dark card.
- *
- * <p>The dialog is built programmatically and attached as a sibling child of
- * whatever {@link StackPane} root the current scene exposes — every scene in
- * the app uses a StackPane root, so no FXML duplication is needed. Closing
- * the dialog removes it from the scene graph.</p>
- */
 public final class SettingsDialog {
 
     private SettingsDialog() {}
 
-    /**
-     * @param stage          the active stage; we attach the overlay to its scene root
-     * @param onLocaleChange callback fired after the user picks a different language,
-     *                       so the host scene can reload itself with the fresh bundle
-     */
     public static void show(Stage stage, Runnable onLocaleChange) {
         if (stage == null) return;
         Scene scene = stage.getScene();
@@ -48,7 +38,6 @@ public final class SettingsDialog {
         Parent root = scene.getRoot();
         if (!(root instanceof StackPane stack)) return;
 
-        // Skip if a dialog is already open (idempotent ⚙ click).
         for (Node n : stack.getChildren()) {
             if ("settings-overlay".equals(n.getId())) return;
         }
@@ -60,10 +49,6 @@ public final class SettingsDialog {
         overlay.setId("settings-overlay");
         overlay.getStyleClass().add("overlay-backdrop");
 
-        // Close pipeline: defer the host-scene reload (which destroys the overlay)
-        // until the user explicitly closes the dialog. While the dialog is open
-        // they can change anything (including language) without the dialog
-        // disappearing under them.
         Runnable closeOverlay = () -> {
             boolean localeChanged = !MessageService.getInstance().getLocale().equals(initialLocale);
             close(stack, overlay);
@@ -72,10 +57,6 @@ public final class SettingsDialog {
             }
         };
 
-        // Rebuild hook: when the user picks a different language, swap the card
-        // content with one freshly rendered against the new bundle. The dialog
-        // stays open; audio settings keep their state because they read live
-        // from the SoundManager singleton.
         Runnable[] rebuild = new Runnable[1];
         rebuild[0] = () -> {
             VBox newCard = buildCard(MessageService.getInstance(), sm, stage, closeOverlay, rebuild[0]);
@@ -83,7 +64,7 @@ public final class SettingsDialog {
         };
 
         overlay.setOnMouseClicked(e -> {
-            // Only dismiss when the backdrop itself was clicked, not the card.
+
             if (e.getTarget() == overlay) {
                 closeOverlay.run();
             }
@@ -94,7 +75,6 @@ public final class SettingsDialog {
 
         stack.getChildren().add(overlay);
 
-        // Esc closes — scene-level filter, removed when the overlay is detached.
         javafx.event.EventHandler<KeyEvent> escFilter = e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
                 closeOverlay.run();
@@ -114,8 +94,6 @@ public final class SettingsDialog {
         stack.getChildren().remove(overlay);
     }
 
-    // ── Card ────────────────────────────────────────────────────────
-
     private static VBox buildCard(MessageService msg, SoundManager sm, Stage stage,
                                   Runnable closeOverlay, Runnable rebuild) {
         VBox card = new VBox(18);
@@ -124,7 +102,6 @@ public final class SettingsDialog {
         card.setMaxHeight(Region.USE_PREF_SIZE);
         card.setPadding(new Insets(22));
 
-        // Header: title + close ✕
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
         Label title = new Label(msg.getMessage("settings.title"));
@@ -136,21 +113,24 @@ public final class SettingsDialog {
         close.setOnAction(e -> closeOverlay.run());
         header.getChildren().addAll(title, spacer, close);
 
-        // Section: Language — selecting a pill rebuilds the card content
-        // in-place against the new locale (no scene reload until close).
         VBox language = buildLanguageSection(msg, rebuild);
 
-        // Section: Audio
         VBox audio = buildAudioSection(msg, sm);
 
-        // Section: Display mode
         VBox display = buildDisplaySection(msg, stage, rebuild);
 
-        // Footer
         Button done = new Button(msg.getMessage("settings.close"));
         done.getStyleClass().add("primary-button");
         done.setMaxWidth(Double.MAX_VALUE);
         done.setOnAction(e -> closeOverlay.run());
+
+        Button quit = new Button(msg.getMessage("settings.quit"));
+        quit.getStyleClass().add("danger-button");
+        quit.setMaxWidth(Double.MAX_VALUE);
+        quit.setOnAction(e -> {
+            SoundManager.getInstance().play(SoundManager.SoundEvent.CLICK);
+            Platform.exit();
+        });
 
         card.getChildren().addAll(
                 header,
@@ -161,7 +141,8 @@ public final class SettingsDialog {
                 divider(),
                 display,
                 divider(),
-                done
+                done,
+                quit
         );
         return card;
     }
@@ -174,8 +155,6 @@ public final class SettingsDialog {
         return d;
     }
 
-    // ── Language section ────────────────────────────────────────────
-
     private static VBox buildLanguageSection(MessageService msg, Runnable rebuild) {
         VBox section = new VBox(10);
 
@@ -186,9 +165,9 @@ public final class SettingsDialog {
         HBox pills = new HBox(8);
         pills.setAlignment(Pos.CENTER_LEFT);
         pills.getChildren().addAll(
-                languagePill("🇮🇹  " + msg.getMessage("settings.language.it"),
+                languagePill(msg.getMessage("settings.language.it"),
                         Locale.ITALIAN, current, rebuild),
-                languagePill("🇬🇧  " + msg.getMessage("settings.language.en"),
+                languagePill(msg.getMessage("settings.language.en"),
                         Locale.ENGLISH, current, rebuild)
         );
 
@@ -215,19 +194,16 @@ public final class SettingsDialog {
         return b;
     }
 
-    // ── Audio section ───────────────────────────────────────────────
-
     private static VBox buildAudioSection(MessageService msg, SoundManager sm) {
         VBox section = new VBox(14);
 
         Label heading = new Label(msg.getMessage("settings.section.audio"));
         heading.getStyleClass().add("settings-section-label");
 
-        // Master toggle row: 🔊  Audio attivo                       [ON|OFF]
         HBox masterRow = new HBox(12);
         masterRow.setAlignment(Pos.CENTER_LEFT);
-        Label masterIcon = new Label("🔊");
-        masterIcon.getStyleClass().add("settings-icon");
+        Label masterIcon = new Label(Icons.SPEAKER);
+        masterIcon.getStyleClass().addAll("settings-icon", Icons.STYLE_CLASS);
         Label masterText = new Label(msg.getMessage(
                 sm.isMuted() ? "settings.audio.muted" : "settings.audio.master"));
         masterText.getStyleClass().add("settings-row-label");
@@ -246,19 +222,15 @@ public final class SettingsDialog {
         });
         masterRow.getChildren().addAll(masterIcon, masterText, rowSpacer, masterToggle);
 
-        // SFX slider row
-        VBox sfxRow = sliderRow("🎲", msg.getMessage("settings.volume"),
+        VBox sfxRow = sliderRow(Icons.SFX, msg.getMessage("settings.volume"),
                 sm.getVolume(), sm::setVolume);
 
-        // Music slider row
-        VBox musicRow = sliderRow("🎵", msg.getMessage("settings.musicVolume"),
+        VBox musicRow = sliderRow(Icons.MUSIC, msg.getMessage("settings.musicVolume"),
                 sm.getMusicVolume(), sm::setMusicVolume);
 
         section.getChildren().addAll(heading, masterRow, sfxRow, musicRow);
         return section;
     }
-
-    // ── Display section ─────────────────────────────────────────────
 
     private static VBox buildDisplaySection(MessageService msg, Stage stage, Runnable rebuild) {
         VBox section = new VBox(10);
@@ -293,8 +265,7 @@ public final class SettingsDialog {
         b.setOnAction(e -> {
             SoundManager.getInstance().play(SoundManager.SoundEvent.CLICK);
             if (!active) {
-                // Show the "Press ESC..." overlay only on this explicit transition;
-                // reset to empty so Navigation's per-scene re-apply doesn't repeat it.
+
                 if (mode == DisplayMode.FULLSCREEN) {
                     stage.setFullScreenExitHint(
                             MessageService.getInstance().getMessage("settings.display.fullscreen.hint"));
@@ -304,7 +275,7 @@ public final class SettingsDialog {
                     stage.setFullScreenExitHint("");
                 }
                 mode.save();
-                // Rebuild so the active-pill highlight updates without closing.
+
                 if (rebuild != null) rebuild.run();
             }
         });
@@ -323,7 +294,7 @@ public final class SettingsDialog {
     private static VBox sliderRow(String iconText, String label, double initial,
                                   java.util.function.DoubleConsumer onChange) {
         Label icon = new Label(iconText);
-        icon.getStyleClass().add("settings-icon");
+        icon.getStyleClass().addAll("settings-icon", Icons.STYLE_CLASS);
         Label name = new Label(label);
         name.getStyleClass().add("settings-row-label");
 

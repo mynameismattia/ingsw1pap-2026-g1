@@ -1,3 +1,7 @@
+// Il banco. Una Hand + flag handRevealed (la seconda carta è scoperta?).
+// Implementa la regola S17: il banco continua a pescare sotto 17, e sul soft-17 — tipico delle case "soft-17 hits".
+// Espone getVisibleCard() (la upcard per le decisioni dei player) e showsAce() (trigger dell'insurance offer).
+
 package ch.supsi.dti.backend.model;
 
 public class Dealer {
@@ -11,10 +15,7 @@ public class Dealer {
     }
 
     public boolean shouldHit(){
-        if ( hand.getScore() < 17 || (hand.getScore() == 17 && hand.isSoft())) {
-            return true;
-        }
-        return false;
+        return GameRules.dealerShouldHit(hand.getScore(), hand.isSoft());
     }
 
     public Card getVisibleCard(){

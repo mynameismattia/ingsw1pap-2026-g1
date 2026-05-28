@@ -1,3 +1,5 @@
+// Test del restore da snapshot: dato un GameSnapshot, il GameManager torna allo stato salvato (round, saldi, storico).
+
 package ch.supsi.dti.backend.service;
 
 import ch.supsi.dti.backend.game.GameManager;
@@ -61,7 +63,6 @@ class GameManagerRestoreTest {
         assertTrue(snap.playersData().get(1).isBot());
         assertEquals(history, snap.roundHistory());
 
-        // Rebuild from the snapshot the same way MenuController will.
         List<Player> rebuilt = new ArrayList<>();
         for (GameSnapshot.PlayerSaveData pd : snap.playersData()) {
             rebuilt.add(new Player(pd.name(), pd.balance(), pd.isBot()));
@@ -69,7 +70,7 @@ class GameManagerRestoreTest {
         GameManager restored = GameManager.restore(rebuilt, snap.roundHistory());
 
         assertEquals(GameState.ROUND_OVER, restored.getState());
-        // startNewRound should accept a restored manager and roll into BETTING.
+
         restored.startNewRound();
         assertEquals(GameState.BETTING, restored.getState());
     }

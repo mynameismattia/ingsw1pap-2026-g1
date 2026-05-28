@@ -1,3 +1,6 @@
+// Enum dei 4 slot di salvataggio: AUTO (autosave a fine round) + SLOT_1/SLOT_2/SLOT_3 (slot manuali).
+// Ogni slot conosce il nome del proprio file .json e il path relativo dentro saved/. Lanciato da IntelliJ il path effettivo diventa frontend/saved/.
+
 package ch.supsi.dti.backend.service;
 
 import java.nio.file.Path;
@@ -17,7 +20,7 @@ public enum SaveSlot {
     }
 
     public Path path() {
-        return Path.of("frontend", "saved", filename);
+        return Path.of("saved", filename);
     }
 
     public boolean isManual() {

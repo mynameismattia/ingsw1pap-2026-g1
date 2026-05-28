@@ -7,144 +7,157 @@
 ![Java 21](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk)
 ![JavaFX](https://img.shields.io/badge/JavaFX-21-blue?style=for-the-badge)
 ![Maven](https://img.shields.io/badge/Maven-Multi--Module-red?style=for-the-badge&logo=apachemaven)
-![License](https://img.shields.io/badge/Licenza-Validazione_C-green?style=for-the-badge)
+![License](https://img.shields.io/badge/Licenza-Validazione_C_(JNI)-green?style=for-the-badge)
 
-<br>
-
-<img src="docs/mockups/Mockup02.png" alt="Tavolo da gioco" width="700">
-
-*Multiplayer locale, regole complete, interfaccia moderna.*
+*Blackjack multiplayer locale, regole complete, interfaccia JavaFX moderna.*
 
 </div>
 
 ---
 
-## Schermate
-
-<table>
-<tr>
-<td width="50%">
-
-### Attivazione Licenza
-Inserisci la tua chiave per sbloccare il gioco completo. Licenza legata alla macchina per una protezione sicura.
-
-</td>
-<td width="50%">
-
-<img src="docs/mockups/Mockup00.png" alt="Attivazione Licenza" width="400">
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-<img src="docs/mockups/Mockup01.png" alt="Lobby" width="400">
-
-</td>
-<td width="50%">
-
-### Lobby e Configurazione
-Crea la tua partita, scegli le regole del tavolo e invita fino a 7 giocatori in locale.
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### Tavolo da Gioco
-Interfaccia intuitiva con carte animate, chip colorati e tutte le azioni a portata di click.
-
-</td>
-<td width="50%">
-
-<img src="docs/mockups/Mockup02.png" alt="Tavolo da gioco" width="400">
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-<img src="docs/mockups/Mockup03.png" alt="Profilo" width="400">
-
-</td>
-<td width="50%">
-
-### Profilo e Statistiche
-Tieni traccia delle tue performance: mani giocate, percentuale di vittoria, saldo e storico completo.
-
-</td>
-</tr>
-<tr>
-<td width="50%">
-
-### Risultato Round
-Riepilogo dettagliato a fine mano con payout, risultato e azioni giocate.
-
-</td>
-<td width="50%">
-
-<img src="docs/mockups/Mockup04.png" alt="Risultato Round" width="400">
-
-</td>
-</tr>
-</table>
-
----
-
 ## Funzionalità
 
-| | Funzionalità | Dettaglio |
-|---|---|---|
-| **Hit / Stand** | Azioni base | Il cuore del Blackjack |
-| **Split** | Fino a 4 mani | Dividi coppie, anche resplit degli assi |
-| **Double Down** | Su qualsiasi mano | Anche dopo split |
-| **Assicurazione** | Regole classiche | Scommessa laterale 2:1 |
-| **Puntate** | 5 – 1.000 chips | Payout Blackjack naturale 3:2 |
-| **Multiplayer** | Fino a 7 giocatori | Sessioni locali, turni sequenziali |
-| **Salvataggio** | A fine mano | Riprendi dove hai lasciato |
-| **Statistiche** | Storico completo | Mani, vincite, saldo nel tempo |
-| **Lingue** | IT / EN | Cambio lingua a runtime |
-| **Licenza** | Machine-bound | Validazione tramite modulo C |
+| Funzionalità | Dettaglio |
+|---|---|
+| **Hit / Stand** | Le azioni base, il cuore del Blackjack |
+| **Split** | Fino a 4 mani, con resplit degli assi |
+| **Double Down** | Su qualsiasi mano, anche dopo lo split |
+| **Assicurazione** | Scommessa laterale 2:1 con regole classiche |
+| **Puntate** | Da 5 a 1.000 chips, payout Blackjack naturale 3:2 |
+| **Multiplayer locale** | Fino a 7 giocatori (umani e bot), turni sequenziali |
+| **Avversari CPU** | Bot con strategia automatica al tavolo |
+| **Salvataggio** | Autosave a fine round + 3 slot manuali (JSON) |
+| **Statistiche** | Storico mani, percentuale di vittoria, andamento del saldo |
+| **Lingue** | Italiano / Inglese, cambio a runtime |
+| **Audio** | Effetti e musica di sottofondo, con mixer nelle impostazioni |
+| **Licenza** | Validazione tramite modulo nativo in C (JNI) |
 
 ---
 
 ## Tech Stack
 
 ```
-┌─────────────────────────────────────────┐
-│              Frontend (JavaFX)          │
-│         UI · Controllers · FXML         │
-├─────────────────────────────────────────┤
-│              Backend (Java 21)          │
-│    Game Logic · Model · Services        │
-├──────────────────┬──────────────────────┤
-│   Persistence    │   License Module     │
-│   JSON Save/Load │   C · ProcessBuilder │
-└──────────────────┴──────────────────────┘
+┌─────────────────────────────────────────────┐
+│              Frontend (JavaFX 21)            │
+│        Scene FXML · Controller · CSS         │
+├─────────────────────────────────────────────┤
+│              Backend (Java 21)               │
+│      Game logic · Model · i18n · Service     │
+├──────────────────────┬──────────────────────┤
+│     Persistenza      │     Modulo licenza    │
+│   JSON (Jackson)     │      C · JNI          │
+└──────────────────────┴──────────────────────┘
 ```
+
+Progetto Maven multi-modulo (`backend` + `frontend`). Il modulo licenza è una
+libreria nativa scritta in C, invocata da Java via JNI: viene compilata da
+Maven con `gcc` durante la build e caricata a runtime tramite
+`System.loadLibrary`.
 
 ---
 
-## Quick Start
+## Requisiti
+
+| | Versione | Note |
+|---|---|---|
+| **JDK** | 21 | Necessario per compilare ed eseguire |
+| **Maven** | 3.9+ | Oppure il Maven incluso in IntelliJ IDEA |
+| **gcc** | qualsiasi recente | Per compilare il modulo licenza nativo |
+| **`JAVA_HOME`** | → JDK 21 | **Obbligatorio**: serve a `gcc` per trovare `jni.h` |
+
+> ⚠️ Senza `JAVA_HOME` impostato la build fallisce con
+> `fatal error: jni.h: No such file or directory`, perché il compilatore C
+> non trova gli header JNI del JDK.
+
+---
+
+## Installazione
 
 ```bash
-# Build
-mvn clean package
+# 1. Clona il repository
+git clone https://github.com/mynameismattia/ingsw1pap-2026-g1.git
+cd ingsw1pap-2026-g1
 
-# Run
+# 2. Imposta JAVA_HOME sul tuo JDK 21 (adatta il percorso al tuo sistema)
+export JAVA_HOME=/usr/lib/jvm/default        # Linux
+# export JAVA_HOME=$(/usr/libexec/java_home -v 21)   # macOS
+# set JAVA_HOME=C:\Program Files\Java\jdk-21          # Windows (cmd)
+
+# 3. Build completa: compila il codice Java, costruisce la libreria
+#    nativa C, esegue i test e installa il modulo backend nel
+#    repository Maven locale (necessario al passo successivo).
+mvn clean install
+
+# 4. Avvia il gioco
 mvn -pl frontend javafx:run
 ```
 
-> Richiede **Java 21** e **Maven 3.9+**
+### Cosa succede dietro le quinte
+
+- `mvn clean install` compila `gcc` la libreria nativa in
+  `backend/target/` con il nome corretto per il tuo sistema operativo
+  (`liblicensechecker.so` su Linux, `.dll` su Windows, `.dylib` su macOS).
+  Il sistema operativo viene rilevato automaticamente dai profili Maven.
+- Usa `install` (non solo `package`): il modulo `backend` deve trovarsi nel
+  repository locale perché `javafx:run` del frontend possa risolverlo.
+- `mvn -pl frontend javafx:run` imposta automaticamente
+  `-Djava.library.path=backend/target`, così la libreria nativa viene
+  trovata e la validazione della licenza funziona.
+
+### Chiave di licenza
+
+Al primo avvio l'app chiede una chiave di licenza nel formato
+`XXXXX-XXXXX-XXXXX-XXXXX`. Per provare il gioco puoi usare la chiave demo:
+
+```
+FELIC-EMATT-IA000-00000
+```
+
+Spuntando **"Ricordami"** la chiave viene salvata in `~/.blackjack/license`
+e non verrà più richiesta agli avvii successivi.
+
+---
+
+## Test
+
+I test (JUnit 5) coprono il modulo `backend` — modello, motore di gioco,
+persistenza e i18n:
+
+```bash
+mvn -pl backend test
+```
+
+I test vengono eseguiti anche durante `mvn clean install`.
+
+---
+
+## Struttura del progetto
+
+```
+ingsw1pap-2026-g1/
+├── backend/                          # Logica, modello, persistenza, licenza
+│   ├── src/main/java/.../model       # Card, Deck, Hand, strategie del dealer
+│   ├── src/main/java/.../game        # Motore di gioco, regole, turni
+│   ├── src/main/java/.../service     # Persistenza JSON, slot di salvataggio
+│   ├── src/main/java/.../i18n        # MessageService (IT / EN)
+│   ├── src/main/java/.../license     # LicenseChecker (wrapper JNI)
+│   └── src/main/c/                   # LicenseChecker.c — modulo nativo
+├── frontend/                         # Interfaccia JavaFX
+│   ├── src/main/java/.../MainApp     # Punto di ingresso
+│   ├── src/main/java/.../controller  # Controller delle scene
+│   ├── src/main/java/.../service     # SoundManager
+│   └── src/main/resources/           # FXML, CSS, audio, font, bundle i18n
+└── pom.xml                           # Reactor multi-modulo
+```
 
 ---
 
 ## Team
 
-| | Nome | Ruolo |
-|---|---|---|
-| [@mynameismattia](https://github.com/mynameismattia) | Mattia Alongi | Game Logic & Architecture |
-| [@FeliceRossetti](https://github.com/FeliceRossetti) | Felice Rossetti | License Module & Domain Model |
+| Nome | Ruolo |
+|---|---|
+| [@mynameismattia](https://github.com/mynameismattia) — Mattia Alongi | Game Logic & Architecture |
+| [@FeliceRossetti](https://github.com/FeliceRossetti) — Felice Rossetti | License Module & Domain Model |
 
 <div align="center">
 

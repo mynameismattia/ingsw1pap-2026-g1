@@ -1,3 +1,6 @@
+// Test base sulla classe Card: creazione, getValue corretto per ogni Rank, toString.
+// JUnit standard.
+
 package ch.supsi.dti.backend.model;
 
 import org.junit.jupiter.api.Test;

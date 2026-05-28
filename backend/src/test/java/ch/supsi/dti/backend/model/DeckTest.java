@@ -1,3 +1,5 @@
+// Test del Deck: 312 carte iniziali (6 mazzi × 52), draw decrementa, shuffle randomizza l'ordine, needsReshuffle scatta sotto la soglia.
+
 package ch.supsi.dti.backend.model;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +47,7 @@ public class DeckTest {
 
     @Test
     void testNeedsReshuffleTrue() {
-        // soglia = 78, quindi peschiamo 312 - 78 = 234
+
         for (int i = 0; i < 234; i++) {
             deck.draw();
         }

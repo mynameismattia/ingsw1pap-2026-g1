@@ -1,3 +1,5 @@
+// Test della strategia bot: regola S17 come il banco — HIT sotto 17 e sul soft-17, STAND dal 17 hard in su, DECLINE_INSURANCE sempre.
+
 package ch.supsi.dti.backend.model;
 
 import ch.supsi.dti.backend.game.GameState;
@@ -27,9 +29,6 @@ public class DealerMimicStrategyTest {
         return ph;
     }
 
-
-    // --- decide() during PLAYER_TURN ---
-
     @Test
     void hitsOnHardSixteen() {
         PlayerHand h = handWith(
@@ -49,14 +48,14 @@ public class DealerMimicStrategyTest {
     }
 
     @Test
-    void standsOnSoftSeventeen() {
-        // S17 rule: bot stands on Ace + 6 even though the dealer would hit it.
+    void hitsOnSoftSeventeen() {
+
         PlayerHand h = handWith(
                 new Card(Suit.HEARTS, Rank.ACE),
                 new Card(Suit.CLUBS, Rank.SIX));
         assertTrue(h.getHand().isSoft());
         assertEquals(17, h.getHand().getScore());
-        assertEquals(PlayerStrategy.Action.STAND,
+        assertEquals(PlayerStrategy.Action.HIT,
                 strategy.decide(GameState.PLAYER_TURN, h, dealerUpcard));
     }
 
@@ -71,7 +70,7 @@ public class DealerMimicStrategyTest {
 
     @Test
     void neverReturnsDoubleOrSplitOnPair() {
-        // Pair of 8s — basic strategy would split; dealer-mimic must not.
+
         PlayerHand h = handWith(
                 new Card(Suit.HEARTS, Rank.EIGHT),
                 new Card(Suit.CLUBS, Rank.EIGHT));
@@ -79,9 +78,6 @@ public class DealerMimicStrategyTest {
         assertNotEquals(PlayerStrategy.Action.SPLIT, action);
         assertNotEquals(PlayerStrategy.Action.DOUBLE, action);
     }
-
-
-    // --- decide() during INSURANCE_OFFER ---
 
     @Test
     void alwaysDeclinesInsurance() {
@@ -93,21 +89,18 @@ public class DealerMimicStrategyTest {
                 strategy.decide(GameState.INSURANCE_OFFER, h, ace));
     }
 
-
-    // --- decideBet() rounding ---
-
     @Test
     void decideBetRoundsToNearestFive() {
-        // 10% of balance, rounded to the nearest multiple of 5.
-        assertEquals(10, strategy.decideBet(new Player("B", 111)));  // 11.1 -> 10
-        assertEquals(10, strategy.decideBet(new Player("B", 117)));  // 11.7 -> 10
-        assertEquals(15, strategy.decideBet(new Player("B", 130)));  // 13.0 -> 15
-        assertEquals(100, strategy.decideBet(new Player("B", 1000))); // 100   -> 100
+
+        assertEquals(10, strategy.decideBet(new Player("B", 111)));
+        assertEquals(10, strategy.decideBet(new Player("B", 117)));
+        assertEquals(15, strategy.decideBet(new Player("B", 130)));
+        assertEquals(100, strategy.decideBet(new Player("B", 1000)));
     }
 
     @Test
     void decideBetClampsToMinBet() {
-        // Below the MIN_BET floor (5) the rule would round to 0; we clamp up.
+
         assertEquals(PlayerStrategy.MIN_BET, strategy.decideBet(new Player("B", 24)));
         assertEquals(PlayerStrategy.MIN_BET, strategy.decideBet(new Player("B", 10)));
         assertEquals(PlayerStrategy.MIN_BET, strategy.decideBet(new Player("B", 5)));

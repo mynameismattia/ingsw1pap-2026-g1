@@ -1,7 +1,9 @@
+// Schermata Carica partita.
+// Lista degli slot con timestamp e info; al click carica il GameSnapshot via PersistenceService, ricostruisce il GameManager e naviga alla scena di gioco.
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.game.GameManager;
-import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.service.GameSnapshot;
 import ch.supsi.dti.backend.service.PersistenceService;
@@ -13,22 +15,16 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class LoadGameController {
-
-    private static final DateTimeFormatter DATE_FMT =
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm").withZone(ZoneId.systemDefault());
 
     @FXML private VBox slotsContainer;
 
@@ -52,17 +48,9 @@ public class LoadGameController {
     }
 
     private HBox buildSlotRow(SaveSlot slot, Optional<GameSnapshot> snapshot) {
-        HBox row = new HBox(12);
-        row.setAlignment(Pos.CENTER_LEFT);
-        row.getStyleClass().add("row");
-        row.setPadding(new Insets(10));
-
-        Label title = new Label(slotLabel(slot));
-        title.getStyleClass().add("slot-title");
-        title.setMinWidth(140);
-
-        VBox details = new VBox(2);
-        HBox.setHgrow(details, javafx.scene.layout.Priority.ALWAYS);
+        Slots.Row base = Slots.base(slot);
+        HBox row = base.row();
+        VBox details = base.details();
 
         boolean occupied = snapshot.isPresent();
         if (occupied) {
@@ -70,48 +58,50 @@ public class LoadGameController {
             String playersStr = snap.playersData().stream()
                     .map(p -> p.name() + " ($" + p.balance() + ")")
                     .reduce((a, b) -> a + ", " + b).orElse("");
-            String roundLine = msg("load.slot.round", snap.currentRoundNumber());
-            String playersLine = msg("load.slot.players", playersStr);
-            String dateLine = new PersistenceService(slot).lastModified()
-                    .map(DATE_FMT::format).orElse("");
-
-            Label roundLbl = new Label(roundLine);
+            Label roundLbl = new Label(Slots.msg("load.slot.round", snap.currentRoundNumber()));
             roundLbl.getStyleClass().add("row-value");
-            Label playersLbl = new Label(playersLine);
+            Label playersLbl = new Label(Slots.msg("load.slot.players", playersStr));
             playersLbl.getStyleClass().add("row-label");
             details.getChildren().add(roundLbl);
             details.getChildren().add(playersLbl);
-            if (!dateLine.isEmpty()) {
-                Label d = new Label(dateLine);
+            new PersistenceService(slot).lastModified().ifPresent(t -> {
+                Label d = new Label(Slots.DATE_FMT.format(t));
                 d.getStyleClass().add("slot-meta");
                 details.getChildren().add(d);
-            }
+            });
         } else {
-            Label empty = new Label(msg("load.slot.empty"));
+            Label empty = new Label(Slots.msg("load.slot.empty"));
             empty.getStyleClass().add("slot-empty");
             details.getChildren().add(empty);
         }
 
-        Button loadBtn = new Button(msg("load.action.load"));
+        Button loadBtn = new Button(Slots.msg("load.action.load"));
         loadBtn.getStyleClass().add("primary-button");
         loadBtn.setDisable(!occupied);
         loadBtn.setOnAction(e -> loadSlot(slot, snapshot.orElse(null)));
 
-        Button deleteBtn = new Button(msg("load.action.delete"));
+        Button deleteBtn = new Button(Slots.msg("load.action.delete"));
         deleteBtn.getStyleClass().add("danger-button");
         deleteBtn.setDisable(!occupied);
         deleteBtn.setOnAction(e -> deleteSlot(slot));
 
-        row.getChildren().addAll(title, details, loadBtn, deleteBtn);
+        row.getChildren().addAll(loadBtn, deleteBtn);
         return row;
     }
 
     private void loadSlot(SaveSlot slot, GameSnapshot snap) {
+        // 1. Guard: se lo snapshot è null (slot vuoto) non faccio nulla.
         if (snap == null) return;
+
+        // 2. Ricostruisco gli oggetti Player dai PlayerSaveData (nome, balance, isBot) — i Player veri non si serializzano,
+        //    si rifanno da zero qui per non portarci dietro mani/strategie morte.
         List<Player> players = new ArrayList<>(snap.playersData().size());
         for (GameSnapshot.PlayerSaveData pd : snap.playersData()) {
             players.add(new Player(pd.name(), pd.balance(), pd.isBot()));
         }
+
+        // 3. Inietto il GameManager restaurato + il numero di round salvato nel GameController (campi statici di handoff),
+        //    poi navigo alla scena di gioco che leggerà questi pending in initialize().
         GameController.setPendingGameManager(GameManager.restore(players, snap.roundHistory()));
         GameController.pendingResumedRoundNumber = snap.currentRoundNumber();
         Navigation.navigate((Stage) slotsContainer.getScene().getWindow(), "/ui/game.fxml");
@@ -119,8 +109,8 @@ public class LoadGameController {
 
     private void deleteSlot(SaveSlot slot) {
         boolean confirmed = confirm(
-                msg("load.delete.confirm.title"),
-                msg("load.delete.confirm.body", slotLabel(slot)));
+                Slots.msg("load.delete.confirm.title"),
+                Slots.msg("load.delete.confirm.body", Slots.label(slot)));
         if (!confirmed) return;
         try {
             new PersistenceService(slot).delete();
@@ -128,19 +118,6 @@ public class LoadGameController {
             System.err.println("Delete failed for " + slot + ": " + ex.getMessage());
         }
         refresh();
-    }
-
-    private String slotLabel(SaveSlot slot) {
-        return switch (slot) {
-            case AUTO -> msg("load.slot.auto");
-            case SLOT_1 -> msg("load.slot.n", 1);
-            case SLOT_2 -> msg("load.slot.n", 2);
-            case SLOT_3 -> msg("load.slot.n", 3);
-        };
-    }
-
-    private static String msg(String key, Object... args) {
-        return MessageService.getInstance().getMessage(key, args);
     }
 
     private boolean confirm(String title, String body) {
@@ -162,9 +139,9 @@ public class LoadGameController {
         header.getStyleClass().add("dialog-header");
         root.getChildren().add(header);
 
-        Button ok = new Button(msg("common.confirm"));
+        Button ok = new Button(Slots.msg("common.confirm"));
         ok.getStyleClass().add("danger-button");
-        Button cancel = new Button(msg("common.cancel"));
+        Button cancel = new Button(Slots.msg("common.cancel"));
         cancel.getStyleClass().add("secondary-button");
         HBox actions = new HBox(10, cancel, ok);
         actions.setAlignment(Pos.CENTER);

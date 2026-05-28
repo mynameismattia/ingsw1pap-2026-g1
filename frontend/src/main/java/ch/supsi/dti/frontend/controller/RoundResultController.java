@@ -1,3 +1,6 @@
+// Schermata di fine round (Vedi Risultati).
+// Tre colonne: a sinistra la mano del banco con storico ultimi round, al centro il grafico dei bilanci con riga-per-giocatore (delta, outcome chip, descrizione), a destra i saldi aggiornati.
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.game.GameManager;
@@ -10,6 +13,8 @@ import ch.supsi.dti.backend.model.RoundRecord;
 import ch.supsi.dti.backend.model.Rank;
 import ch.supsi.dti.backend.model.Suit;
 import ch.supsi.dti.frontend.view.CardView;
+import ch.supsi.dti.frontend.view.Icons;
+import ch.supsi.dti.frontend.view.UiFactory;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.chart.LineChart;
@@ -31,7 +36,7 @@ import java.util.Map;
 
 public class RoundResultController {
 
-    private static final int TOTAL_ROUNDS = 10;
+    private static final int TOTAL_ROUNDS = GameController.TOTAL_ROUNDS;
 
     @FXML private Label titleLabel;
     @FXML private HBox progressDots;
@@ -45,6 +50,7 @@ public class RoundResultController {
     @FXML private Label othersHeader;
     @FXML private VBox othersList;
     @FXML private Button primaryActionBtn;
+    @FXML private Button saveBtn;
     @FXML private StackPane chartContainer;
     @FXML private Label dealerHistoryHeader;
     @FXML private FlowPane dealerHistoryList;
@@ -52,17 +58,17 @@ public class RoundResultController {
     @FXML
     private void initialize() {
         MessageService msg = MessageService.getInstance();
+        saveBtn.setText(Icons.SAVE);
+        saveBtn.getStyleClass().add(Icons.STYLE_CLASS);
         int round = GameController.sharedRoundNumber;
         boolean isFinalRound = round >= TOTAL_ROUNDS;
 
-        // (B) Titlebar — text + dot progress.
         titleLabel.setText(isFinalRound
                 ? msg.getMessage("roundresult.title.final", round, TOTAL_ROUNDS)
                 : msg.getMessage("roundresult.title.progress", round, TOTAL_ROUNDS));
         if (isFinalRound) titleLabel.getStyleClass().add("titlebar-title-final");
         renderProgressDots(round);
 
-        // (D) Action button label flips on the final round.
         if (isFinalRound) {
             primaryActionBtn.setText(msg.getMessage("roundresult.action.session"));
             primaryActionBtn.setOnAction(e -> navigateTo("/ui/menu.fxml"));
@@ -78,17 +84,13 @@ public class RoundResultController {
         renderDealerHistory(gm, msg);
         Map<String, RoundRecord> lastByPlayer = buildLastRecordMap(gm);
 
-        // (C) Session band: cumulative human stats across all rounds.
         renderSessionLine(gm, msg);
 
-        // New: dealer outcome banner + round-meta line above the heroes.
         renderDealerBanner(gm, msg);
         renderRoundMeta(round, lastByPlayer, msg);
 
-        // Balance-over-rounds chart, one line per player.
         renderBalanceChart(gm);
 
-        // (A) Hero net-delta: one block per human; others go in the strip below.
         renderHeroes(gm, lastByPlayer, msg);
         renderOthers(gm, lastByPlayer, msg);
         renderBalances(gm, lastByPlayer);
@@ -114,8 +116,6 @@ public class RoundResultController {
         navigateTo("/ui/save.fxml");
     }
 
-    // ── Title + progress dots ────────────────────────────────────
-
     private void renderProgressDots(int currentRound) {
         progressDots.getChildren().clear();
         for (int i = 1; i <= TOTAL_ROUNDS; i++) {
@@ -130,10 +130,8 @@ public class RoundResultController {
         }
     }
 
-    // ── Session summary band ─────────────────────────────────────
-
     private void renderSessionLine(GameManager gm, MessageService msg) {
-        // Aggregate across the human player's history records (first human).
+
         String humanName = gm.getPlayers().stream()
                 .filter(p -> !p.isBot())
                 .map(Player::getName)
@@ -147,7 +145,7 @@ public class RoundResultController {
         int currentStreak = 0, bestStreak = 0;
         for (RoundRecord r : gm.getHistory()) {
             if (!r.playerName().equals(humanName)) continue;
-            int d = computeDelta(r.bet(), r.outcome());
+            int d = r.net();
             net += d;
             HandOutcome o = r.outcome();
             if (o == HandOutcome.WIN || o == HandOutcome.BLACKJACK) {
@@ -157,8 +155,6 @@ public class RoundResultController {
             } else if (o == HandOutcome.LOSE) {
                 losses++;
                 currentStreak = 0;
-            } else {
-                // PUSH keeps the streak alive — neither a win nor a loss.
             }
         }
         String netStr = net >= 0 ? "+$" + net : "-$" + Math.abs(net);
@@ -166,39 +162,19 @@ public class RoundResultController {
                 wins, losses, netStr, currentStreak));
     }
 
-    // ── Balance-over-rounds chart ────────────────────────────────
-
-    /**
-     * Builds a {@link LineChart} (one series per player) showing each player's
-     * balance evolution across the rounds played so far. We reconstruct each
-     * player's starting balance from {@code currentBalance - sumOfAllDeltas},
-     * then walk the history in order accumulating per-player.
-     *
-     * <p>Series colours come from the same seat-avatar palette used everywhere
-     * (blue / green / amber / purple for humans, grey for bots), applied via
-     * inline {@code -fx-stroke} on each series' line node after the chart is
-     * laid out — the only reliable way to colour-code series without writing
-     * brittle "default-colorN" overrides.</p>
-     */
     private void renderBalanceChart(GameManager gm) {
         chartContainer.getChildren().clear();
         List<Player> players = gm.getPlayers();
         List<RoundRecord> history = gm.getHistory();
         if (players.isEmpty()) return;
 
-        // Group history records into rounds by timestamp gaps. Records within
-        // a single round (including extra records from splits) are appended
-        // in tight succession by GameManager; cross-round gaps include user
-        // interaction and animation delays — well over our 100ms threshold.
         List<List<RoundRecord>> rounds = groupHistoryIntoRounds(history);
 
-        // Total delta per player (used to back-derive initial balance).
         Map<String, Integer> totalDelta = new HashMap<>();
         for (RoundRecord r : history) {
-            totalDelta.merge(r.playerName(), computeDelta(r.bet(), r.outcome()), Integer::sum);
+            totalDelta.merge(r.playerName(), r.net(), Integer::sum);
         }
 
-        // Per-player series, prefilled with their starting balance at "round 0".
         Map<String, XYChart.Series<Number, Number>> seriesByName = new LinkedHashMap<>();
         Map<String, Integer> runningBalance = new HashMap<>();
         for (Player p : players) {
@@ -210,15 +186,11 @@ public class RoundResultController {
             runningBalance.put(p.getName(), initial);
         }
 
-        // One point per ROUND per player: sum all deltas the player accrued
-        // that round (splits add multiple records that net into one point).
-        // Sitting-out players carry their previous balance forward — the line
-        // stays flat across rounds where they didn't play.
         for (int i = 0; i < rounds.size(); i++) {
             Map<String, Integer> deltaThisRound = new HashMap<>();
             for (RoundRecord r : rounds.get(i)) {
                 deltaThisRound.merge(r.playerName(),
-                        computeDelta(r.bet(), r.outcome()), Integer::sum);
+                        r.net(), Integer::sum);
             }
             for (Player p : players) {
                 int newBal = runningBalance.get(p.getName())
@@ -229,8 +201,6 @@ public class RoundResultController {
             }
         }
 
-        // Range-aware Y-axis: pick a tick step rounded to a "nice" number so we
-        // don't end up with 122.5/120.0/117.5/... clutter on small swings.
         int yMin = Integer.MAX_VALUE, yMax = Integer.MIN_VALUE;
         for (XYChart.Series<Number, Number> s : seriesByName.values()) {
             for (XYChart.Data<Number, Number> d : s.getData()) {
@@ -239,18 +209,15 @@ public class RoundResultController {
                 yMax = Math.max(yMax, v);
             }
         }
-        // Pad ~10% so the curve doesn't kiss the axis edge.
+
         int yPad = Math.max(10, (yMax - yMin) / 10);
         int yLo = yMin - yPad;
         int yHi = yMax + yPad;
         int yStep = pickNiceStep(yHi - yLo);
-        // Snap bounds to the chosen step so labels read clean (e.g. 75, 100, 125).
+
         yLo = (int) Math.floor(yLo / (double) yStep) * yStep;
         yHi = (int) Math.ceil(yHi / (double) yStep) * yStep;
 
-        // Fixed 0..TOTAL_ROUNDS so the scale is consistent across the whole
-        // session — the curve grows into the chart rather than rescaling on
-        // every round.
         NumberAxis xAxis = new NumberAxis(0, TOTAL_ROUNDS, 1);
         xAxis.setLabel("Round");
         xAxis.setMinorTickVisible(false);
@@ -273,8 +240,6 @@ public class RoundResultController {
         chart.setHorizontalGridLinesVisible(true);
         chart.setVerticalGridLinesVisible(false);
 
-        // Pre-compute each player's seat colour so it can be applied after
-        // CSS skin pass completes (series nodes only exist post-layout).
         Map<String, String> colourByName = new LinkedHashMap<>();
         for (int i = 0; i < players.size(); i++) {
             Player p = players.get(i);
@@ -282,21 +247,19 @@ public class RoundResultController {
             chart.getData().add(seriesByName.get(p.getName()));
         }
 
-        // Style the series lines + symbols after the chart has been added to
-        // the scene graph (otherwise their internal nodes aren't created yet).
         javafx.application.Platform.runLater(() -> applySeriesColours(chart, colourByName));
 
         chartContainer.getChildren().add(chart);
     }
 
     private static String seatColourFor(Player p, int index) {
-        if (p.isBot()) return "#6b7280";                 // CPU grey
+        if (p.isBot()) return "#6b7280";
         return switch (index) {
-            case 0 -> "#3b82f6";  // blue
-            case 1 -> "#4ade80";  // green
-            case 2 -> "#f59e0b";  // amber
-            case 3 -> "#a78bfa";  // purple
-            default -> "#94a3b8"; // fallback
+            case 0 -> "#3b82f6";
+            case 1 -> "#4ade80";
+            case 2 -> "#f59e0b";
+            case 3 -> "#a78bfa";
+            default -> "#94a3b8";
         };
     }
 
@@ -307,8 +270,7 @@ public class RoundResultController {
             if (s.getNode() != null) {
                 s.getNode().setStyle("-fx-stroke: " + colour + "; -fx-stroke-width: 3;");
             }
-            // Symbol: filled outer disc in seat colour with a small dark inner
-            // dot so it pops against the chart background.
+
             for (XYChart.Data<Number, Number> d : s.getData()) {
                 if (d.getNode() != null) {
                     d.getNode().setStyle(
@@ -318,7 +280,7 @@ public class RoundResultController {
                             "-fx-padding: 6px;");
                 }
             }
-            // Recolour the legend swatch for this series.
+
             for (var item : chart.lookupAll(".chart-legend-item")) {
                 if (item instanceof javafx.scene.control.Label lbl
                         && s.getName().equals(lbl.getText())
@@ -331,13 +293,6 @@ public class RoundResultController {
         }
     }
 
-    /**
-     * Splits a flat history list into per-round chunks using timestamp gaps.
-     * Records within a single round are committed in tight succession by
-     * GameManager.endRound() (sub-millisecond apart, all sharing a tight
-     * cluster). Cross-round gaps include the user clicking "Nuovo round",
-     * placing a bet, dealing — easily 100+ ms even on rapid play.
-     */
     private static List<List<RoundRecord>> groupHistoryIntoRounds(List<RoundRecord> history) {
         List<List<RoundRecord>> rounds = new java.util.ArrayList<>();
         if (history.isEmpty()) return rounds;
@@ -356,7 +311,6 @@ public class RoundResultController {
         return rounds;
     }
 
-    /** Pick a tick step (5/10/25/50/100/250/500/1000) that yields ~5 grid lines. */
     private static int pickNiceStep(int range) {
         if (range <= 0) return 25;
         int target = Math.max(1, range / 5);
@@ -367,16 +321,8 @@ public class RoundResultController {
         return steps[steps.length - 1];
     }
 
-    // ── Dealer outcome banner + round meta line ──────────────────
-
-    /**
-     * Big narrative banner above the heroes saying *why* this round ended the
-     * way it did — "Banco sballato a 25", "Banco si ferma a 18", or "Blackjack
-     * del banco". Coloured per state: red on bust, gold on blackjack, neutral
-     * on a regular stand.
-     */
     private void renderDealerBanner(GameManager gm, MessageService msg) {
-        // Strip any previous state class so re-renders don't accumulate.
+
         dealerBanner.getStyleClass().removeAll(
                 "dealer-banner-bust", "dealer-banner-stand", "dealer-banner-blackjack");
 
@@ -398,7 +344,6 @@ public class RoundResultController {
         dealerBanner.getStyleClass().add(styleClass);
     }
 
-    /** Sum of bets placed this round across every player, with current round / total. */
     private void renderRoundMeta(int round, Map<String, RoundRecord> lastByPlayer, MessageService msg) {
         int totalWagered = 0;
         for (RoundRecord r : lastByPlayer.values()) {
@@ -408,75 +353,85 @@ public class RoundResultController {
                 round, TOTAL_ROUNDS, totalWagered));
     }
 
-    // ── Hero net-delta + others ──────────────────────────────────
-
-    /** Builds one hero block per human player and puts them in a row inside heroBox. */
     private void renderHeroes(GameManager gm, Map<String, RoundRecord> lastByPlayer, MessageService msg) {
+        // 1. Pulisco l'heroBox dal render precedente, imposto spacing 8 tra le righe.
         heroBox.getChildren().clear();
+        heroBox.setSpacing(8);
+
+        // 2. Filtro solo i giocatori umani: i bot vanno nella sezione "others" più sotto.
         List<Player> players = gm.getPlayers();
         List<Player> humans = players.stream()
                 .filter(p -> !p.isBot())
                 .toList();
         if (humans.isEmpty()) return;
 
-        HBox row = new HBox(20);
-        row.setAlignment(Pos.CENTER);
-        boolean multi = humans.size() > 1;
+        // 3. Per ogni umano costruisco una "hero row" orizzontale (avatar | nome | delta | outcome chip | detail)
+        //    e la aggiungo al heroBox come riga. Il seatIndex viene dal player ORDINE NELLA LISTA TOTALE
+        //    (non solo umani), così il colore del seat sul felt e qui combaciano.
         for (Player p : humans) {
-            // Seat colour comes from the player's index in the full player list,
-            // matching the seat-avatar palette used everywhere else (seat 1 blue,
-            // seat 2 green, seat 3 amber, seat 4 purple).
             int seatIndex = players.indexOf(p);
-            row.getChildren().add(buildHeroBlock(p, lastByPlayer.get(p.getName()),
-                    seatIndex, msg, multi));
+            heroBox.getChildren().add(buildHeroBlock(p, lastByPlayer.get(p.getName()),
+                    seatIndex, msg));
         }
-        heroBox.getChildren().add(row);
     }
 
-    private VBox buildHeroBlock(Player player, RoundRecord r, int seatIndex,
-                                MessageService msg, boolean multi) {
-        VBox block = new VBox(6);
-        block.setAlignment(Pos.CENTER);
-        block.getStyleClass().add("hero-block");
-        // Seat-colour stripe is the block's top border, applied via this modifier.
+    private HBox buildHeroBlock(Player player, RoundRecord r, int seatIndex,
+                                MessageService msg) {
+        // 1. Riga base: HBox 16px di spacing, allineata a sinistra, classi CSS .hero-block + .hero-block-seatN (colore stripe).
+        HBox row = new HBox(16);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.getStyleClass().add("hero-block");
         if (seatIndex >= 0) {
-            block.getStyleClass().add("hero-block-seat" + (seatIndex + 1));
+            row.getStyleClass().add("hero-block-seat" + (seatIndex + 1));
         }
 
-        // In multiplayer, prepend the player's name so blocks aren't ambiguous.
-        if (multi) {
-            Label name = new Label(player.getName());
-            name.getStyleClass().add("hero-name");
-            block.getChildren().add(name);
-        }
+        // 2. Avatar mini 20px (cerchio con iniziale). Colore dalla palette seat-avatar-cpu/p2/p3/p4 (uguale al felt).
+        row.getChildren().add(UiFactory.avatar(player, seatIndex, "seat-card-avatar"));
 
+        // 3. Nome del player a sinistra (min-width 90 via CSS).
+        Label name = new Label(player.getName());
+        name.getStyleClass().add("hero-row-name");
+        row.getChildren().add(name);
+
+        // 4. Edge case: nessun RoundRecord (player non ha giocato la mano corrente). Mostro solo "—" allineato a destra.
         if (r == null) {
+            javafx.scene.layout.Region flex = new javafx.scene.layout.Region();
+            HBox.setHgrow(flex, Priority.ALWAYS);
+            row.getChildren().add(flex);
             Label dash = new Label("—");
             dash.getStyleClass().add("hero-delta-neutral");
-            block.getChildren().add(dash);
-            return block;
+            row.getChildren().add(dash);
+            return row;
         }
 
-        int delta = computeDelta(r.bet(), r.outcome());
-        Label deltaLbl = new Label(formatHeroDelta(delta));
-        deltaLbl.getStyleClass().add(heroDeltaClass(r.outcome(), delta));
-        block.getChildren().add(deltaLbl);
+        javafx.scene.layout.Region beforeDelta = new javafx.scene.layout.Region();
+        HBox.setHgrow(beforeDelta, Priority.SOMETIMES);
+        row.getChildren().add(beforeDelta);
 
-        Label headline = new Label(heroHeadline(r.outcome(), msg));
-        headline.getStyleClass().add("hero-headline");
-        block.getChildren().add(headline);
+        int delta = r.net();
+        Label deltaLbl = new Label(UiFactory.formatDelta(delta));
+        deltaLbl.getStyleClass().add(heroDeltaClass(r.outcome(), delta));
+        row.getChildren().add(deltaLbl);
+
+        Label chip = new Label(heroHeadline(r.outcome(), msg).toUpperCase());
+        chip.getStyleClass().addAll("hero-chip", "hero-chip-" + heroChipModifier(r.outcome()));
+        row.getChildren().add(chip);
 
         Label detail = new Label(heroDetail(r.outcome(), r.bet(), msg));
         detail.getStyleClass().add("hero-detail");
-        block.getChildren().add(detail);
+        HBox.setHgrow(detail, Priority.ALWAYS);
+        row.getChildren().add(detail);
 
-        return block;
+        return row;
     }
 
-    private static String formatHeroDelta(int delta) {
-        if (delta > 0) return "+$" + delta;
-        if (delta < 0) return "-$" + Math.abs(delta);
-        return "$0";
+    private static String heroChipModifier(HandOutcome outcome) {
+        return switch (outcome) {
+            case BLACKJACK -> "bj";
+            case WIN       -> "win";
+            case LOSE      -> "loss";
+            case PUSH      -> "push";
+        };
     }
 
     private static String heroDeltaClass(HandOutcome outcome, int delta) {
@@ -505,7 +460,6 @@ public class RoundResultController {
         };
     }
 
-    /** Lists non-human players (bots) below the hero blocks; hides the strip if none. */
     private void renderOthers(GameManager gm, Map<String, RoundRecord> lastByPlayer, MessageService msg) {
         othersList.getChildren().clear();
         List<Player> bots = gm.getPlayers().stream()
@@ -530,7 +484,7 @@ public class RoundResultController {
 
         row.getChildren().add(buildAvatar(p, index));
 
-        String displayName = "🤖 " + p.getName();
+        String displayName = p.getName();
         if (r != null) displayName += " · " + r.playerScore();
         Label name = new Label(displayName);
         name.getStyleClass().add("outcome-name");
@@ -542,7 +496,7 @@ public class RoundResultController {
             Label chip = new Label(msg.getMessage(roundresultOutcomeKey(r.outcome())));
             chip.getStyleClass().addAll("outcome-chip", outcomeChipClass(r.outcome()));
             row.getChildren().add(chip);
-            row.getChildren().add(buildDeltaLabel(computeDelta(r.bet(), r.outcome())));
+            row.getChildren().add(buildDeltaLabel(r.net()));
         } else {
             Label chip = new Label("—");
             chip.getStyleClass().addAll("outcome-chip", "outcome-chip-push");
@@ -551,22 +505,19 @@ public class RoundResultController {
         return row;
     }
 
-    // ── Right column: per-player balance after the round ─────────
-
     private void renderBalances(GameManager gm, Map<String, RoundRecord> lastByPlayer) {
         balancesList.getChildren().clear();
         int idx = 0;
         MessageService msg = MessageService.getInstance();
         for (Player p : gm.getPlayers()) {
             RoundRecord r = lastByPlayer.get(p.getName());
-            int delta = r != null ? computeDelta(r.bet(), r.outcome()) : 0;
+            int delta = r != null ? r.net() : 0;
             int[] wl = countWinsLosses(gm, p.getName());
             balancesList.getChildren().add(buildBalanceRow(p, delta, idx, wl[0], wl[1], msg));
             idx++;
         }
     }
 
-    /** Returns {wins, losses} across the player's history. PUSH counts as neither. */
     private static int[] countWinsLosses(GameManager gm, String playerName) {
         int w = 0, l = 0;
         for (RoundRecord r : gm.getHistory()) {
@@ -574,7 +525,7 @@ public class RoundResultController {
             switch (r.outcome()) {
                 case WIN, BLACKJACK -> w++;
                 case LOSE           -> l++;
-                case PUSH           -> { /* neither */ }
+                case PUSH           -> {  }
             }
         }
         return new int[]{w, l};
@@ -587,12 +538,11 @@ public class RoundResultController {
         row.getStyleClass().add("balance-mini-row");
         row.getChildren().add(buildAvatar(p, index));
 
-        // Vertical info block: name (top) + W/L badge (bottom).
         VBox info = new VBox(1);
         info.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(info, Priority.ALWAYS);
 
-        Label name = new Label((p.isBot() ? "🤖 " : "") + p.getName());
+        Label name = new Label(p.getName());
         name.getStyleClass().add("balance-mini-name");
         info.getChildren().add(name);
 
@@ -611,8 +561,6 @@ public class RoundResultController {
         return row;
     }
 
-    // ── Dealer cards ─────────────────────────────────────────────
-
     private void renderDealerCards(GameManager gm) {
         List<Card> cards = gm.getDealer().getHand().getCards();
         dealerCardsBox.getChildren().clear();
@@ -627,13 +575,6 @@ public class RoundResultController {
         dealerScorePill.setText(String.valueOf(gm.getDealer().getHand().getScore()));
     }
 
-    /**
-     * Lists the dealer's final score for every round played so far. Uses the
-     * first player's records as the anchor sequence — every player in a round
-     * sees the same dealer, so any non-sitting-out player's record carries the
-     * round's dealerScore. Each row is plain text styled like the existing
-     * mini-round entries on the felt's right panel.
-     */
     private void renderDealerHistory(GameManager gm, MessageService msg) {
         dealerHistoryList.getChildren().clear();
         Player anchor = gm.getPlayers().stream().findFirst().orElse(null);
@@ -653,7 +594,6 @@ public class RoundResultController {
         }
     }
 
-    /** One round tile for the dealer-history grid: round label, big score, outcome tag. */
     private VBox buildDealerHistoryTile(int round, int score, MessageService msg) {
         boolean bust = score > 21;
         boolean blackjack = score == 21;
@@ -682,8 +622,6 @@ public class RoundResultController {
         return tile;
     }
 
-    // ── Misc helpers ─────────────────────────────────────────────
-
     private void renderFallback(MessageService msg) {
         sessionLabel.setText("");
         dealerCardsBox.getChildren().addAll(
@@ -706,20 +644,7 @@ public class RoundResultController {
     }
 
     private StackPane buildAvatar(Player p, int index) {
-        StackPane avatar = new StackPane();
-        avatar.getStyleClass().add("seat-avatar");
-        if (p.isBot()) {
-            avatar.getStyleClass().add("seat-avatar-cpu");
-        } else if (index > 0) {
-            avatar.getStyleClass().add("seat-avatar-p" + (index + 1));
-        }
-        String initial = p.getName().isEmpty()
-                ? "?"
-                : p.getName().substring(0, 1).toUpperCase();
-        Label initLbl = new Label(initial);
-        initLbl.getStyleClass().add("seat-avatar-initial");
-        avatar.getChildren().add(initLbl);
-        return avatar;
+        return UiFactory.avatar(p, index, "seat-avatar");
     }
 
     private Label buildDeltaLabel(int delta) {
@@ -736,15 +661,6 @@ public class RoundResultController {
         Label l = new Label("+$0");
         l.getStyleClass().add("balance-mini-value");
         return l;
-    }
-
-    private static int computeDelta(int bet, HandOutcome outcome) {
-        return switch (outcome) {
-            case WIN       -> bet;
-            case BLACKJACK -> (int) Math.round(bet * 1.5);
-            case LOSE      -> -bet;
-            case PUSH      -> 0;
-        };
     }
 
     private static String roundresultOutcomeKey(HandOutcome outcome) {

@@ -1,3 +1,5 @@
+// Test save/load su file reale: scrive un JSON in una temp dir, lo rilegge, verifica equivalenza. Anche test di exists/lastModified.
+
 package ch.supsi.dti.backend.service;
 
 import ch.supsi.dti.backend.model.HandOutcome;

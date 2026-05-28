@@ -1,3 +1,6 @@
+// Helper statico per cambiare scena dell'app.
+// Un solo metodo navigate(stage, fxml): carica il file FXML, applica il MessageService bundle per le %label, e sostituisce il root della Scene. Tutti i controller lo usano.
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.i18n.MessageService;
@@ -9,26 +12,19 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-/**
- * Scene navigation that swaps only the root node of the existing scene.
- *
- * Calling {@code stage.setScene(new Scene(...))} would briefly snap the stage
- * to the new scene's {@code prefSize} before any re-apply of fullscreen /
- * maximize could correct it, producing a visible flicker (windowed → fullscreen
- * jump on every screen change). Swapping the root via {@link Scene#setRoot}
- * keeps the same {@code Scene} object alive — so stage geometry, fullscreen
- * state and the SoundManager click filter all stay in place untouched.
- */
 public final class Navigation {
 
     private Navigation() {}
 
     public static void navigate(Stage stage, String fxml) {
         try {
+            // 1. Carica l'FXML e attacca il ResourceBundle delle traduzioni (le %label vengono risolte qui).
             FXMLLoader loader = new FXMLLoader(Navigation.class.getResource(fxml));
             loader.setResources(MessageService.getInstance().getBundle());
             Parent newRoot = loader.load();
 
+            // 2. Se è la prima scena della finestra ne crea una nuova; altrimenti scambia solo il root
+            //    (mantiene dimensioni/fullscreen impostati prima).
             Scene scene = stage.getScene();
             if (scene == null) {
                 scene = new Scene(newRoot);
@@ -36,7 +32,8 @@ public final class Navigation {
             } else {
                 scene.setRoot(newRoot);
             }
-            // Idempotent; the existing scene keeps its filter via the marker check.
+
+            // 3. Aggancia gli effetti click globali, aggiorna il titolo della finestra e fa partire la musica giusta.
             SoundManager.attachClickSfx(scene);
             stage.setTitle(MessageService.getInstance().getMessage("app.title"));
             SoundManager.getInstance().playMusic(musicFor(fxml));
@@ -45,10 +42,6 @@ public final class Navigation {
         }
     }
 
-    /**
-     * Which looping track plays on each scene. {@code null} = silence.
-     * Round-result and license deliberately stay quiet.
-     */
     private static SoundManager.MusicTrack musicFor(String fxml) {
         return switch (fxml) {
             case "/ui/game.fxml" -> SoundManager.MusicTrack.GAME;

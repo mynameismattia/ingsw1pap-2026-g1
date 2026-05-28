@@ -1,3 +1,6 @@
+// Il giocatore (umano o bot) con nome, bankroll, eventuale strategia. Possiede una lista di PlayerHand (cresce con lo split).
+// Espone debit/credit per le mutazioni di denaro, resetForNewRound, insertHandAfter (split), e sittingOut (player eliminato che resta visibile ma non gioca).
+
 package ch.supsi.dti.backend.model;
 
 import java.util.ArrayList;

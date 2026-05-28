@@ -1,3 +1,6 @@
+// Gestisce tutti i suoni e la musica del gioco (carte, chip, click, vittoria, sconfitta, fine round, musica menu/gioco).
+// Pre-carica gli AudioClip all'avvio per evitare lag al primo play. Singleton.
+
 package ch.supsi.dti.frontend.service;
 
 import javafx.animation.KeyFrame;
@@ -18,7 +21,6 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class SoundManager {
 
     public enum SoundEvent {
@@ -35,7 +37,6 @@ public class SoundManager {
         public String getResourcePath() { return resourcePath; }
     }
 
-    /** Looping background tracks played via MediaPlayer (heavier than AudioClip). */
     public enum MusicTrack {
         MENU("/audio/menu_music.wav"),
         GAME("/audio/game_music.wav");
@@ -46,21 +47,20 @@ public class SoundManager {
     }
 
     private static final String SCENE_MARKER = "clickSfxInstalled";
-    // I bottoni con questa style class hanno un SFX dedicato (chip, hit, ...) → niente CLICK generico sopra.
+
     private static final String NO_CLICK_SFX_CLASS = "no-click-sfx";
 
     private static SoundManager instance;
 
     private final Map<SoundEvent, AudioClip> registry = new EnumMap<>(SoundEvent.class);
     private final Map<MusicTrack, MediaPlayer> musicPlayers = new EnumMap<>(MusicTrack.class);
-    /** In-flight volume animations, keyed by the player they target. Cancelled
-     *  on re-entry so rapid scene switches don't leave stale tweens fighting. */
+
     private final Map<MediaPlayer, Timeline> fades = new HashMap<>();
-    private MusicTrack currentTrack;        // null = silent
+    private MusicTrack currentTrack;
     private boolean muted = false;
     private boolean preloaded = false;
     private double volume = 0.5;
-    private double musicVolume = 0.4;       // independent of SFX volume
+    private double musicVolume = 0.4;
     private boolean musicMuted = false;
     private static final Duration MUSIC_FADE = Duration.millis(400);
 
@@ -74,9 +74,13 @@ public class SoundManager {
     }
 
     public void preload() {
+        // 1. Idempotente: se ho già pre-caricato, non rifaccio (evita di creare due AudioClip per lo stesso file).
         if (preloaded) {
             return;
         }
+
+        // 2. Per ogni SoundEvent (chip, card, click, ...) creo un AudioClip pronto al play immediato.
+        //    Se il .wav manca dal classpath, log e continuo: l'app gira lo stesso, solo senza quel suono.
         for (SoundEvent event : SoundEvent.values()) {
             URL url = getClass().getResource(event.getResourcePath());
             if (url == null) {
@@ -85,6 +89,9 @@ public class SoundManager {
             }
             registry.put(event, new AudioClip(url.toExternalForm()));
         }
+
+        // 3. Per ogni MusicTrack (menu, game) creo un MediaPlayer in loop infinito al volume corrente.
+        //    Diverso da AudioClip: MediaPlayer supporta fade/pause/loop, AudioClip è solo "fire and forget".
         for (MusicTrack track : MusicTrack.values()) {
             URL url = getClass().getResource(track.getResourcePath());
             if (url == null) {
@@ -96,6 +103,8 @@ public class SoundManager {
             player.setVolume(musicVolume);
             musicPlayers.put(track, player);
         }
+
+        // 4. Flag preloaded a true così le chiamate successive sono no-op.
         preloaded = true;
     }
 
@@ -109,11 +118,6 @@ public class SoundManager {
         }
     }
 
-    /**
-     * Plays a SFX cutting off any in-flight playback of the same clip.
-     * Useful for rapid-fire sounds (e.g. the per-card deal cue) where AudioClip's
-     * default overlapping behaviour would stack copies on top of each other.
-     */
     public void playInterrupting(SoundEvent event) {
         if (muted || volume <= 0.0) {
             return;
@@ -127,7 +131,6 @@ public class SoundManager {
 
     public boolean isMuted() { return muted; }
 
-    /** Master kill-switch: silences both SFX and music. */
     public void setMuted(boolean muted) {
         this.muted = muted;
         setMusicMuted(muted);
@@ -139,26 +142,25 @@ public class SoundManager {
         this.volume = Math.max(0.0, Math.min(1.0, volume));
     }
 
-    // ── Music ───────────────────────────────────────────────────────
-
-    /**
-     * Switches the looping background track. {@code null} stops music entirely.
-     * No-op when the requested track is already current — so navigating between
-     * menu-family scenes does not restart the song. Outgoing and incoming
-     * tracks crossfade over {@link #MUSIC_FADE} so transitions aren't abrupt.
-     */
     public void playMusic(MusicTrack track) {
+        // 1. Se sto già suonando questa traccia, non faccio nulla (evita il "saltino" quando navighi nella stessa area).
         if (track == currentTrack) {
             return;
         }
+
+        // 2. Fade-out della traccia precedente (se c'è) e stop al termine della transizione.
         MediaPlayer prev = (currentTrack != null) ? musicPlayers.get(currentTrack) : null;
         if (prev != null) {
             fadeVolume(prev, 0.0, prev::stop);
         }
+
+        // 3. Aggiorno il "current". Se la nuova track è null (es. schermata di risultati silenziosa) mi fermo qui.
         currentTrack = track;
         if (track == null) {
             return;
         }
+
+        // 4. Recupero il MediaPlayer per la nuova traccia e parto in fade-in dal volume 0 al target.
         MediaPlayer next = musicPlayers.get(track);
         if (next == null) {
             return;
@@ -169,11 +171,6 @@ public class SoundManager {
         fadeVolume(next, target, null);
     }
 
-    /**
-     * Animates {@code player.volumeProperty()} towards {@code target} over
-     * {@link #MUSIC_FADE}. Any in-flight fade for this player is cancelled
-     * first so back-to-back switches don't stack.
-     */
     private void fadeVolume(MediaPlayer player, double target, Runnable onFinished) {
         Timeline existing = fades.remove(player);
         if (existing != null) {
@@ -196,7 +193,7 @@ public class SoundManager {
         if (currentTrack != null && !musicMuted) {
             MediaPlayer p = musicPlayers.get(currentTrack);
             if (p != null) {
-                // Cancel any in-flight fade so the slider feels live.
+
                 Timeline existing = fades.remove(p);
                 if (existing != null) existing.stop();
                 p.setVolume(musicVolume);
@@ -219,22 +216,22 @@ public class SoundManager {
     }
 
     public static void attachClickSfx(Scene scene) {
+        // 1. Idempotenza: uso una marker property sulla Scene per non installare il filter due volte.
         if (scene == null || scene.getProperties().containsKey(SCENE_MARKER)) {
             return;
         }
+        // 2. Event filter globale: ogni ActionEvent (click su Button, ecc.) fa partire il click sound.
+        //    Eccezione: i nodi marcati con la classe "no-click-sfx" lo saltano (es. chip che hanno il loro CHIP sound).
         scene.addEventFilter(ActionEvent.ACTION, e -> {
-            // getSource() lungo la dispatch chain diventa la Scene; usare getTarget() per il nodo originale.
             if (e.getTarget() instanceof Node node && node.getStyleClass().contains(NO_CLICK_SFX_CLASS)) {
                 return;
             }
             getInstance().play(SoundEvent.CLICK);
         });
+        // 3. Marco la Scene come "click sfx installato" così attachClickSfx successivi sono no-op.
         scene.getProperties().put(SCENE_MARKER, Boolean.TRUE);
     }
 
-    // Lo Spinner non emette ActionEvent — il filtro scene-wide non lo intercetta.
-    // Uso un flag su MOUSE_PRESSED per distinguere variazioni user-initiated da quelle programmatiche
-    // (es. quando applyModeStyle() reimposta i valori al cambio di modalità).
     public static void attachSpinnerClick(Spinner<?> spinner) {
         if (spinner == null) {
             return;

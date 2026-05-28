@@ -13,6 +13,11 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<!--
+  Layout del menu principale.
+  Titlebar in alto, hero a sinistra (logo + license pill), controlli a destra (mode pills, spinner setup giocatori e balance, bottoni start/continue).
+-->
+
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="ch.supsi.dti.frontend.controller.MenuController"
@@ -28,20 +33,6 @@
             <Button styleClass="icon-button" text="%mainmenu.action.license" onAction="#onLicense">
                 <tooltip><Tooltip text="%mainmenu.tooltip.license"/></tooltip>
             </Button>
-
-            <HBox alignment="CENTER_LEFT" spacing="4">
-                <Button styleClass="icon-button" text="%mainmenu.action.profile" onAction="#onProfile" disable="true">
-                    <tooltip><Tooltip text="%mainmenu.tooltip.profile"/></tooltip>
-                </Button>
-                <Label text="%mainmenu.badge.soon" styleClass="badge-soon"/>
-            </HBox>
-
-            <HBox alignment="CENTER_LEFT" spacing="4">
-                <Button styleClass="icon-button" text="%mainmenu.action.leaderboard" onAction="#onLeaderboard" disable="true">
-                    <tooltip><Tooltip text="%mainmenu.tooltip.leaderboard"/></tooltip>
-                </Button>
-                <Label text="%mainmenu.badge.soon" styleClass="badge-soon"/>
-            </HBox>
 
             <Region HBox.hgrow="ALWAYS"/>
 
