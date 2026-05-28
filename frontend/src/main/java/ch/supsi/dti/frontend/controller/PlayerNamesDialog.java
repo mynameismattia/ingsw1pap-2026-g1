@@ -7,6 +7,7 @@ import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.BotNames;
 import ch.supsi.dti.backend.model.Player;
+import ch.supsi.dti.frontend.view.Icons;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -216,8 +217,8 @@ public final class PlayerNamesDialog {
     }
 
     private static HBox buildBotChip(String botName) {
-        Label icon = new Label("🤖");
-        icon.getStyleClass().add("bot-chip-icon");
+        Label icon = new Label(Icons.BOT);
+        icon.getStyleClass().addAll("bot-chip-icon", Icons.STYLE_CLASS);
         Label name = new Label(botName);
         name.getStyleClass().add("bot-chip-name");
         HBox chip = new HBox(6, icon, name);

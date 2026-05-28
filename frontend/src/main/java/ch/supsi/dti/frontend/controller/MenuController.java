@@ -6,6 +6,7 @@ package ch.supsi.dti.frontend.controller;
 import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.BotNames;
+import ch.supsi.dti.backend.model.GameRules;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.service.SaveSlot;
 
@@ -27,7 +28,7 @@ import java.util.Set;
 
 public class MenuController {
 
-    private static final int DEFAULT_BALANCE = 100;
+    private static final int DEFAULT_BALANCE = GameRules.DEFAULT_BALANCE;
     private static final int MAX_SEATS = 4;
 
     private enum Mode { VS_CPU, MULTI, TUTORIAL }

@@ -5,6 +5,7 @@ package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.frontend.service.SoundManager;
+import ch.supsi.dti.frontend.view.Icons;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -155,9 +156,9 @@ public final class SettingsDialog {
         HBox pills = new HBox(8);
         pills.setAlignment(Pos.CENTER_LEFT);
         pills.getChildren().addAll(
-                languagePill("🇮🇹  " + msg.getMessage("settings.language.it"),
+                languagePill(msg.getMessage("settings.language.it"),
                         Locale.ITALIAN, current, rebuild),
-                languagePill("🇬🇧  " + msg.getMessage("settings.language.en"),
+                languagePill(msg.getMessage("settings.language.en"),
                         Locale.ENGLISH, current, rebuild)
         );
 
@@ -192,8 +193,8 @@ public final class SettingsDialog {
 
         HBox masterRow = new HBox(12);
         masterRow.setAlignment(Pos.CENTER_LEFT);
-        Label masterIcon = new Label("🔊");
-        masterIcon.getStyleClass().add("settings-icon");
+        Label masterIcon = new Label(Icons.SPEAKER);
+        masterIcon.getStyleClass().addAll("settings-icon", Icons.STYLE_CLASS);
         Label masterText = new Label(msg.getMessage(
                 sm.isMuted() ? "settings.audio.muted" : "settings.audio.master"));
         masterText.getStyleClass().add("settings-row-label");
@@ -212,10 +213,10 @@ public final class SettingsDialog {
         });
         masterRow.getChildren().addAll(masterIcon, masterText, rowSpacer, masterToggle);
 
-        VBox sfxRow = sliderRow("🎲", msg.getMessage("settings.volume"),
+        VBox sfxRow = sliderRow(Icons.SFX, msg.getMessage("settings.volume"),
                 sm.getVolume(), sm::setVolume);
 
-        VBox musicRow = sliderRow("🎵", msg.getMessage("settings.musicVolume"),
+        VBox musicRow = sliderRow(Icons.MUSIC, msg.getMessage("settings.musicVolume"),
                 sm.getMusicVolume(), sm::setMusicVolume);
 
         section.getChildren().addAll(heading, masterRow, sfxRow, musicRow);
@@ -284,7 +285,7 @@ public final class SettingsDialog {
     private static VBox sliderRow(String iconText, String label, double initial,
                                   java.util.function.DoubleConsumer onChange) {
         Label icon = new Label(iconText);
-        icon.getStyleClass().add("settings-icon");
+        icon.getStyleClass().addAll("settings-icon", Icons.STYLE_CLASS);
         Label name = new Label(label);
         name.getStyleClass().add("settings-row-label");
 

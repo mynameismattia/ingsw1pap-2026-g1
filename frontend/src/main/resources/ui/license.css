@@ -9,6 +9,10 @@
     -fx-font-family: "Inter Medium", "Inter", "Segoe UI", "Helvetica Neue", sans-serif;
 }
 
+.nf-icon {
+    -fx-font-family: "JetBrainsMono NFM";
+}
+
 .card {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%,
             rgba(18, 24, 38, 0.96) 0%,

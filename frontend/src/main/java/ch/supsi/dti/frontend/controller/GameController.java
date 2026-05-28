@@ -8,6 +8,7 @@ import ch.supsi.dti.backend.game.GameManager;
 import ch.supsi.dti.backend.game.GameState;
 import ch.supsi.dti.backend.i18n.MessageService;
 import ch.supsi.dti.backend.model.Card;
+import ch.supsi.dti.backend.model.GameRules;
 import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
@@ -18,6 +19,8 @@ import ch.supsi.dti.backend.service.SaveSlot;
 import ch.supsi.dti.frontend.service.SoundManager;
 import ch.supsi.dti.frontend.service.SoundManager.SoundEvent;
 import ch.supsi.dti.frontend.view.CardView;
+import ch.supsi.dti.frontend.view.Icons;
+import ch.supsi.dti.frontend.view.UiFactory;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
@@ -62,12 +65,12 @@ import java.util.Map;
 
 public class GameController {
 
-    private static final int INITIAL_BALANCE = 100;
-    private static final int MIN_BET = 5;
-    private static final int MAX_BET = 1000;
+    private static final int INITIAL_BALANCE = GameRules.DEFAULT_BALANCE;
+    private static final int MIN_BET = GameRules.MIN_BET;
+    private static final int MAX_BET = GameRules.MAX_BET;
     private static final Duration DEALER_STEP_DELAY = Duration.millis(800);
     private static final Duration BOT_STEP_DELAY = Duration.millis(600);
-    private static final int TOTAL_ROUNDS = 10;
+    static final int TOTAL_ROUNDS = 10;
 
     private Timeline dealerTimeline;
     private Timeline botTimeline;
@@ -398,14 +401,14 @@ public class GameController {
 
     @FXML
     private void onViewResultsClicked() {
-        navigateTo("/ui/roundresult.fxml", 1100, 680);
+        navigateTo("/ui/roundresult.fxml");
     }
 
     @FXML
     private void onBackToMenuClicked() {
         stopDealerTimeline();
         stopBotTimeline();
-        navigateTo("/ui/menu.fxml", 1100, 680);
+        navigateTo("/ui/menu.fxml");
     }
 
     @FXML
@@ -495,11 +498,8 @@ public class GameController {
         TableColumn<RoundRecord, String> colNet = new TableColumn<>(
                 msg.getMessage("game.history.col.net"));
         colNet.setCellValueFactory(d -> {
-            int delta = computeDelta(d.getValue().bet(), d.getValue().outcome());
-            String text = delta > 0 ? "+$" + delta
-                        : delta < 0 ? "-$" + Math.abs(delta)
-                                    : "$0";
-            return new ReadOnlyObjectWrapper<>(text);
+            int delta = d.getValue().net();
+            return new ReadOnlyObjectWrapper<>(UiFactory.formatDelta(delta));
         });
         colNet.setCellFactory(col -> new javafx.scene.control.TableCell<>() {
             @Override
@@ -563,7 +563,8 @@ public class GameController {
         return anyHuman;
     }
 
-    private static final String[] PODIUM_MEDALS = {"🥇", "🥈", "🥉"};
+    private static final String[] PODIUM_MEDALS = {Icons.MEDAL, Icons.MEDAL, Icons.MEDAL};
+    private static final String[] MEDAL_COLORS = {"#FFD700", "#C0C0C0", "#CD7F32"};
 
     private void renderGameOverOverlay(MessageService msg, boolean gameOver) {
         if (!gameOver) {
@@ -611,8 +612,12 @@ public class GameController {
 
         Label medal = new Label(rank < PODIUM_MEDALS.length ? PODIUM_MEDALS[rank] : "  ");
         medal.getStyleClass().add("gameover-row-medal");
+        if (rank < PODIUM_MEDALS.length) {
+            medal.getStyleClass().add(Icons.STYLE_CLASS);
+            medal.setStyle("-fx-text-fill: " + MEDAL_COLORS[rank] + ";");
+        }
 
-        Label name = new Label((p.isBot() ? "🤖 " : "") + p.getName());
+        Label name = new Label(p.getName());
         name.getStyleClass().add("gameover-row-name");
         HBox.setHgrow(name, Priority.ALWAYS);
         name.setMaxWidth(Double.MAX_VALUE);
@@ -622,11 +627,15 @@ public class GameController {
                 ? "gameover-row-broke"
                 : "gameover-row-balance");
 
-        row.getChildren().addAll(medal, name, bal);
+        row.getChildren().add(medal);
+        if (p.isBot()) {
+            row.getChildren().add(botIcon());
+        }
+        row.getChildren().addAll(name, bal);
         return row;
     }
 
-    private void navigateTo(String fxml, int w, int h) {
+    private void navigateTo(String fxml) {
         Navigation.navigate((Stage) dealButton.getScene().getWindow(), fxml);
     }
 
@@ -855,7 +864,7 @@ public class GameController {
 
         String caption = msg.getMessage("game.panel.balance");
         if (players.size() > 1 && target != null) {
-            caption = caption + " · " + (target.isBot() ? "🤖 " : "") + target.getName();
+            caption = caption + " · " + target.getName();
         }
         balanceOwnerLabel.setText(caption);
     }
@@ -1270,7 +1279,7 @@ public class GameController {
         HBox nameRow = new HBox(8);
         nameRow.setAlignment(Pos.CENTER_LEFT);
         nameRow.setMaxWidth(Double.MAX_VALUE);
-        nameRow.getChildren().add(buildSeatCardAvatar(player, seatIndex));
+        nameRow.getChildren().add(UiFactory.avatar(player, seatIndex, "seat-card-avatar"));
         nameRow.getChildren().add(labeled(displayName, "seat-card-name"));
         Region nameFlex = new Region();
         HBox.setHgrow(nameFlex, Priority.ALWAYS);
@@ -1308,23 +1317,6 @@ public class GameController {
         return seat;
     }
 
-    private static StackPane buildSeatCardAvatar(Player player, int seatIndex) {
-        StackPane avatar = new StackPane();
-        avatar.getStyleClass().add("seat-card-avatar");
-        if (player.isBot()) {
-            avatar.getStyleClass().add("seat-avatar-cpu");
-        } else if (seatIndex > 0) {
-            avatar.getStyleClass().add("seat-avatar-p" + (seatIndex + 1));
-        }
-        String initial = player.getName().isEmpty()
-                ? "?"
-                : player.getName().substring(0, 1).toUpperCase();
-        Label initLbl = new Label(initial);
-        initLbl.getStyleClass().add("seat-card-avatar-initial");
-        avatar.getChildren().add(initLbl);
-        return avatar;
-    }
-
     private HBox buildSideSeatRow(Player player, boolean isActive, MessageService msg, int index) {
         HBox row = new HBox(10);
         row.setAlignment(Pos.CENTER_LEFT);
@@ -1333,24 +1325,11 @@ public class GameController {
             row.getStyleClass().add("seat-row-active");
         }
 
-        StackPane avatar = new StackPane();
-        avatar.getStyleClass().add("seat-avatar");
-        if (player.isBot()) {
-            avatar.getStyleClass().add("seat-avatar-cpu");
-        } else if (index > 0) {
-            avatar.getStyleClass().add("seat-avatar-p" + (index + 1));
-        }
-        String initial = player.getName().isEmpty()
-                ? "?"
-                : player.getName().substring(0, 1).toUpperCase();
-        Label initLbl = new Label(initial);
-        initLbl.getStyleClass().add("seat-avatar-initial");
-        avatar.getChildren().add(initLbl);
-        row.getChildren().add(avatar);
+        row.getChildren().add(UiFactory.avatar(player, index, "seat-avatar"));
 
         VBox info = new VBox();
         HBox.setHgrow(info, Priority.ALWAYS);
-        info.getChildren().add(labeled((player.isBot() ? "🤖 " : "") + player.getName(), "seat-name"));
+        info.getChildren().add(labeled(player.getName(), "seat-name"));
         info.getChildren().add(labeled("$" + player.getBalance(), "seat-balance"));
         row.getChildren().add(info);
 
@@ -1368,6 +1347,12 @@ public class GameController {
         return l;
     }
 
+    private static Label botIcon() {
+        Label l = new Label(Icons.BOT);
+        l.getStyleClass().add(Icons.STYLE_CLASS);
+        return l;
+    }
+
     private String outcomeKey(HandOutcome outcome) {
         return switch (outcome) {
             case WIN       -> "game.message.win";
@@ -1377,12 +1362,4 @@ public class GameController {
         };
     }
 
-    private static int computeDelta(int bet, HandOutcome outcome) {
-        return switch (outcome) {
-            case WIN       -> bet;
-            case BLACKJACK -> (int) Math.round(bet * 1.5);
-            case LOSE      -> -bet;
-            case PUSH      -> 0;
-        };
-    }
 }

@@ -175,6 +175,10 @@
     -fx-font-weight: bold;
 }
 
+.nf-icon {
+    -fx-font-family: "JetBrainsMono NFM";
+}
+
 .spacer-sm {
     -fx-min-height: 6;
     -fx-pref-height: 6;

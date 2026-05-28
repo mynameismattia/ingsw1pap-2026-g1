@@ -7,7 +7,7 @@ import ch.supsi.dti.backend.game.GameState;
 
 public interface PlayerStrategy {
 
-    int MIN_BET = 5;
+    int MIN_BET = GameRules.MIN_BET;
 
     enum Action {
         HIT, STAND, DOUBLE, SPLIT, TAKE_INSURANCE, DECLINE_INSURANCE

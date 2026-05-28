@@ -32,7 +32,7 @@
             <Region HBox.hgrow="ALWAYS"/>
 
             <Label text="%roundresult.saved" styleClass="saved-pill"/>
-            <Button text="💾" onAction="#onSaveClicked" styleClass="icon-button"/>
+            <Button fx:id="saveBtn" onAction="#onSaveClicked" styleClass="icon-button"/>
             <Button text="☰" onAction="#onBackToMenu" styleClass="icon-button"/>
         </HBox>
 

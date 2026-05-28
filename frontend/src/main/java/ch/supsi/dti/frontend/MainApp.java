@@ -64,7 +64,8 @@
               "/fonts/Manrope-Medium.ttf",
               "/fonts/Inter-Medium.ttf",
               "/fonts/Inter-Regular.ttf",
-              "/fonts/JetBrainsMono-Medium.ttf"
+              "/fonts/JetBrainsMono-Medium.ttf",
+              "/fonts/JetBrainsMonoNerdFontMono-Regular.ttf"
           };
           // 2. Per ogni font provo a registrarlo in JavaFX. Se non lo trovo o non si carica, ignoro silenziosamente.
           for (String path : candidates) {

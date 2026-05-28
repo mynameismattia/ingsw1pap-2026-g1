@@ -12,4 +12,8 @@ public record RoundRecord(
         int playerScore,
         int dealerScore,
         Instant timestamp
-) {}
+) {
+    public int net() {
+        return GameRules.net(bet, outcome);
+    }
+}

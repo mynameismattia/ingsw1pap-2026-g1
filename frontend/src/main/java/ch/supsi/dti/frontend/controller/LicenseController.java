@@ -3,6 +3,7 @@
 
 package ch.supsi.dti.frontend.controller;
 import ch.supsi.dti.backend.license.LicenseChecker;
+import ch.supsi.dti.frontend.view.Icons;
 import javafx.animation.Interpolator;
 import javafx.animation.PauseTransition;
 import javafx.animation.RotateTransition;
@@ -34,6 +35,7 @@ public class LicenseController {
     private static final Duration SUCCESS_HOLD = Duration.millis(700);
     private static final Duration ERROR_REVERT = Duration.millis(1500);
 
+    @FXML private Label keyIcon;
     @FXML private TextField licenseField;
     @FXML private Button activateButton;
     @FXML private HBox statusBox;
@@ -48,6 +50,8 @@ public class LicenseController {
 
     @FXML
     private void initialize() {
+        keyIcon.setText(Icons.KEY);
+        keyIcon.getStyleClass().add(Icons.STYLE_CLASS);
         // Listener sulla casella di testo: ogni volta che l'utente digita un carattere fa partire la pipeline qua sotto.
         licenseField.textProperty().addListener((obs, oldVal, newVal) -> {
             // 1. Guard anti-ricorsione: se stiamo formattando noi (setText interno), non rientrare.

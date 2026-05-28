@@ -8,6 +8,7 @@ package ch.supsi.dti.backend.game;
 import ch.supsi.dti.backend.model.Card;
 import ch.supsi.dti.backend.model.Dealer;
 import ch.supsi.dti.backend.model.Deck;
+import ch.supsi.dti.backend.model.GameRules;
 import ch.supsi.dti.backend.model.HandOutcome;
 import ch.supsi.dti.backend.model.Player;
 import ch.supsi.dti.backend.model.PlayerHand;
@@ -24,9 +25,9 @@ import java.util.Set;
 
 public class GameManager {
 
-    private static final int MIN_BET = 5;
-    private static final int MAX_BET = 1000;
-    private static final double BLACKJACK_PAYOUT = 1.5;
+    private static final int MIN_BET = GameRules.MIN_BET;
+    private static final int MAX_BET = GameRules.MAX_BET;
+    private static final double BLACKJACK_PAYOUT = GameRules.BLACKJACK_PAYOUT;
     private static final double NORMAL_PAYOUT = 1.0;
 
     private final List<Player> players;

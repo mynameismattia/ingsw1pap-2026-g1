@@ -44,7 +44,7 @@
             <Label text="CODICE LICENZA" styleClass="field-label"/>
 
             <HBox styleClass="input-wrap" alignment="CENTER_LEFT" spacing="8">
-                <Label text="🔑" styleClass="input-icon"/>
+                <Label fx:id="keyIcon" styleClass="input-icon"/>
                 <TextField fx:id="licenseField"
                            promptText="XXXXX-XXXXX-XXXXX-XXXXX"
                            styleClass="license-input"

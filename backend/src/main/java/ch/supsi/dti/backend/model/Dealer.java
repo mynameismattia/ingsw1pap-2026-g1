@@ -15,12 +15,7 @@ public class Dealer {
     }
 
     public boolean shouldHit(){
-        // Regola S17 (Soft-17 Hits): il banco pesca sotto 17, e anche sul 17 quando è soft (asso ancora a 11).
-        // Sopra 17 hard sta sempre. È la variante più comune nelle case da gioco.
-        if ( hand.getScore() < 17 || (hand.getScore() == 17 && hand.isSoft())) {
-            return true;
-        }
-        return false;
+        return GameRules.dealerShouldHit(hand.getScore(), hand.isSoft());
     }
 
     public Card getVisibleCard(){

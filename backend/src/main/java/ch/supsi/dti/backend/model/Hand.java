@@ -21,22 +21,7 @@ public class Hand {
     }
 
     public int getScore(){
-        // 1. Sommo tutti i valori "nominali" delle carte (l'asso vale 11 di default in Rank).
-        int score = 0;
-        int aces = 0;
-        for (Card card : cards) {
-            score += card.getValue();
-            if(card.getRank() == Rank.ACE){
-                aces++;
-            }
-        }
-
-        // 2. Finché sballo (>21) e ho ancora assi "soft" (contati come 11), degrado un asso a 1 togliendo 10.
-        while (score > 21 && aces > 0){
-            score -= 10;
-            aces--;
-        }
-        return score;
+        return evaluate().score();
     }
 
     public boolean isBusted(){
@@ -48,25 +33,26 @@ public class Hand {
     }
 
     public boolean isSoft(){
-        // 1. Stessa contabilità di getScore: somma valori e conta assi.
+        return evaluate().softAces() > 0;
+    }
+
+    private Eval evaluate() {
         int score = 0;
         int aces = 0;
         for (Card card : cards) {
             score += card.getValue();
-            if(card.getRank() == Rank.ACE){
+            if (card.getRank() == Rank.ACE) {
                 aces++;
             }
         }
-
-        // 2. Degrado gli assi solo se sballo; gli assi che restano "11" sono i soft.
-        while (score > 21 && aces > 0){
+        while (score > 21 && aces > 0) {
             score -= 10;
             aces--;
         }
-
-        // 3. È soft se almeno un asso è ancora contato come 11.
-        return aces > 0;
+        return new Eval(score, aces);
     }
+
+    private record Eval(int score, int softAces) {}
 
     public List<Card> getCards() {
         return Collections.unmodifiableList(cards);

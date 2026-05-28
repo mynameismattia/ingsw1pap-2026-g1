@@ -13,6 +13,8 @@ import ch.supsi.dti.backend.model.RoundRecord;
 import ch.supsi.dti.backend.model.Rank;
 import ch.supsi.dti.backend.model.Suit;
 import ch.supsi.dti.frontend.view.CardView;
+import ch.supsi.dti.frontend.view.Icons;
+import ch.supsi.dti.frontend.view.UiFactory;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.chart.LineChart;
@@ -34,7 +36,7 @@ import java.util.Map;
 
 public class RoundResultController {
 
-    private static final int TOTAL_ROUNDS = 10;
+    private static final int TOTAL_ROUNDS = GameController.TOTAL_ROUNDS;
 
     @FXML private Label titleLabel;
     @FXML private HBox progressDots;
@@ -48,6 +50,7 @@ public class RoundResultController {
     @FXML private Label othersHeader;
     @FXML private VBox othersList;
     @FXML private Button primaryActionBtn;
+    @FXML private Button saveBtn;
     @FXML private StackPane chartContainer;
     @FXML private Label dealerHistoryHeader;
     @FXML private FlowPane dealerHistoryList;
@@ -55,6 +58,8 @@ public class RoundResultController {
     @FXML
     private void initialize() {
         MessageService msg = MessageService.getInstance();
+        saveBtn.setText(Icons.SAVE);
+        saveBtn.getStyleClass().add(Icons.STYLE_CLASS);
         int round = GameController.sharedRoundNumber;
         boolean isFinalRound = round >= TOTAL_ROUNDS;
 
@@ -140,7 +145,7 @@ public class RoundResultController {
         int currentStreak = 0, bestStreak = 0;
         for (RoundRecord r : gm.getHistory()) {
             if (!r.playerName().equals(humanName)) continue;
-            int d = computeDelta(r.bet(), r.outcome());
+            int d = r.net();
             net += d;
             HandOutcome o = r.outcome();
             if (o == HandOutcome.WIN || o == HandOutcome.BLACKJACK) {
@@ -150,8 +155,6 @@ public class RoundResultController {
             } else if (o == HandOutcome.LOSE) {
                 losses++;
                 currentStreak = 0;
-            } else {
-
             }
         }
         String netStr = net >= 0 ? "+$" + net : "-$" + Math.abs(net);
@@ -169,7 +172,7 @@ public class RoundResultController {
 
         Map<String, Integer> totalDelta = new HashMap<>();
         for (RoundRecord r : history) {
-            totalDelta.merge(r.playerName(), computeDelta(r.bet(), r.outcome()), Integer::sum);
+            totalDelta.merge(r.playerName(), r.net(), Integer::sum);
         }
 
         Map<String, XYChart.Series<Number, Number>> seriesByName = new LinkedHashMap<>();
@@ -187,7 +190,7 @@ public class RoundResultController {
             Map<String, Integer> deltaThisRound = new HashMap<>();
             for (RoundRecord r : rounds.get(i)) {
                 deltaThisRound.merge(r.playerName(),
-                        computeDelta(r.bet(), r.outcome()), Integer::sum);
+                        r.net(), Integer::sum);
             }
             for (Player p : players) {
                 int newBal = runningBalance.get(p.getName())
@@ -383,20 +386,7 @@ public class RoundResultController {
         }
 
         // 2. Avatar mini 20px (cerchio con iniziale). Colore dalla palette seat-avatar-cpu/p2/p3/p4 (uguale al felt).
-        StackPane avatar = new StackPane();
-        avatar.getStyleClass().add("seat-card-avatar");
-        if (player.isBot()) {
-            avatar.getStyleClass().add("seat-avatar-cpu");
-        } else if (seatIndex > 0) {
-            avatar.getStyleClass().add("seat-avatar-p" + (seatIndex + 1));
-        }
-        String initial = player.getName().isEmpty()
-                ? "?"
-                : player.getName().substring(0, 1).toUpperCase();
-        Label initLbl = new Label(initial);
-        initLbl.getStyleClass().add("seat-card-avatar-initial");
-        avatar.getChildren().add(initLbl);
-        row.getChildren().add(avatar);
+        row.getChildren().add(UiFactory.avatar(player, seatIndex, "seat-card-avatar"));
 
         // 3. Nome del player a sinistra (min-width 90 via CSS).
         Label name = new Label(player.getName());
@@ -418,8 +408,8 @@ public class RoundResultController {
         HBox.setHgrow(beforeDelta, Priority.SOMETIMES);
         row.getChildren().add(beforeDelta);
 
-        int delta = computeDelta(r.bet(), r.outcome());
-        Label deltaLbl = new Label(formatHeroDelta(delta));
+        int delta = r.net();
+        Label deltaLbl = new Label(UiFactory.formatDelta(delta));
         deltaLbl.getStyleClass().add(heroDeltaClass(r.outcome(), delta));
         row.getChildren().add(deltaLbl);
 
@@ -442,12 +432,6 @@ public class RoundResultController {
             case LOSE      -> "loss";
             case PUSH      -> "push";
         };
-    }
-
-    private static String formatHeroDelta(int delta) {
-        if (delta > 0) return "+$" + delta;
-        if (delta < 0) return "-$" + Math.abs(delta);
-        return "$0";
     }
 
     private static String heroDeltaClass(HandOutcome outcome, int delta) {
@@ -500,7 +484,7 @@ public class RoundResultController {
 
         row.getChildren().add(buildAvatar(p, index));
 
-        String displayName = "🤖 " + p.getName();
+        String displayName = p.getName();
         if (r != null) displayName += " · " + r.playerScore();
         Label name = new Label(displayName);
         name.getStyleClass().add("outcome-name");
@@ -512,7 +496,7 @@ public class RoundResultController {
             Label chip = new Label(msg.getMessage(roundresultOutcomeKey(r.outcome())));
             chip.getStyleClass().addAll("outcome-chip", outcomeChipClass(r.outcome()));
             row.getChildren().add(chip);
-            row.getChildren().add(buildDeltaLabel(computeDelta(r.bet(), r.outcome())));
+            row.getChildren().add(buildDeltaLabel(r.net()));
         } else {
             Label chip = new Label("—");
             chip.getStyleClass().addAll("outcome-chip", "outcome-chip-push");
@@ -527,7 +511,7 @@ public class RoundResultController {
         MessageService msg = MessageService.getInstance();
         for (Player p : gm.getPlayers()) {
             RoundRecord r = lastByPlayer.get(p.getName());
-            int delta = r != null ? computeDelta(r.bet(), r.outcome()) : 0;
+            int delta = r != null ? r.net() : 0;
             int[] wl = countWinsLosses(gm, p.getName());
             balancesList.getChildren().add(buildBalanceRow(p, delta, idx, wl[0], wl[1], msg));
             idx++;
@@ -558,7 +542,7 @@ public class RoundResultController {
         info.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(info, Priority.ALWAYS);
 
-        Label name = new Label((p.isBot() ? "🤖 " : "") + p.getName());
+        Label name = new Label(p.getName());
         name.getStyleClass().add("balance-mini-name");
         info.getChildren().add(name);
 
@@ -660,20 +644,7 @@ public class RoundResultController {
     }
 
     private StackPane buildAvatar(Player p, int index) {
-        StackPane avatar = new StackPane();
-        avatar.getStyleClass().add("seat-avatar");
-        if (p.isBot()) {
-            avatar.getStyleClass().add("seat-avatar-cpu");
-        } else if (index > 0) {
-            avatar.getStyleClass().add("seat-avatar-p" + (index + 1));
-        }
-        String initial = p.getName().isEmpty()
-                ? "?"
-                : p.getName().substring(0, 1).toUpperCase();
-        Label initLbl = new Label(initial);
-        initLbl.getStyleClass().add("seat-avatar-initial");
-        avatar.getChildren().add(initLbl);
-        return avatar;
+        return UiFactory.avatar(p, index, "seat-avatar");
     }
 
     private Label buildDeltaLabel(int delta) {
@@ -690,15 +661,6 @@ public class RoundResultController {
         Label l = new Label("+$0");
         l.getStyleClass().add("balance-mini-value");
         return l;
-    }
-
-    private static int computeDelta(int bet, HandOutcome outcome) {
-        return switch (outcome) {
-            case WIN       -> bet;
-            case BLACKJACK -> (int) Math.round(bet * 1.5);
-            case LOSE      -> -bet;
-            case PUSH      -> 0;
-        };
     }
 
     private static String roundresultOutcomeKey(HandOutcome outcome) {

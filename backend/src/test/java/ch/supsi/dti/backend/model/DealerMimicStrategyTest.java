@@ -1,4 +1,4 @@
-// Test della strategia bot: HIT sotto 17 (anche soft), STAND dal 17 in su, DECLINE_INSURANCE sempre.
+// Test della strategia bot: regola S17 come il banco — HIT sotto 17 e sul soft-17, STAND dal 17 hard in su, DECLINE_INSURANCE sempre.
 
 package ch.supsi.dti.backend.model;
 
@@ -48,14 +48,14 @@ public class DealerMimicStrategyTest {
     }
 
     @Test
-    void standsOnSoftSeventeen() {
+    void hitsOnSoftSeventeen() {
 
         PlayerHand h = handWith(
                 new Card(Suit.HEARTS, Rank.ACE),
                 new Card(Suit.CLUBS, Rank.SIX));
         assertTrue(h.getHand().isSoft());
         assertEquals(17, h.getHand().getScore());
-        assertEquals(PlayerStrategy.Action.STAND,
+        assertEquals(PlayerStrategy.Action.HIT,
                 strategy.decide(GameState.PLAYER_TURN, h, dealerUpcard));
     }
 
