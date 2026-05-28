@@ -1,3 +1,5 @@
+// Test della Hand: score normale con e senza figure, asso soft (vale 11), asso che degrada a 1 quando la mano sballa, isBlackJack su 21+2carte, isBusted su >21.
+
 package ch.supsi.dti.backend.model;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +14,6 @@ public class HandTest {
     void setUp() {
         hand = new Hand();
     }
-
 
     @Test
     void testScoreSimple() {
@@ -58,7 +59,6 @@ public class HandTest {
         assertEquals(13, hand.getScore());
     }
 
-
     @Test
     void testBlackjack() {
         hand.addCard(new Card(Suit.HEARTS, Rank.ACE));
@@ -76,7 +76,6 @@ public class HandTest {
         assertFalse(hand.isBlackJack());
     }
 
-
     @Test
     void testBusted() {
         hand.addCard(new Card(Suit.HEARTS, Rank.KING));
@@ -91,7 +90,6 @@ public class HandTest {
         hand.addCard(new Card(Suit.CLUBS, Rank.QUEEN));
         assertFalse(hand.isBusted());
     }
-
 
     @Test
     void testSoft() {
@@ -114,7 +112,6 @@ public class HandTest {
         hand.addCard(new Card(Suit.CLUBS, Rank.SEVEN));
         assertFalse(hand.isSoft());
     }
-
 
     @Test
     void testClear() {

@@ -1,3 +1,5 @@
+// Test serializzazione/deserializzazione GameSnapshot in JSON via Jackson: round-trip identità, gestione campi null/list vuote.
+
 package ch.supsi.dti.backend.service;
 
 import ch.supsi.dti.backend.model.HandOutcome;

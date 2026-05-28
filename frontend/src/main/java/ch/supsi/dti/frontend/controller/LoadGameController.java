@@ -1,3 +1,6 @@
+// Schermata Carica partita.
+// Lista degli slot con timestamp e info; al click carica il GameSnapshot via PersistenceService, ricostruisce il GameManager e naviga alla scena di gioco.
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.game.GameManager;
@@ -107,11 +110,18 @@ public class LoadGameController {
     }
 
     private void loadSlot(SaveSlot slot, GameSnapshot snap) {
+        // 1. Guard: se lo snapshot è null (slot vuoto) non faccio nulla.
         if (snap == null) return;
+
+        // 2. Ricostruisco gli oggetti Player dai PlayerSaveData (nome, balance, isBot) — i Player veri non si serializzano,
+        //    si rifanno da zero qui per non portarci dietro mani/strategie morte.
         List<Player> players = new ArrayList<>(snap.playersData().size());
         for (GameSnapshot.PlayerSaveData pd : snap.playersData()) {
             players.add(new Player(pd.name(), pd.balance(), pd.isBot()));
         }
+
+        // 3. Inietto il GameManager restaurato + il numero di round salvato nel GameController (campi statici di handoff),
+        //    poi navigo alla scena di gioco che leggerà questi pending in initialize().
         GameController.setPendingGameManager(GameManager.restore(players, snap.roundHistory()));
         GameController.pendingResumedRoundNumber = snap.currentRoundNumber();
         Navigation.navigate((Stage) slotsContainer.getScene().getWindow(), "/ui/game.fxml");

@@ -1,3 +1,6 @@
+// Schermata Leaderboard (classifica giocatori).
+// Non raggiungibile dal menu (bottone rimosso) ma il file resta. Controller praticamente vuoto, solo il back-button funziona.
+
 package ch.supsi.dti.frontend.controller;
 
 import javafx.fxml.FXML;

@@ -1,3 +1,6 @@
+// Schermata Salva partita.
+// Mostra 3 slot manuali + autosave, con anteprima (round, balance, timestamp) e bottone per sovrascrivere lo slot selezionato.
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.i18n.MessageService;
@@ -28,7 +31,6 @@ public class SaveGameController {
 
     @FXML private VBox slotsContainer;
 
-    // Overwrite confirmation overlay
     @FXML private StackPane confirmOverlay;
     @FXML private Label confirmBody;
     @FXML private Button confirmOk;
@@ -62,6 +64,7 @@ public class SaveGameController {
     }
 
     private HBox buildSlotRow(SaveSlot slot, Optional<GameSnapshot> snapshot) {
+        // 1. Riga base: HBox con titolo (es. "Slot 1"), dettagli flex al centro, bottone Salva a destra.
         HBox row = new HBox(12);
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("row");
@@ -74,6 +77,7 @@ public class SaveGameController {
         VBox details = new VBox(2);
         HBox.setHgrow(details, Priority.ALWAYS);
 
+        // 2. Se lo slot è già occupato mostro round + data ultima modifica; altrimenti la label "vuoto".
         boolean occupied = snapshot.isPresent();
         if (occupied) {
             GameSnapshot snap = snapshot.get();
@@ -91,6 +95,7 @@ public class SaveGameController {
             details.getChildren().add(empty);
         }
 
+        // 3. Bottone Salva (o "Sovrascrivi" se lo slot è già occupato) — quest'ultimo apre prima un overlay di conferma.
         Button save = new Button(occupied ? msg("save.action.overwrite") : msg("save.action.saveHere"));
         save.getStyleClass().add(occupied ? "danger-button" : "primary-button");
         save.setOnAction(e -> {
@@ -107,13 +112,16 @@ public class SaveGameController {
 
     private void doSave(SaveSlot slot) {
         try {
+            // 1. Costruisco lo snapshot dal GameController condiviso (statico): contiene round + saldi + storico.
             GameSnapshot snap = GameSnapshot.fromGameManager(
                     GameController.sharedGameManager,
                     GameController.sharedRoundNumber);
+            // 2. Lo serializzo in JSON nel file dello slot scelto via PersistenceService.
             new PersistenceService(slot).save(snap);
         } catch (Exception ex) {
             System.err.println("Manual save failed: " + ex.getMessage());
         }
+        // 3. Torno alla schermata Vedi Risultati (da dove l'utente di solito apre il save).
         Stage stage = (Stage) slotsContainer.getScene().getWindow();
         Navigation.navigate(stage, "/ui/roundresult.fxml");
     }
@@ -140,7 +148,7 @@ public class SaveGameController {
 
     @FXML
     private void onConfirmBackdropClicked(MouseEvent e) {
-        // Only dismiss when the click lands on the backdrop itself, not on the card.
+
         if (e.getTarget() == confirmOverlay) {
             hideConfirm();
         }

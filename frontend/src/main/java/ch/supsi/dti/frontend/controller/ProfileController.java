@@ -1,3 +1,6 @@
+// Schermata Profilo (avatar, statistiche, ultimi giochi).
+// Al momento non raggiungibile dal menu (bottone rimosso in iter passata) ma il file resta per riusi futuri.
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.i18n.MessageService;
@@ -13,7 +16,7 @@ public class ProfileController {
 
     @FXML
     private void initialize() {
-        // Parametric i18n: "{0} vittoria" / "{0} win" — FXML %key can't apply MessageFormat
+
         winStreakBadge.setText(MessageService.getInstance().getMessage("profile.badge.winStreak", 1));
     }
 

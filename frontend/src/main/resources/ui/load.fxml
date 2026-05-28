@@ -9,6 +9,11 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<!--
+  Layout del dialog Carica partita.
+  Lista degli slot disponibili con timestamp e info; al click carica.
+-->
+
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="ch.supsi.dti.frontend.controller.LoadGameController"

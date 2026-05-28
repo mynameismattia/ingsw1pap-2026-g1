@@ -1,3 +1,6 @@
+// Schermata Tutorial.
+// Spiega le regole base del Black Jack con esempi visivi di carte (CardView statiche con piccole animazioni di entry per attirare l'attenzione).
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.model.Card;
@@ -18,7 +21,6 @@ public class TutorialController {
     @FXML private Button startBtn;
     @FXML private Button settingsBtn;
 
-    // Card example slots — populated in initialize().
     @FXML private HBox heroCards;
     @FXML private HBox valuesRow;
     @FXML private HBox exampleHit;
@@ -34,19 +36,17 @@ public class TutorialController {
         renderActionExamples();
     }
 
-    // ── Visuals ─────────────────────────────────────────────────
-
-    /** Fanned-out trio of cards as decorative hero element. */
     private void renderHeroCards() {
+        // 1. Tre carte "vetrina" in alto: Asso ♠, Re ♥, Donna ♦.
         CardView c1 = new CardView(new Card(Suit.SPADES, Rank.ACE));
         CardView c2 = new CardView(new Card(Suit.HEARTS, Rank.KING));
         CardView c3 = new CardView(new Card(Suit.DIAMONDS, Rank.QUEEN));
+        // 2. Le due laterali sono leggermente ruotate (-10° e +10°) per dare un effetto "ventaglio" visivo.
         c1.getTransforms().add(new Rotate(-10));
         c3.getTransforms().add(new Rotate(10));
         heroCards.getChildren().addAll(c1, c2, c3);
     }
 
-    /** Row of example cards with the value rendered under each. */
     private void renderCardValues() {
         valuesRow.getChildren().addAll(
                 cardWithCaption(new Card(Suit.HEARTS, Rank.TWO), "2"),
@@ -57,32 +57,31 @@ public class TutorialController {
         );
     }
 
-    /** Small two-card scenes illustrating each action context. */
     private void renderActionExamples() {
-        // Hit: 5 + 7 = 12, you may want one more.
+
         exampleHit.getChildren().addAll(
                 new CardView(new Card(Suit.CLUBS, Rank.FIVE)),
                 new CardView(new Card(Suit.HEARTS, Rank.SEVEN))
         );
-        // Stand: 10 + 8 = 18, stop here.
+
         exampleStand.getChildren().addAll(
                 new CardView(new Card(Suit.SPADES, Rank.TEN)),
                 new CardView(new Card(Suit.HEARTS, Rank.EIGHT))
         );
-        // Double: 5 + 6 = 11, double and take one card.
+
         exampleDouble.getChildren().addAll(
                 new CardView(new Card(Suit.SPADES, Rank.FIVE)),
                 new CardView(new Card(Suit.HEARTS, Rank.SIX))
         );
-        // Split: pair of 8s.
+
         exampleSplit.getChildren().addAll(
                 new CardView(new Card(Suit.SPADES, Rank.EIGHT)),
                 new CardView(new Card(Suit.DIAMONDS, Rank.EIGHT))
         );
-        // Insurance: dealer shows an Ace (face-up + face-down).
+
         exampleInsurance.getChildren().addAll(
                 new CardView(new Card(Suit.SPADES, Rank.ACE)),
-                new CardView(null) // face-down
+                new CardView(null)
         );
     }
 
@@ -95,8 +94,6 @@ public class TutorialController {
         box.getChildren().add(label);
         return box;
     }
-
-    // ── Navigation ──────────────────────────────────────────────
 
     @FXML
     private void onBack() {

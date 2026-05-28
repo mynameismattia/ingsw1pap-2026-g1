@@ -9,6 +9,11 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<!--
+  Layout della schermata Vedi Risultati.
+  Tre colonne: mano del banco + storico a sinistra, dealer banner + grafico + hero rows + others list al centro, saldi aggiornati a destra.
+-->
+
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="ch.supsi.dti.frontend.controller.RoundResultController"
@@ -18,7 +23,6 @@
 
     <VBox styleClass="card" spacing="0">
 
-        <!-- ── Titlebar: round progress + save / menu icons ───── -->
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
             <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
 
@@ -34,7 +38,6 @@
 
         <Region styleClass="divider"/>
 
-        <!-- ── Session summary band ───────────────────────────── -->
         <HBox styleClass="session-band" alignment="CENTER" spacing="10">
             <padding><Insets top="8" right="14" bottom="8" left="14"/></padding>
             <Label fx:id="sessionLabel" text="" styleClass="session-line"/>
@@ -42,10 +45,8 @@
 
         <Region styleClass="divider"/>
 
-        <!-- ── Body: 3 columns ────────────────────────────────── -->
         <HBox VBox.vgrow="ALWAYS" spacing="0">
 
-            <!-- ── Left: dealer hand ─────────────────────────── -->
             <VBox prefWidth="300" minWidth="300" spacing="10" HBox.hgrow="ALWAYS">
                 <padding><Insets top="22" right="20" bottom="22" left="20"/></padding>
 
@@ -69,25 +70,18 @@
 
             <Region styleClass="vdivider"/>
 
-            <!-- ── Centre: dealer banner + chart + heroes + others ── -->
             <VBox HBox.hgrow="ALWAYS" spacing="14" alignment="TOP_CENTER"
                   maxWidth="760">
                 <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
 
-                <!-- Dealer outcome banner ("Banco sballato a 25", etc.) -->
                 <Label fx:id="dealerBanner" text="" styleClass="dealer-banner"
                        alignment="CENTER" maxWidth="Infinity"/>
 
-                <!-- Round meta: "Round 1/10 · puntata totale al tavolo $60" -->
                 <Label fx:id="roundMetaLabel" text="" styleClass="round-meta"/>
 
-                <!-- Per-player balance evolution chart (line per player across rounds).
-                     Populated programmatically in the controller — easier than wiring
-                     NumberAxis instances through FXML. -->
                 <StackPane fx:id="chartContainer" minHeight="220" prefHeight="240"
                            styleClass="chart-container" VBox.vgrow="ALWAYS"/>
 
-                <!-- Hero block(s) — one per human player, built dynamically. -->
                 <VBox fx:id="heroBox" alignment="CENTER" spacing="12"/>
 
                 <Region prefHeight="6"/>
@@ -104,7 +98,6 @@
 
             <Region styleClass="vdivider"/>
 
-            <!-- ── Right: updated balances ───────────────────── -->
             <VBox prefWidth="260" minWidth="260" spacing="10" HBox.hgrow="ALWAYS">
                 <padding><Insets top="22" right="20" bottom="22" left="20"/></padding>
 

@@ -1,3 +1,6 @@
+// I 13 valori delle carte (Asso → Re) con il loro punteggio in Black Jack.
+// Figure = 10, Asso = 11 (poi la Hand lo degrada a 1 quando la mano sfora). Senza questo enum non saprebbe quanto somma una mano.
+
 package ch.supsi.dti.backend.model;
 
 public enum Rank {

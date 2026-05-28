@@ -1,3 +1,5 @@
+// Test del MessageService: load bundle, getMessage con e senza args ({0}), cambio lingua via setLocale, fallback chiave mancante.
+
 package ch.supsi.dti.backend.i18n;
 
 import org.junit.jupiter.api.Test;

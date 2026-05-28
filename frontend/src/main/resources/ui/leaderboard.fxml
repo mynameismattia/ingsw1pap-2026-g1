@@ -8,6 +8,11 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<!--
+  Layout della schermata Leaderboard.
+  Tabella con rank, avatar, nome, vittorie, bilancio. Non più raggiungibile dal menu ma il file resta.
+-->
+
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="ch.supsi.dti.frontend.controller.LeaderboardController"
@@ -17,7 +22,6 @@
 
     <VBox styleClass="card" spacing="0">
 
-        <!-- Titlebar -->
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
             <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
             <Button fx:id="backBtn" text="%common.back" onAction="#onBack" styleClass="icon-button"/>
@@ -29,14 +33,12 @@
 
         <Region styleClass="divider"/>
 
-        <!-- Table -->
         <VBox VBox.vgrow="ALWAYS" spacing="0">
             <padding><Insets top="24" right="32" bottom="24" left="32"/></padding>
 
             <Label text="%leaderboard.title" styleClass="field-label"/>
             <Region prefHeight="14"/>
 
-            <!-- Header row -->
             <HBox styleClass="lb-header" alignment="CENTER_LEFT" spacing="0">
                 <Label text="%leaderboard.header.rank"    styleClass="lb-cell lb-rank-col"/>
                 <Label text="%leaderboard.header.player"  styleClass="lb-cell lb-name-col" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
@@ -44,7 +46,6 @@
                 <Label text="%leaderboard.header.balance" styleClass="lb-cell lb-num-col"/>
             </HBox>
 
-            <!-- Row 1 — gold highlight -->
             <HBox styleClass="lb-row lb-row-gold" alignment="CENTER_LEFT" spacing="0">
                 <Label text="1" styleClass="lb-cell lb-rank-col lb-rank-gold"/>
                 <HBox styleClass="lb-cell lb-name-col" alignment="CENTER_LEFT" spacing="10" HBox.hgrow="ALWAYS" maxWidth="Infinity">
@@ -55,7 +56,6 @@
                 <Label text="\$3.240" styleClass="lb-cell lb-num-col lb-balance-pos"/>
             </HBox>
 
-            <!-- Row 2 -->
             <HBox styleClass="lb-row lb-row-alt" alignment="CENTER_LEFT" spacing="0">
                 <Label text="2" styleClass="lb-cell lb-rank-col"/>
                 <HBox styleClass="lb-cell lb-name-col" alignment="CENTER_LEFT" spacing="10" HBox.hgrow="ALWAYS" maxWidth="Infinity">
@@ -66,7 +66,6 @@
                 <Label text="\$2.100" styleClass="lb-cell lb-num-col"/>
             </HBox>
 
-            <!-- Row 3 -->
             <HBox styleClass="lb-row" alignment="CENTER_LEFT" spacing="0">
                 <Label text="3" styleClass="lb-cell lb-rank-col"/>
                 <HBox styleClass="lb-cell lb-name-col" alignment="CENTER_LEFT" spacing="10" HBox.hgrow="ALWAYS" maxWidth="Infinity">
@@ -77,7 +76,6 @@
                 <Label text="\$1.500" styleClass="lb-cell lb-num-col"/>
             </HBox>
 
-            <!-- Row 4 -->
             <HBox styleClass="lb-row lb-row-alt" alignment="CENTER_LEFT" spacing="0">
                 <Label text="4" styleClass="lb-cell lb-rank-col"/>
                 <HBox styleClass="lb-cell lb-name-col" alignment="CENTER_LEFT" spacing="10" HBox.hgrow="ALWAYS" maxWidth="Infinity">
@@ -88,7 +86,6 @@
                 <Label text="\$980" styleClass="lb-cell lb-num-col"/>
             </HBox>
 
-            <!-- Row 5 -->
             <HBox styleClass="lb-row" alignment="CENTER_LEFT" spacing="0">
                 <Label text="5" styleClass="lb-cell lb-rank-col"/>
                 <HBox styleClass="lb-cell lb-name-col" alignment="CENTER_LEFT" spacing="10" HBox.hgrow="ALWAYS" maxWidth="Infinity">

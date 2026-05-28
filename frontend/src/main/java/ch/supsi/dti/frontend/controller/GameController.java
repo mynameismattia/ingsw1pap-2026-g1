@@ -1,3 +1,7 @@
+// Il cuore della UI di gioco.
+// Renderizza dealer, seat dei player, chip slot, balance card e action bar.
+// Gestisce gli handler di chip/hit/stand/double/split/insurance, le animazioni (deal-in, dealer flip 3D, chip-fly, breathing del seat attivo, balance tween) e l'autosave a fine round.
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.game.GameManager;
@@ -14,12 +18,24 @@ import ch.supsi.dti.backend.service.SaveSlot;
 import ch.supsi.dti.frontend.service.SoundManager;
 import ch.supsi.dti.frontend.service.SoundManager.SoundEvent;
 import ch.supsi.dti.frontend.view.CardView;
+import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
 import javafx.animation.PauseTransition;
+import javafx.animation.RotateTransition;
+import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
+import javafx.scene.Node;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.paint.Color;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
@@ -32,6 +48,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
@@ -55,16 +72,14 @@ public class GameController {
     private Timeline dealerTimeline;
     private Timeline botTimeline;
 
-    // Titlebar
     @FXML private Label roundLabel;
     @FXML private Label deckLabel;
     @FXML private Label phaseLabel;
 
-    // Left panel
     @FXML private VBox sidePlayersList;
     @FXML private Button historyButton;
 
-    // Center: dealer + player seats
+    @FXML private VBox dealerTray;
     @FXML private HBox dealerCardsBox;
     @FXML private Label dealerScoreLabel;
     @FXML private HBox playersRow;
@@ -73,7 +88,6 @@ public class GameController {
     @FXML private HBox chipsSlot;
     @FXML private HBox actionBar;
 
-    // Action bar
     @FXML private Button hitButton;
     @FXML private Button standButton;
     @FXML private Button doubleButton;
@@ -82,7 +96,6 @@ public class GameController {
     @FXML private Button declineInsuranceButton;
     @FXML private Button viewResultsButton;
 
-    // Right panel: chips + bet
     @FXML private Button chip5;
     @FXML private Button chip10;
     @FXML private Button chip25;
@@ -94,14 +107,19 @@ public class GameController {
     @FXML private Label balanceOwnerLabel;
     @FXML private Button dealButton;
     @FXML private Button settingsBtn;
+    @FXML private StackPane rootPane;
 
-    // In-scene history overlay
+    private Timeline activeSeatPulse;
+    private Timeline balanceTween;
+    private int lastBalanceShown = -1;
+
+    private boolean lastDealerRevealed = false;
+
     @FXML private StackPane historyOverlay;
     @FXML private VBox historyCard;
     @FXML private Label historyTitleLabel;
     @FXML private TableView<RoundRecord> historyTable;
 
-    // In-scene game-over overlay
     @FXML private StackPane gameOverOverlay;
     @FXML private Label gameOverEyebrow;
     @FXML private Label gameOverTitle;
@@ -110,52 +128,27 @@ public class GameController {
     @FXML private VBox gameOverBalances;
     @FXML private Label gameOverFooter;
 
-    // Survives FXML reloads (e.g. language change) so the active game isn't lost.
-    // Package-private so RoundResultController.onNewRound can call startNewRound() on it.
-    // Sequential betting / insurance turn is derived from GameManager — no UI cursor needed.
     static GameManager sharedGameManager;
-    // Injected by the menu before navigating to the game scene.
+
     private static GameManager pendingGameManager;
 
-    // Round counter shared across FXML reloads. Reset to 1 on a fresh game,
-    // incremented by RoundResultController when the user starts the next round.
     static int sharedRoundNumber = 1;
 
-    // If non-null when initialize() runs, the round counter is restored to this
-    // value instead of being reset to 1. Used by MenuController.onContinue().
     static Integer pendingResumedRoundNumber;
 
     private GameManager gameManager;
     private int currentBet;
 
-    // Tracks the previous state so autosave fires exactly once per ROUND_OVER transition.
     private GameState lastObservedState;
 
-    // Card counts per stable key from the previous render — used to detect which
-    // cards are NEW so only those get the deal-in animation. STATIC so the map
-    // survives FXML reloads (e.g. language change). Without that, the freshly
-    // initialised controller would see all on-table cards as new and replay
-    // the staggered deal animation on every settings switch. Cleared on a
-    // genuine new game.
     private static final Map<String, Integer> lastRenderedCardCount = new HashMap<>();
     private static final Duration DEAL_ANIM_DURATION = Duration.millis(280);
     private static final double DEAL_ANIM_OFFSET_Y = -36;
-    // Spacing between consecutive cards when multiple new cards arrive in the
-    // same UI tick (typical: opening deal of a round).
+
     private static final Duration DEAL_STAGGER_STEP = Duration.millis(300);
 
-    // Per-render lookup of "this card slot is the Nth in the staggered deal sequence";
-    // computed once at the start of updateUI() and used by renderDealer / buildTableSeat
-    // to pick the right per-card delay. Key format: "<containerKey>@<cardIndex>".
     private Map<String, Integer> currentDealSchedule = java.util.Collections.emptyMap();
 
-    /**
-     * Number of opening-deal card animations currently in flight. While > 0,
-     * action buttons are forced disabled so a mid-deal click can't (a) skip
-     * the visual stagger by triggering an immediate updateUI() that orphans
-     * the in-flight transitions, and (b) corrupt the round by interleaving
-     * with the staggered deal.
-     */
     private int dealAnimsRunning = 0;
 
     public static void setPendingGameManager(GameManager gm) {
@@ -164,6 +157,8 @@ public class GameController {
 
     @FXML
     public void initialize() {
+        // 1. Se c'è un GameManager "pending" (iniettato da MenuController o LoadGameController) lo prendo come shared
+        //    e gli faccio partire subito il primo round. Marca questo come "freshGame" per resettare lo stato.
         boolean freshGame = false;
         if (pendingGameManager != null) {
             sharedGameManager = pendingGameManager;
@@ -171,6 +166,7 @@ public class GameController {
             sharedGameManager.startNewRound();
             freshGame = true;
         }
+        // 2. Fallback (es. dopo un reload FXML per cambio lingua): se shared è null, ne creo uno solo-player di default.
         if (sharedGameManager == null) {
             sharedGameManager = new GameManager(List.of(new Player("Player 1", INITIAL_BALANCE)));
             sharedGameManager.startNewRound();
@@ -178,31 +174,24 @@ public class GameController {
         }
         gameManager = sharedGameManager;
         currentBet = 0;
-        // Old animations from a previous controller can't reach this instance's
-        // counter, so reset it explicitly to avoid a stuck-disabled action bar.
         dealAnimsRunning = 0;
+
+        // 3. Solo per fresh game (no reload FXML): aggiorno il round number e azzero il tracker di animazioni carte.
+        //    pendingResumedRoundNumber arriva da LoadGameController quando si riprende un save.
         if (freshGame) {
             sharedRoundNumber = (pendingResumedRoundNumber != null)
                     ? pendingResumedRoundNumber : 1;
             pendingResumedRoundNumber = null;
-            // Wipe stale per-hand counters so the opening deal of a new game animates.
             lastRenderedCardCount.clear();
         }
+
+        // 4. Render iniziale + auto-tick dei turni bot/dealer + filtro tastiera che evita SPAZIO/ENTER accidentali.
         lastObservedState = gameManager.getState();
         updateUI();
-        tickAutoTurns(); // resume dealer/bot animation after a reload
+        tickAutoTurns();
         installKeyboardGuard();
     }
 
-    /**
-     * Consumes SPACE / ENTER on the game-scene root so the currently-focused
-     * button can't re-fire its onAction via keyboard activation. Holding space
-     * after clicking, say, Hit would otherwise spam {@code gameManager.hit()}
-     * in states where it's invalid — each call throws IllegalStateException,
-     * leaking exception logs to stderr and partially mutating round state.
-     * The filter lives on the FXML root (this game scene's StackPane), so it
-     * disappears automatically when Navigation swaps the root for another scene.
-     */
     private void installKeyboardGuard() {
         Platform.runLater(() -> {
             javafx.scene.Scene scene = dealButton.getScene();
@@ -218,31 +207,84 @@ public class GameController {
     }
 
     private void autosaveIfRoundOver(GameState state) {
+        // 1. Eseguo l'autosave solo sull'edge "passaggio a ROUND_OVER": una volta sola per round, non a ogni updateUI.
         if (state != GameState.ROUND_OVER || lastObservedState == GameState.ROUND_OVER) {
             return;
         }
         try {
+            // 2. Costruisco lo snapshot dello stato attuale e lo salvo nello slot AUTO via PersistenceService.
             GameSnapshot snap = GameSnapshot.fromGameManager(gameManager, sharedRoundNumber);
             new PersistenceService(SaveSlot.AUTO).save(snap);
         } catch (Exception e) {
-            // Autosave is best-effort; never crash the UI on a save failure.
+            // 3. Errore di scrittura non fatale: log su stderr, la partita continua senza save.
             System.err.println("Autosave failed: " + e.getMessage());
         }
     }
 
-    // ── Action handlers ──────────────────────────────────────────
-
     @FXML
     private void onChipClicked(ActionEvent event) {
-        Object data = ((Button) event.getSource()).getUserData();
-        int value = Integer.parseInt(data.toString());
+        // 1. Leggo il valore della chip cliccata dal suo userData FXML (es. "25").
+        Button source = (Button) event.getSource();
+        int value = Integer.parseInt(source.getUserData().toString());
+
+        // 2. Calcolo il nuovo bet rispettando il cap (min tra MAX_BET globale e saldo disponibile del giocatore corrente).
         int cap = Math.min(MAX_BET, currentBettingBalance());
         int newBet = Math.min(currentBet + value, cap);
+
+        // 3. Se il bet è effettivamente cresciuto: aggiorno, suono "chip", animo la mini-chip che vola nel bet display, refresh UI.
         if (newBet > currentBet) {
             currentBet = newBet;
             SoundManager.getInstance().play(SoundEvent.CHIP);
+            flyChipFromButton(source);
             updateUI();
         }
+    }
+
+    private void flyChipFromButton(Button source) {
+        if (rootPane == null) return;
+        Bounds sBounds = source.localToScreen(source.getBoundsInLocal());
+        Bounds eBounds = currentBetLabel.localToScreen(currentBetLabel.getBoundsInLocal());
+        if (sBounds == null || eBounds == null) return;
+
+        Point2D rootStart = rootPane.screenToLocal(
+                sBounds.getMinX() + sBounds.getWidth() / 2.0,
+                sBounds.getMinY() + sBounds.getHeight() / 2.0);
+        Point2D rootEnd = rootPane.screenToLocal(
+                eBounds.getMinX() + eBounds.getWidth() / 2.0,
+                eBounds.getMinY() + eBounds.getHeight() / 2.0);
+        if (rootStart == null || rootEnd == null) return;
+
+        String chipClass = source.getStyleClass().stream()
+                .filter(c -> c.startsWith("chip-") && !c.equals("chip-button"))
+                .findFirst().orElse("chip-25");
+
+        Region flyChip = new Region();
+        flyChip.getStyleClass().addAll(chipClass, "chip-fly");
+        flyChip.setMouseTransparent(true);
+        StackPane.setAlignment(flyChip, Pos.TOP_LEFT);
+        rootPane.getChildren().add(flyChip);
+
+        flyChip.setTranslateX(rootStart.getX() - 20);
+        flyChip.setTranslateY(rootStart.getY() - 20);
+
+        TranslateTransition tt = new TranslateTransition(Duration.millis(280), flyChip);
+        tt.setFromX(rootStart.getX() - 20);
+        tt.setFromY(rootStart.getY() - 20);
+        tt.setToX(rootEnd.getX() - 20);
+        tt.setToY(rootEnd.getY() - 20);
+        tt.setInterpolator(Interpolator.EASE_OUT);
+
+        ScaleTransition st = new ScaleTransition(Duration.millis(280), flyChip);
+        st.setFromX(1.0); st.setToX(0.4);
+        st.setFromY(1.0); st.setToY(0.4);
+
+        FadeTransition ft = new FadeTransition(Duration.millis(280), flyChip);
+        ft.setFromValue(1.0);
+        ft.setToValue(0.0);
+
+        ParallelTransition fly = new ParallelTransition(tt, st, ft);
+        fly.setOnFinished(e -> rootPane.getChildren().remove(flyChip));
+        fly.play();
     }
 
     @FXML
@@ -282,7 +324,7 @@ public class GameController {
             return;
         }
         runSafe(() -> {
-            // Sequential betting: ask the backend whose turn it is, then advance.
+
             int bettingIdx = gameManager.currentBettingPlayerIndex();
             if (bettingIdx < 0) {
                 return;
@@ -290,9 +332,7 @@ public class GameController {
             gameManager.placeBet(bettingIdx, currentBet);
             currentBet = 0;
             if (gameManager.currentBettingPlayerIndex() < 0) {
-                // All active players have bet → deal and possibly enter insurance / dealer turn.
-                // Per-card CARD_DEALT cues fire from inside playDealInAnimation as each card
-                // animates in, so no single sound here.
+
                 gameManager.deal();
                 tickAutoTurns();
             }
@@ -376,7 +416,49 @@ public class GameController {
 
     @FXML
     private void onQuitClicked() {
-        Platform.exit();
+        showQuitConfirm();
+    }
+
+    private void showQuitConfirm() {
+        if (rootPane == null) {
+            Platform.exit();
+            return;
+        }
+        MessageService msg = MessageService.getInstance();
+        StackPane backdrop = new StackPane();
+        backdrop.getStyleClass().add("overlay-backdrop");
+        backdrop.setOnMouseClicked(e -> {
+            if (e.getTarget() == backdrop) {
+                rootPane.getChildren().remove(backdrop);
+            }
+        });
+
+        VBox card = new VBox(14);
+        card.getStyleClass().add("overlay-card");
+        card.setMaxWidth(380);
+        card.setMaxHeight(180);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new javafx.geometry.Insets(24, 28, 24, 28));
+
+        Label title = new Label(msg.getMessage("game.quit.confirm.title"));
+        title.getStyleClass().add("dialog-header");
+        Label body = new Label(msg.getMessage("game.quit.confirm.body"));
+        body.getStyleClass().add("dialog-body");
+        body.setWrapText(true);
+
+        HBox buttons = new HBox(10);
+        buttons.setAlignment(Pos.CENTER);
+        Button cancel = new Button(msg.getMessage("common.cancel"));
+        cancel.getStyleClass().add("secondary-button");
+        cancel.setOnAction(e -> rootPane.getChildren().remove(backdrop));
+        Button confirm = new Button(msg.getMessage("game.action.quit"));
+        confirm.getStyleClass().add("danger-button");
+        confirm.setOnAction(e -> Platform.exit());
+        buttons.getChildren().addAll(cancel, confirm);
+
+        card.getChildren().addAll(title, body, buttons);
+        backdrop.getChildren().add(card);
+        rootPane.getChildren().add(backdrop);
     }
 
     @FXML
@@ -455,7 +537,7 @@ public class GameController {
 
     @FXML
     private void onHistoryBackdropClicked(javafx.scene.input.MouseEvent e) {
-        // Only dismiss when the click lands on the backdrop itself, not on the card.
+
         if (e.getTarget() == historyOverlay) {
             hideHistory();
         }
@@ -466,11 +548,8 @@ public class GameController {
         historyOverlay.setManaged(false);
     }
 
-    // ── Game-over overlay ────────────────────────────────────────
-
-    /** All human players are below the table minimum — the game can't progress meaningfully. */
     private boolean isHumansBroke(GameState state) {
-        // Mid-round play must finish before we declare game-over.
+
         if (state != GameState.BETTING && state != GameState.WAITING
                 && state != GameState.ROUND_OVER && state != GameState.GAME_OVER) {
             return false;
@@ -501,7 +580,6 @@ public class GameController {
                 : "game.gameover.body.humans"));
         gameOverStandingsHeader.setText(msg.getMessage("game.gameover.standings"));
 
-        // Final standings — sort by balance desc, give the top three medals.
         gameOverBalances.getChildren().clear();
         List<Player> ranked = new java.util.ArrayList<>(gameManager.getPlayers());
         ranked.sort((a, b) -> Integer.compare(b.getBalance(), a.getBalance()));
@@ -510,7 +588,6 @@ public class GameController {
             gameOverBalances.getChildren().add(buildStandingRow(ranked.get(i), i, topBalance));
         }
 
-        // Session footer — rounds played and biggest pot from history.
         int roundsPlayed = Math.max(0, sharedRoundNumber - 1);
         int biggestPot = 0;
         for (RoundRecord r : gameManager.getHistory()) {
@@ -549,14 +626,12 @@ public class GameController {
         return row;
     }
 
-    // ── Helpers ──────────────────────────────────────────────────
-
     private void navigateTo(String fxml, int w, int h) {
         Navigation.navigate((Stage) dealButton.getScene().getWindow(), fxml);
     }
 
     private void reloadGame() {
-        stopDealerTimeline(); // prevent orphan ticks against the new controller instance
+        stopDealerTimeline();
         stopBotTimeline();
         Navigation.navigate((Stage) dealButton.getScene().getWindow(), "/ui/game.fxml");
     }
@@ -585,9 +660,6 @@ public class GameController {
         return total;
     }
 
-    // VS_CPU (1 umano): WIN/LOSE in base all'esito dell'umano, silenzio su PUSH.
-    // MULTI (>1 umani): un unico ROUND_OVER neutro — gli esiti possono divergere fra giocatori,
-    // non ha senso favorirne uno suonando "vittoria".
     private void playRoundOutcomeSfx() {
         int humans = 0;
         boolean anyWin = false;
@@ -610,12 +682,6 @@ public class GameController {
         }
     }
 
-    /**
-     * Called when the opening-deal animation counter drains to zero. Re-runs
-     * updateUI() so the button gating is recomputed (dealingAnim now false).
-     * Cheap: updateUI is idempotent and the schedule will produce zero new
-     * card animations for this pass.
-     */
     private void refreshActionAvailability() {
         if (gameManager == null) return;
         updateUI();
@@ -630,7 +696,6 @@ public class GameController {
         }
     }
 
-    /** Kicks off bot / dealer animation if the game state calls for it. No-op otherwise. */
     private void tickAutoTurns() {
         autoPlayBotIfNeeded();
         autoPlayDealerIfNeeded();
@@ -673,7 +738,7 @@ public class GameController {
             updateUI();
             if (!more) {
                 botTimeline.stop();
-                // bot turn ended → possibly chain into the dealer animation.
+
                 autoPlayDealerIfNeeded();
             }
         }));
@@ -692,7 +757,6 @@ public class GameController {
               playRoundOutcomeSfx();
           }
 
-        // Titlebar pills (parametric — set programmatically because FXML %key can't apply MessageFormat)
         roundLabel.setText(msg.getMessage("game.titlebar.round", sharedRoundNumber, TOTAL_ROUNDS));
         deckLabel.setText(msg.getMessage("game.titlebar.deck", gameManager.getDeckRemaining()));
 
@@ -714,15 +778,11 @@ public class GameController {
 
         renderGameOverOverlay(msg, gameOver);
 
-        // Chips and action bar share the same painted slot at the bottom of
-        // the felt. Show one at a time — chips when the user is placing a bet,
-        // the action buttons (hit / stand / etc.) otherwise.
         chipsSlot.setVisible(betting);
         chipsSlot.setManaged(betting);
         actionBar.setVisible(!betting);
         actionBar.setManaged(!betting);
 
-        // Chips: enabled only while betting, and only if adding wouldn't overflow MAX_BET
         updateChip(chip5,   betting);
         updateChip(chip10,  betting);
         updateChip(chip25,  betting);
@@ -730,15 +790,17 @@ public class GameController {
         updateChip(chip100, betting);
         updateChip(chip250, betting);
 
-        // Human-only gating. Bot turns auto-play via botTimeline; if the action
-        // bar is left clickable during a bot's hand the user can call hit() on
-        // the bot's behalf, which races the timeline and floods stderr with
-        // IllegalStateException once state advances past PLAYER_TURN.
         boolean botActive = gameManager.isCurrentPlayerBot();
         boolean dealingAnim = dealAnimsRunning > 0;
         boolean humanCanAct = playing && !botActive && !dealingAnim;
 
         dealButton.setDisable(gameOver || dealingAnim || !betting || currentBet < MIN_BET);
+        boolean dealReady = !dealButton.isDisable();
+        if (dealReady && !dealButton.getStyleClass().contains("deal-button-ready")) {
+            dealButton.getStyleClass().add("deal-button-ready");
+        } else if (!dealReady) {
+            dealButton.getStyleClass().remove("deal-button-ready");
+        }
         hitButton.setDisable(gameOver || !humanCanAct);
         standButton.setDisable(gameOver || !humanCanAct);
 
@@ -768,7 +830,8 @@ public class GameController {
 
     private void updateChip(Button chip, boolean betting) {
         int cap = Math.min(MAX_BET, currentBettingBalance());
-        chip.setDisable(!betting || currentBet >= cap);
+        int chipValue = Integer.parseInt(chip.getUserData().toString());
+        chip.setDisable(!betting || currentBet + chipValue > cap);
     }
 
     private int currentBettingBalance() {
@@ -779,13 +842,6 @@ public class GameController {
         return gameManager.getPlayers().get(idx).getBalance();
     }
 
-    /**
-     * Drives the right-panel balance hero. Shows the *active* player's balance
-     * (whoever is currently betting / playing / answering insurance). When no
-     * one is actively up — dealer turn, results — falls back to the first human.
-     * In multi-player the owner caption shows the player's name so the change
-     * isn't silent.
-     */
     private void renderBalanceHero(MessageService msg, GameState state) {
         List<Player> players = gameManager.getPlayers();
         int activeIdx = activePlayerIndex(state);
@@ -795,13 +851,49 @@ public class GameController {
         }
 
         int balance = (target != null) ? target.getBalance() : 0;
-        balanceLabel.setText("$" + balance);
+        tweenBalanceTo(balance);
 
         String caption = msg.getMessage("game.panel.balance");
         if (players.size() > 1 && target != null) {
             caption = caption + " · " + (target.isBot() ? "🤖 " : "") + target.getName();
         }
         balanceOwnerLabel.setText(caption);
+    }
+
+    private void tweenBalanceTo(int newValue) {
+        // 1. Se c'è un tween in corso lo fermo (evita race tra animazioni accavallate, es. due render veloci di seguito).
+        if (balanceTween != null) {
+            balanceTween.stop();
+            balanceTween = null;
+        }
+
+        // 2. Primo render della partita o valore invariato: setText immediato, niente animazione.
+        if (lastBalanceShown < 0 || lastBalanceShown == newValue) {
+            balanceLabel.setText("$" + newValue);
+            lastBalanceShown = newValue;
+            return;
+        }
+
+        // 3. Tween numerico: una IntegerProperty interpolata da oldValue a newValue in 600ms; il listener aggiorna il label
+        //    a ogni frame con "$N" intermedio (es. $100 → $108 → $123 → $215). Più "casino-feel" di un setText secco.
+        int oldValue = lastBalanceShown;
+        IntegerProperty counter = new SimpleIntegerProperty(oldValue);
+        counter.addListener((obs, o, n) -> balanceLabel.setText("$" + n.intValue()));
+        balanceTween = new Timeline(
+            new KeyFrame(Duration.ZERO, new KeyValue(counter, oldValue)),
+            new KeyFrame(Duration.millis(600), new KeyValue(counter, newValue))
+        );
+        balanceTween.play();
+        lastBalanceShown = newValue;
+
+        // 4. Color flash: verde se il saldo è salito, rosso se sceso. Tolto via PauseTransition dopo 800ms.
+        String flashClass = (newValue > oldValue) ? "balance-flash-up" : "balance-flash-down";
+        balanceLabel.getStyleClass().remove("balance-flash-up");
+        balanceLabel.getStyleClass().remove("balance-flash-down");
+        balanceLabel.getStyleClass().add(flashClass);
+        PauseTransition clear = new PauseTransition(Duration.millis(800));
+        clear.setOnFinished(e -> balanceLabel.getStyleClass().remove(flashClass));
+        clear.play();
     }
 
     private Player firstHumanOrNull() {
@@ -818,12 +910,8 @@ public class GameController {
         return !gameManager.getPlayers().get(idx).isBot();
     }
 
-    /**
-     * Drives the titlebar phase pill and the hint banner above the seats.
-     * One source of truth for "what phase + what should I do".
-     */
     private void updatePhaseChrome(MessageService msg, GameState state) {
-        // Strip any previous phase variant class.
+
         phaseLabel.getStyleClass().removeAll(
                 "phase-pill-bet", "phase-pill-play", "phase-pill-dealer", "phase-pill-result");
 
@@ -899,17 +987,30 @@ public class GameController {
     }
 
     private void renderDealer() {
-        dealerCardsBox.getChildren().clear();
         boolean revealed = gameManager.getDealer().isHandRevealed();
         List<Card> dealerCards = gameManager.getDealer().getHand().getCards();
-        int animateFrom = animateFromIndex("dealer", dealerCards.size());
-        for (int i = 0; i < dealerCards.size(); i++) {
-            Card visible = (i == 1 && !revealed) ? null : dealerCards.get(i);
-            CardView cv = new CardView(visible);
-            if (i >= animateFrom) {
-                playDealInAnimation(cv, dealDelayFor("dealer", i));
+        boolean showTray = !dealerCards.isEmpty();
+        dealerTray.setVisible(showTray);
+        dealerTray.setManaged(showTray);
+
+        boolean justRevealed = revealed && !lastDealerRevealed
+                && dealerCards.size() >= 2
+                && dealerCardsBox.getChildren().size() == dealerCards.size();
+        lastDealerRevealed = revealed;
+
+        if (justRevealed) {
+            flipDealerHoleCard(dealerCards.get(1));
+        } else {
+            dealerCardsBox.getChildren().clear();
+            int animateFrom = animateFromIndex("dealer", dealerCards.size());
+            for (int i = 0; i < dealerCards.size(); i++) {
+                Card visible = (i == 1 && !revealed) ? null : dealerCards.get(i);
+                CardView cv = new CardView(visible);
+                if (i >= animateFrom) {
+                    playDealInAnimation(cv, dealDelayFor("dealer", i));
+                }
+                dealerCardsBox.getChildren().add(cv);
             }
-            dealerCardsBox.getChildren().add(cv);
         }
         if (revealed && !dealerCards.isEmpty()) {
             dealerScoreLabel.setText(String.valueOf(gameManager.getDealer().getHand().getScore()));
@@ -922,31 +1023,40 @@ public class GameController {
         }
     }
 
-    /**
-     * Returns the first card index that should be animated for a given hand
-     * (dealer or per-player) given how many cards it had on the previous
-     * render. Cards already shown last time keep their static look; only the
-     * newly-arrived tail fades in from above. Also updates the tracker.
-     * Returns {@code Integer.MAX_VALUE} (no animation) when the hand has not
-     * grown — e.g. a round reset, an unrelated UI tick like a chip click, or
-     * the initial render after a controller reload.
-     */
+    private void flipDealerHoleCard(Card revealedCard) {
+        // 1. Guard: serve la seconda carta (la hole card) presente nella box.
+        if (dealerCardsBox.getChildren().size() < 2) return;
+
+        // 2. Fase 1 del flip — la carta-retro si schiaccia da scale-X=1 a 0 in 220ms (sembra di taglio).
+        Node back = dealerCardsBox.getChildren().get(1);
+        ScaleTransition shrink = new ScaleTransition(Duration.millis(220), back);
+        shrink.setFromX(1.0);
+        shrink.setToX(0.0);
+        shrink.setInterpolator(Interpolator.EASE_IN);
+        shrink.setOnFinished(e -> {
+            // 3. A metà del flip: swap istantaneo del retro con la carta-fronte vera (scale-X=0 per ora invisibile).
+            int idx = dealerCardsBox.getChildren().indexOf(back);
+            CardView face = new CardView(revealedCard);
+            face.setScaleX(0.0);
+            dealerCardsBox.getChildren().remove(back);
+            dealerCardsBox.getChildren().add(idx, face);
+
+            // 4. Fase 2 del flip — la carta-fronte cresce da scale-X=0 a 1 in altri 220ms (riemerge da taglio).
+            ScaleTransition grow = new ScaleTransition(Duration.millis(220), face);
+            grow.setFromX(0.0);
+            grow.setToX(1.0);
+            grow.setInterpolator(Interpolator.EASE_OUT);
+            grow.play();
+        });
+        shrink.play();
+    }
+
     private int animateFromIndex(String key, int currentCount) {
         int prev = lastRenderedCardCount.getOrDefault(key, 0);
         lastRenderedCardCount.put(key, currentCount);
         return currentCount > prev ? prev : Integer.MAX_VALUE;
     }
 
-    /**
-     * Builds the deal-order schedule for the upcoming render: each newly-arrived
-     * card gets a sequential step index, so multiple cards appearing in the same
-     * tick (the opening deal of a round) animate one after the other instead of
-     * all at once. Order matches a real-life dealer: round-by-round, each player
-     * in seat order, with the dealer last in every round.
-     *
-     * Must be called BEFORE renderDealer/renderPlayers since those mutate
-     * {@link #lastRenderedCardCount} via {@link #animateFromIndex}.
-     */
     private Map<String, Integer> computeDealSchedule() {
         List<Player> players = gameManager.getPlayers();
         int dealerCount = gameManager.getDealer().getHand().getCards().size();
@@ -962,7 +1072,7 @@ public class GameController {
         Map<String, Integer> schedule = new HashMap<>();
         int step = 0;
         for (int cardIdx = 0; cardIdx < maxIdx; cardIdx++) {
-            // Players (in seat order) for this round.
+
             for (Player p : players) {
                 int handIdx = 0;
                 for (PlayerHand ph : p.getHands()) {
@@ -975,7 +1085,7 @@ public class GameController {
                     handIdx++;
                 }
             }
-            // Dealer goes last in each round.
+
             if (cardIdx >= dealerPrev && cardIdx < dealerCount) {
                 schedule.put("dealer@" + cardIdx, step++);
             }
@@ -983,33 +1093,38 @@ public class GameController {
         return schedule;
     }
 
-    /** Per-card animation delay derived from the current deal schedule. */
     private Duration dealDelayFor(String containerKey, int cardIndex) {
         Integer step = currentDealSchedule.get(containerKey + "@" + cardIndex);
         return step != null ? DEAL_STAGGER_STEP.multiply(step) : Duration.ZERO;
     }
 
-    /**
-     * Fade + slide-down from ~36px above; runs once on next layout pulse.
-     * Also fires a CARD_DEALT cue synced with the visual start, interrupting
-     * any in-flight CARD_DEALT clip so rapid-fire deals don't layer.
-     */
     private void playDealInAnimation(javafx.scene.Node node, Duration delay) {
+        double startRotation = (Math.random() - 0.5) * 6;
         node.setOpacity(0);
         node.setTranslateY(DEAL_ANIM_OFFSET_Y);
+        node.setScaleX(0.92);
+        node.setScaleY(0.92);
+        node.setRotate(startRotation);
+
         FadeTransition fade = new FadeTransition(DEAL_ANIM_DURATION, node);
         fade.setFromValue(0);
         fade.setToValue(1);
         TranslateTransition slide = new TranslateTransition(DEAL_ANIM_DURATION, node);
         slide.setFromY(DEAL_ANIM_OFFSET_Y);
         slide.setToY(0);
-        ParallelTransition anim = new ParallelTransition(fade, slide);
+        ScaleTransition scale = new ScaleTransition(DEAL_ANIM_DURATION, node);
+        scale.setFromX(0.92); scale.setToX(1.0);
+        scale.setFromY(0.92); scale.setToY(1.0);
+        RotateTransition spin = new RotateTransition(DEAL_ANIM_DURATION, node);
+        spin.setFromAngle(startRotation);
+        spin.setToAngle(0);
+
+        ParallelTransition anim = new ParallelTransition(fade, slide, scale, spin);
+        anim.setInterpolator(Interpolator.EASE_OUT);
         if (delay != null && delay.greaterThan(Duration.ZERO)) {
             anim.setDelay(delay);
         }
 
-        // Only gate the action bar on multi-card opening deals — a one-off Hit
-        // or dealer draw shouldn't lock the UI for a 280ms fade.
         boolean isOpeningDeal = currentDealSchedule.size() > 1;
         if (isOpeningDeal) {
             dealAnimsRunning++;
@@ -1022,10 +1137,6 @@ public class GameController {
         }
         anim.play();
 
-        // Per-card CARD_DEALT cue — only during the staggered opening deal
-        // (multiple new cards in the same render). Single-card events (hit,
-        // dealer step, bot step) keep their existing CARD sound played by the
-        // caller; firing CARD_DEALT here too would double up.
         if (currentDealSchedule.size() > 1) {
             PauseTransition audioCue = new PauseTransition(
                     (delay != null && delay.greaterThan(Duration.ZERO)) ? delay : Duration.millis(1));
@@ -1036,16 +1147,57 @@ public class GameController {
     }
 
     private void renderPlayers(MessageService msg, GameState state) {
+        // 1. Stoppo l'animazione di breathing del seat attivo precedente (sarà riattaccata sotto al nuovo).
+        if (activeSeatPulse != null) {
+            activeSeatPulse.stop();
+            activeSeatPulse = null;
+        }
+
+        // 2. Svuoto entrambe le viste dei player: la riga sul felt (playersRow) e la sidebar a sinistra (sidePlayersList).
         playersRow.getChildren().clear();
         sidePlayersList.getChildren().clear();
+
+        // 3. Per ogni player creo un seat sul felt + una row nella sidebar. Quello "attivo" (turno corrente) riceve il glow pulsante.
         List<Player> players = gameManager.getPlayers();
         int activeIdx = activePlayerIndex(state);
         for (int i = 0; i < players.size(); i++) {
             Player p = players.get(i);
             boolean isActive = (i == activeIdx);
-            playersRow.getChildren().add(buildTableSeat(p, isActive, msg));
+            VBox seat = buildTableSeat(p, isActive, msg, i);
+            if (isActive) {
+                attachActiveSeatBreathing(seat);
+            }
+            playersRow.getChildren().add(seat);
             sidePlayersList.getChildren().add(buildSideSeatRow(p, isActive, msg, i));
         }
+    }
+
+    private void attachActiveSeatBreathing(VBox seat) {
+        // 1. Definisco i due estremi del glow (alpha 0.45 → 0.65) sull'accent-blue della palette.
+        Color base = Color.color(96 / 255.0, 165 / 255.0, 250 / 255.0, 0.45);
+        Color peak = Color.color(96 / 255.0, 165 / 255.0, 250 / 255.0, 0.65);
+
+        // 2. Applico un DropShadow al seat e lo metto come effect "vivo".
+        DropShadow glow = new DropShadow();
+        glow.setRadius(28);
+        glow.setSpread(0.45);
+        glow.setColor(base);
+        seat.setEffect(glow);
+
+        // 3. Timeline infinita che oscilla il colore del glow tra base e peak (ciclo 1.8s). È il "respiro" del seat attivo.
+        activeSeatPulse = new Timeline(
+            new KeyFrame(Duration.ZERO, new KeyValue(glow.colorProperty(), base)),
+            new KeyFrame(Duration.millis(900), new KeyValue(glow.colorProperty(), peak)),
+            new KeyFrame(Duration.millis(1800), new KeyValue(glow.colorProperty(), base))
+        );
+        activeSeatPulse.setCycleCount(Animation.INDEFINITE);
+        activeSeatPulse.play();
+    }
+
+    private static Region makeFlexSpacer() {
+        Region r = new Region();
+        HBox.setHgrow(r, Priority.ALWAYS);
+        return r;
     }
 
     private int activePlayerIndex(GameState state) {
@@ -1057,20 +1209,17 @@ public class GameController {
         };
     }
 
-    /** Center-table seat panel — cards box. Uses our seat-card CSS palette. */
-    private VBox buildTableSeat(Player player, boolean isActive, MessageService msg) {
+    private VBox buildTableSeat(Player player, boolean isActive, MessageService msg, int seatIndex) {
         VBox seat = new VBox(6);
         seat.setAlignment(Pos.CENTER);
         seat.getStyleClass().add("seat-card");
         if (isActive) {
             seat.getStyleClass().add("seat-card-active");
         }
-        String displayName = (player.isBot() ? "🤖 " : "") + player.getName();
+        String displayName = player.getName();
 
         if (player.isSittingOut()) {
-            // Benched: no cards rendered, seat is dimmed and nudged slightly
-            // lower so it visually sits below the active players' card row
-            // without crowding the action bar underneath.
+
             seat.getStyleClass().add("seat-card-sitting-out");
             seat.setTranslateY(18);
             seat.getChildren().add(labeled(displayName, "seat-card-name"));
@@ -1079,10 +1228,6 @@ public class GameController {
             return seat;
         }
 
-        // Reserve the size the seat will need once two cards are dealt, so the
-        // layout doesn't snap from a tiny name-only box into a card-sized one
-        // when betting ends. Width = 2 cards (92×2) + spacing + padding; height
-        // = card (130) + score label + name label + padding.
         seat.setMinSize(214, 192);
 
         PlayerHand activeHand = gameManager.getCurrentHand();
@@ -1121,11 +1266,65 @@ public class GameController {
             handsRow.getChildren().add(handBox);
         }
         seat.getChildren().add(handsRow);
-        seat.getChildren().add(labeled(displayName, "seat-card-name"));
+
+        HBox nameRow = new HBox(8);
+        nameRow.setAlignment(Pos.CENTER_LEFT);
+        nameRow.setMaxWidth(Double.MAX_VALUE);
+        nameRow.getChildren().add(buildSeatCardAvatar(player, seatIndex));
+        nameRow.getChildren().add(labeled(displayName, "seat-card-name"));
+        Region nameFlex = new Region();
+        HBox.setHgrow(nameFlex, Priority.ALWAYS);
+        nameRow.getChildren().add(nameFlex);
+        nameRow.getChildren().add(labeled("$" + player.getBalance(), "seat-card-balance"));
+        seat.getChildren().add(nameRow);
+
+        int seatBet = 0;
+        for (PlayerHand ph : player.getHands()) {
+            seatBet += ph.getBet();
+        }
+        if (seatBet == 0
+                && gameManager.getState() == GameState.BETTING
+                && seatIndex == gameManager.currentBettingPlayerIndex()) {
+            seatBet = currentBet;
+        }
+        if (seatBet > 0) {
+            HBox betRow = new HBox(8);
+            betRow.setAlignment(Pos.CENTER_LEFT);
+            betRow.setMaxWidth(Double.MAX_VALUE);
+            betRow.getChildren().add(labeled(msg.getMessage("game.panel.bet"),
+                    "seat-card-bet-label"));
+            Region betFlex = new Region();
+            HBox.setHgrow(betFlex, Priority.ALWAYS);
+            betRow.getChildren().add(betFlex);
+            betRow.getChildren().add(labeled("$" + seatBet, "seat-card-bet-value"));
+            seat.getChildren().add(betRow);
+        }
+
+        boolean hasCards = player.getHands().stream()
+                .anyMatch(ph -> !ph.getHand().getCards().isEmpty());
+        if (hasCards) {
+            seat.setTranslateY(-25);
+        }
         return seat;
     }
 
-    /** Side-panel row — avatar + name + balance + Turn badge. */
+    private static StackPane buildSeatCardAvatar(Player player, int seatIndex) {
+        StackPane avatar = new StackPane();
+        avatar.getStyleClass().add("seat-card-avatar");
+        if (player.isBot()) {
+            avatar.getStyleClass().add("seat-avatar-cpu");
+        } else if (seatIndex > 0) {
+            avatar.getStyleClass().add("seat-avatar-p" + (seatIndex + 1));
+        }
+        String initial = player.getName().isEmpty()
+                ? "?"
+                : player.getName().substring(0, 1).toUpperCase();
+        Label initLbl = new Label(initial);
+        initLbl.getStyleClass().add("seat-card-avatar-initial");
+        avatar.getChildren().add(initLbl);
+        return avatar;
+    }
+
     private HBox buildSideSeatRow(Player player, boolean isActive, MessageService msg, int index) {
         HBox row = new HBox(10);
         row.setAlignment(Pos.CENTER_LEFT);

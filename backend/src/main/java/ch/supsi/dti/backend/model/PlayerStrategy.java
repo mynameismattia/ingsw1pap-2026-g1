@@ -1,12 +1,10 @@
+// Interfaccia per la "AI" decisionale dei bot. Definisce l'enum Action (HIT/STAND/DOUBLE/SPLIT/TAKE_INSURANCE/DECLINE_INSURANCE) e decide(state, hand, dealerUpcard).
+// Ha anche un decideBet di default che punta il 10% del bankroll arrotondato a 5. Solo i bot la implementano.
+
 package ch.supsi.dti.backend.model;
 
 import ch.supsi.dti.backend.game.GameState;
 
-/**
- * Decision contract for non-human players. Strategies are stateless: the
- * {@link GameManager} calls {@link #decide} during PLAYER_TURN / INSURANCE_OFFER
- * and {@link #decideBet} when the round opens.
- */
 public interface PlayerStrategy {
 
     int MIN_BET = 5;
@@ -17,13 +15,10 @@ public interface PlayerStrategy {
 
     Action decide(GameState state, PlayerHand currentHand, Card dealerUpcard);
 
-    /**
-     * Default bet rule: 10% of the bot's balance, rounded to the nearest
-     * multiple of 5, clamped to [MIN_BET, balance]. Callers must guarantee
-     * the bot has at least {@code MIN_BET} (sitting-out is handled upstream).
-     */
     default int decideBet(Player self) {
+        // 1. Punto base = 10% del saldo, arrotondato al multiplo di 5 più vicino.
         int rounded = Math.round(self.getBalance() * 0.1f / 5f) * 5;
+        // 2. Clamp tra MIN_BET (5) e il saldo totale, così un bot povero punta almeno il minimo e uno ricco non sfora.
         return Math.max(MIN_BET, Math.min(rounded, self.getBalance()));
     }
 }

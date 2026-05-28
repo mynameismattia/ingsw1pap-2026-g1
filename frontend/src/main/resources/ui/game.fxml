@@ -9,7 +9,13 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
-<StackPane xmlns="http://javafx.com/javafx"
+<!--
+  Layout della scena di gioco.
+  Sidebar players a sinistra, felt (tavolo dipinto) al centro con dealer/seat row/chip slot, balance card pinned in basso a sinistra, deal button pinned in basso a destra.
+-->
+
+<StackPane fx:id="rootPane"
+           xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="ch.supsi.dti.frontend.controller.GameController"
            styleClass="root-pane"
@@ -18,7 +24,6 @@
 
     <VBox styleClass="card" spacing="0">
 
-        <!-- ── Titlebar ───────────────────────────────────────── -->
         <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
             <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
 
@@ -33,16 +38,13 @@
 
         <Region styleClass="divider"/>
 
-        <!-- ── Body: 3 columns ────────────────────────────────── -->
         <HBox VBox.vgrow="ALWAYS" spacing="0">
 
-            <!-- ── Left column: players list + bottom actions ── -->
             <VBox prefWidth="200" minWidth="200" spacing="10">
                 <padding><Insets top="16" right="14" bottom="16" left="14"/></padding>
 
                 <Label text="%game.panel.players" styleClass="field-label"/>
 
-                <!-- Players list populated dynamically by the controller -->
                 <VBox fx:id="sidePlayersList" spacing="8"/>
 
                 <Region VBox.vgrow="ALWAYS"/>
@@ -55,21 +57,18 @@
 
             <Region styleClass="vdivider"/>
 
-            <!-- ── Center column: painted felt + positioned overlays ── -->
             <StackPane HBox.hgrow="ALWAYS" styleClass="table-felt-img">
 
-                <!-- Main vertical flow: hint → dealer → seats → chip slot. -->
+                <Region styleClass="table-felt-vignette" mouseTransparent="true"/>
+
                 <VBox spacing="6">
                     <padding><Insets top="10" right="24" bottom="14" left="24"/></padding>
 
-                    <!-- Hint banner at the top — single source of truth for "what to do" -->
                     <Label fx:id="hintLabel" text="" styleClass="hint-banner"
                            alignment="CENTER" maxWidth="Infinity"/>
 
-                    <!-- Dealer cards in a seat-card tray, matching the player
-                         seats' translucent dark background. -->
                     <HBox alignment="CENTER">
-                        <VBox fx:id="dealerTray" styleClass="seat-card" alignment="CENTER" spacing="6">
+                        <VBox fx:id="dealerTray" styleClass="seat-card, dealer-tray-box" alignment="CENTER" spacing="6">
                             <HBox fx:id="dealerCardsBox" alignment="CENTER" spacing="6" minHeight="120"/>
                             <HBox alignment="CENTER">
                                 <Label fx:id="dealerScoreLabel" text="" styleClass="dealer-score-pill"/>
@@ -77,16 +76,12 @@
                         </VBox>
                     </HBox>
 
-                    <!-- Spacer that lets the painted "Just 21" + rules text show
-                         through the felt. Bumped so seats sit slightly lower. -->
-                    <Region prefHeight="165" VBox.vgrow="ALWAYS"/>
+                    <Region prefHeight="30" VBox.vgrow="ALWAYS"/>
 
-                    <!-- Player seats row, between painted text and chip slot. -->
-                    <HBox fx:id="playersRow" alignment="CENTER" spacing="20"/>
+                    <HBox fx:id="playersRow" alignment="CENTER" spacing="24"/>
 
-                    <Region prefHeight="50" VBox.vgrow="ALWAYS"/>
+                    <Region prefHeight="70"/>
 
-                    <!-- Chip slot: chips during BETTING / action bar otherwise. -->
                     <StackPane fx:id="bottomSlot">
                         <HBox fx:id="chipsSlot" alignment="CENTER" spacing="10">
                             <Button fx:id="chip5"   onAction="#onChipClicked"
@@ -115,11 +110,9 @@
                         </HBox>
                     </StackPane>
 
-                    <!-- Lifts the chip slot up into the painted rectangle. -->
-                    <Region prefHeight="70"/>
+                    <Region prefHeight="105"/>
                 </VBox>
 
-                <!-- Saldo + Puntata pinned to the bottom-left of the felt. -->
                 <VBox spacing="10" maxWidth="220" maxHeight="220"
                       StackPane.alignment="BOTTOM_LEFT">
                     <StackPane.margin><Insets bottom="20" left="20"/></StackPane.margin>
@@ -143,7 +136,6 @@
                     </VBox>
                 </VBox>
 
-                <!-- Deal button pinned to the bottom-right of the felt. -->
                 <VBox alignment="BOTTOM_RIGHT" maxWidth="220" maxHeight="80"
                       StackPane.alignment="BOTTOM_RIGHT">
                     <StackPane.margin><Insets bottom="20" right="20"/></StackPane.margin>
@@ -157,7 +149,6 @@
 
     </VBox>
 
-    <!-- ── In-scene history overlay ───────────────────────────────── -->
     <StackPane fx:id="historyOverlay" styleClass="overlay-backdrop"
                visible="false" managed="false" onMouseClicked="#onHistoryBackdropClicked">
         <VBox fx:id="historyCard" styleClass="overlay-card" spacing="12"
@@ -174,14 +165,12 @@
         </VBox>
     </StackPane>
 
-    <!-- ── In-scene game-over overlay ─────────────────────────────── -->
     <StackPane fx:id="gameOverOverlay" styleClass="overlay-backdrop"
                visible="false" managed="false">
         <VBox styleClass="overlay-card, gameover-card" spacing="18"
               alignment="TOP_CENTER" maxWidth="560" maxHeight="540">
             <padding><Insets top="32" right="36" bottom="28" left="36"/></padding>
 
-            <!-- Headline block -->
             <VBox alignment="CENTER" spacing="6">
                 <Label fx:id="gameOverEyebrow" text="%game.gameover.eyebrow"
                        styleClass="gameover-eyebrow"/>
@@ -193,7 +182,6 @@
 
             <Region styleClass="gameover-divider" prefHeight="1" maxHeight="1"/>
 
-            <!-- Final standings — players sorted by balance, with medals -->
             <VBox spacing="8" maxWidth="Infinity">
                 <Label fx:id="gameOverStandingsHeader" text="%game.gameover.standings"
                        styleClass="gameover-section-label"/>
@@ -202,7 +190,6 @@
 
             <Region VBox.vgrow="ALWAYS"/>
 
-            <!-- Session footer -->
             <Label fx:id="gameOverFooter" text="" styleClass="gameover-footer"
                    alignment="CENTER" maxWidth="Infinity"/>
 

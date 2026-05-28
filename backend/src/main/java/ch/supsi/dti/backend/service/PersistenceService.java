@@ -1,3 +1,6 @@
+// Salva e carica una partita in JSON usando Jackson.
+// Lavora per slot (uno SaveSlot per istanza); fornisce save(snapshot), load(), exists(), lastModified() e loadAll() (su tutti gli slot). Crea automaticamente la cartella se manca.
+
 package ch.supsi.dti.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,14 +36,18 @@ public final class PersistenceService {
     }
 
     public void save(GameSnapshot snapshot) throws IOException {
+        // 1. Assicura che la cartella esista (es. frontend/saved/ al primo lancio).
         Files.createDirectories(path.toAbsolutePath().getParent());
+        // 2. Scrive il JSON formattato (writerWithDefaultPrettyPrinter) così è leggibile a mano in caso di debug.
         MAPPER.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), snapshot);
     }
 
     public Optional<GameSnapshot> load() throws IOException {
+        // 1. Se il file non esiste restituisco Optional.empty() — chiamante distingue "vuoto" da "presente".
         if (!Files.exists(path)) {
             return Optional.empty();
         }
+        // 2. Deserializzo il JSON in un GameSnapshot. Jackson + JavaTimeModule gestisce gli Instant.
         return Optional.of(MAPPER.readValue(path.toFile(), GameSnapshot.class));
     }
 
@@ -67,13 +74,12 @@ public final class PersistenceService {
         return path;
     }
 
-    /**
-     * Loads every slot in a single call. A slot that is missing or fails to
-     * deserialize maps to {@link Optional#empty()} — one bad save must not
-     * prevent the UI from listing the others.
-     */
     public static Map<SaveSlot, Optional<GameSnapshot>> loadAll() {
+        // 1. EnumMap come output: preserva l'ordine degli slot (AUTO, SLOT_1, SLOT_2, SLOT_3).
         Map<SaveSlot, Optional<GameSnapshot>> out = new EnumMap<>(SaveSlot.class);
+
+        // 2. Provo a caricare ogni slot. Se uno fallisce (file corrotto, JSON invalido) lo segno come empty
+        //    invece di interrompere tutto: gli altri slot devono comunque essere mostrati nella UI Carica/Salva.
         for (SaveSlot slot : SaveSlot.values()) {
             try {
                 out.put(slot, new PersistenceService(slot).load());

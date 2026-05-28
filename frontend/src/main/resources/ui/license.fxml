@@ -12,6 +12,11 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<!--
+  Layout della schermata di inserimento licenza.
+  Una card centrale con input mascherato (5 gruppi da 5 caratteri), bottone Attiva, status row che cambia colore in base all'esito.
+-->
+
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="ch.supsi.dti.frontend.controller.LicenseController"

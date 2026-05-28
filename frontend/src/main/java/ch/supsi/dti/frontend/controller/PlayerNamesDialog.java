@@ -1,3 +1,6 @@
+// Dialog che chiede i nomi dei giocatori umani in modalità multiplayer prima di avviare la partita.
+// Costruito programmaticamente. Pre-popola con BotNames per gli slot CPU.
+
 package ch.supsi.dti.frontend.controller;
 
 import ch.supsi.dti.backend.game.GameManager;
@@ -27,27 +30,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Multiplayer lobby as an in-scene overlay (same visual pattern as
- * {@link SettingsDialog} and the in-game history dialog: dimmed backdrop +
- * centred card). Replaces the old separate {@code playernames.fxml} scene
- * which left a vast empty fullscreen background. The user stays on the menu
- * underneath the dim, types names, confirms — only then do we navigate.
- */
 public final class PlayerNamesDialog {
 
     private PlayerNamesDialog() {}
 
-    /**
-     * Shows the lobby overlay over the current scene's StackPane root.
-     *
-     * @param stage         the active stage; we look up its scene root to attach
-     * @param humanCount    1–4 humans
-     * @param botCount      0–4 bots
-     * @param balance       starting balance applied to every player
-     * @param onCancel      fired when the user cancels (Esc / backdrop / back button) —
-     *                      use this to re-enable the originating button etc.
-     */
     public static void show(Stage stage, int humanCount, int botCount, int balance,
                             Runnable onCancel) {
         if (stage == null) return;
@@ -56,15 +42,12 @@ public final class PlayerNamesDialog {
         Parent root = scene.getRoot();
         if (!(root instanceof StackPane stack)) return;
 
-        // Idempotent: skip if another lobby overlay is already open.
         for (Node n : stack.getChildren()) {
             if ("playernames-overlay".equals(n.getId())) return;
         }
 
         MessageService msg = MessageService.getInstance();
 
-        // Preview bot names once, against the default "Player N" placeholders.
-        // onConfirm only re-allocates if the user types a colliding name.
         Set<String> defaults = new HashSet<>();
         for (int i = 0; i < humanCount; i++) defaults.add("Player " + (i + 1));
         List<String> previewedBots = (botCount > 0)
@@ -95,7 +78,7 @@ public final class PlayerNamesDialog {
                 players.add(new Player(name, balance));
             }
             if (botCount > 0) {
-                // Reuse the previewed names unless a typed name now collides.
+
                 List<String> botNames = previewedBots;
                 boolean collision = botNames.stream().anyMatch(taken::contains)
                         || botNames.size() != botCount;
@@ -107,7 +90,6 @@ public final class PlayerNamesDialog {
                 }
             }
 
-            // Don't fire the cancel callback — we *are* proceeding into the game.
             stack.getChildren().remove(overlay);
             GameController.setPendingGameManager(new GameManager(players));
             Navigation.navigate(stage, "/ui/game.fxml");
@@ -122,7 +104,6 @@ public final class PlayerNamesDialog {
         overlay.getChildren().add(card);
         stack.getChildren().add(overlay);
 
-        // Esc closes — scene-level filter, removed when the overlay is detached.
         javafx.event.EventHandler<KeyEvent> escFilter = e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
                 closeOverlay.run();
@@ -136,7 +117,6 @@ public final class PlayerNamesDialog {
             }
         });
 
-        // Focus the first name field for instant typing.
         if (!fields.isEmpty()) {
             Platform.runLater(() -> {
                 TextField first = fields.get(0);
@@ -145,8 +125,6 @@ public final class PlayerNamesDialog {
             });
         }
     }
-
-    // ── Card ────────────────────────────────────────────────────────
 
     private static VBox buildCard(MessageService msg,
                                   int humanCount, int botCount, int balance,
@@ -160,7 +138,6 @@ public final class PlayerNamesDialog {
         card.setMaxHeight(Region.USE_PREF_SIZE);
         card.setPadding(new Insets(24));
 
-        // Header: title + close ✕
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
         Label title = new Label(msg.getMessage("menu.names.title"));
@@ -172,13 +149,11 @@ public final class PlayerNamesDialog {
         close.setOnAction(e -> closeOverlay.run());
         header.getChildren().addAll(title, spacer, close);
 
-        // Summary line
         Label summary = new Label(botCount > 0
                 ? msg.getMessage("menu.names.summary", humanCount, botCount, balance)
                 : msg.getMessage("menu.names.summary.noBots", humanCount, balance));
         summary.getStyleClass().add("lobby-summary");
 
-        // Seat-cards
         HBox seatsRow = new HBox(18);
         seatsRow.setAlignment(Pos.CENTER);
         for (int i = 0; i < humanCount; i++) {
@@ -188,7 +163,6 @@ public final class PlayerNamesDialog {
         VBox content = new VBox(16, summary, seatsRow);
         content.setAlignment(Pos.CENTER);
 
-        // Bot strip (only when bots are present)
         if (botCount > 0) {
             Label botsHeader = new Label(msg.getMessage("menu.names.botsHeader"));
             botsHeader.getStyleClass().add("field-label");
@@ -201,7 +175,6 @@ public final class PlayerNamesDialog {
             content.getChildren().addAll(botsHeader, botsStrip);
         }
 
-        // Confirm
         Button start = new Button(msg.getMessage("mainmenu.action.start"));
         start.getStyleClass().add("primary-button");
         start.setMaxWidth(Double.MAX_VALUE);
@@ -211,7 +184,6 @@ public final class PlayerNamesDialog {
         return card;
     }
 
-    /** Coloured avatar + "Giocatore N" caption + editable name field. */
     private static VBox buildSeatCard(int index, MessageService msg,
                                       List<TextField> fields, Runnable confirm) {
         VBox slot = new VBox(10);
@@ -235,8 +207,7 @@ public final class PlayerNamesDialog {
         tf.setPromptText("Player " + (index + 1));
         tf.getStyleClass().add("text-field-dark");
         tf.setMaxWidth(220);
-        // ENTER inside any name field = confirm. (The game-scene SPACE/ENTER
-        // filter is scoped to game.fxml so it doesn't affect this dialog.)
+
         tf.setOnAction(e -> confirm.run());
         fields.add(tf);
 
@@ -244,7 +215,6 @@ public final class PlayerNamesDialog {
         return slot;
     }
 
-    /** Pill-shaped read-only chip showing a bot's auto-allocated name. */
     private static HBox buildBotChip(String botName) {
         Label icon = new Label("🤖");
         icon.getStyleClass().add("bot-chip-icon");

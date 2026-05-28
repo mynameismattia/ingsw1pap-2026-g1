@@ -8,6 +8,11 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
+<!--
+  Layout del dialog Salva partita.
+  Card centrale con 3 slot, ciascuno con info di salvataggio (round, balance, timestamp) e bottone Salva.
+-->
+
 <StackPane xmlns="http://javafx.com/javafx"
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="ch.supsi.dti.frontend.controller.SaveGameController"
@@ -38,7 +43,6 @@
 
     </VBox>
 
-    <!-- ── In-scene overwrite confirmation ─────────────────────────── -->
     <StackPane fx:id="confirmOverlay" styleClass="overlay-backdrop"
                visible="false" managed="false" onMouseClicked="#onConfirmBackdropClicked">
         <VBox styleClass="overlay-card" spacing="14"

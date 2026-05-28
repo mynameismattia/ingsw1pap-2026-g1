@@ -1,3 +1,8 @@
+// Il regista della partita — la classe più importante del backend.
+// Tiene il mazzo (Deck), il dealer, la lista dei Player e la fase corrente (GameState).
+// Espone metodi per ogni transizione: piazzare puntate, distribuire le carte iniziali, gestire hit/stand/double/split/insurance del player corrente, far giocare i bot, far girare la carta nascosta del dealer e pagare gli esiti.
+// Tutta la UI gli parla per cambiare stato.
+
 package ch.supsi.dti.backend.game;
 
 import ch.supsi.dti.backend.model.Card;
@@ -19,13 +24,11 @@ import java.util.Set;
 
 public class GameManager {
 
-    // Constants
     private static final int MIN_BET = 5;
     private static final int MAX_BET = 1000;
     private static final double BLACKJACK_PAYOUT = 1.5;
     private static final double NORMAL_PAYOUT = 1.0;
 
-    // Variables
     private final List<Player> players;
     private final Dealer dealer;
     private final Deck deck;
@@ -39,16 +42,10 @@ public class GameManager {
         this(playersNames, initialBalance, new Deck());
     }
 
-    // Package-private constructor: allows injecting a deck (used by tests).
     GameManager(List<String> playersNames, int initialBalance, Deck deck) {
         this(buildPlayers(playersNames, initialBalance), deck);
     }
 
-    /**
-     * Accepts pre-built {@link Player} instances. Used by the menu (to inject
-     * custom names + bot flags) and by future snapshot-restore in the
-     * persistence layer.
-     */
     public GameManager(List<Player> prebuiltPlayers) {
         this(prebuiltPlayers, new Deck());
     }
@@ -64,11 +61,6 @@ public class GameManager {
         this.currentHandIndex = 0;
     }
 
-    /**
-     * Rebuilds a GameManager from a persisted snapshot. Saving is allowed only
-     * at GameState=ROUND_OVER, so we land directly there — the next
-     * call to startNewRound() will be into BETTING.
-     */
     public static GameManager restore(List<Player> players, List<RoundRecord> history) {
         GameManager gm = new GameManager(players);
         gm.roundHistory.addAll(history);
@@ -84,9 +76,8 @@ public class GameManager {
         return list;
     }
 
-    // --- Round flow ---
-
     public void startNewRound() {
+        // 1. Validazione di stato: si parte solo da WAITING (prima partita) o ROUND_OVER (round successivo).
         if (state == GameState.GAME_OVER) {
             throw new IllegalStateException("Game is over");
         }
@@ -94,6 +85,7 @@ public class GameManager {
             throw new IllegalStateException("Cannot start a new round in state " + state);
         }
 
+        // 2. Game-over check: se NESSUN player ha abbastanza saldo per puntare il minimo, la sessione finisce.
         boolean anyCanPlay = false;
         for (Player player : players) {
             if (player.getBalance() >= MIN_BET) {
@@ -106,28 +98,31 @@ public class GameManager {
             return;
         }
 
+        // 3. Reset di ogni player: mani azzerate, e chi non può più giocare (balance < MIN_BET) va in sitting-out.
         for (Player player : players) {
             player.resetForNewRound();
             boolean broke = player.getBalance() < MIN_BET;
             player.setSittingOut(broke);
             if (broke) {
-                // Pre-settle the placeholder hand so the turn loop skips them naturally.
                 player.getHands().get(0).setSettled(true);
             }
         }
+
+        // 4. Reset dello stato del banco e degli indici di turno (currentPlayer/currentHand).
         dealer.getHand().clear();
         dealer.setHandRevealed(false);
         insuranceDecisions.clear();
         currentPlayerIndex = 0;
         currentHandIndex = 0;
 
+        // 5. Rimescola se siamo sotto la soglia (≤25% rimanente) — vedi Deck.needsReshuffle().
         if (deck.needsReshuffle()) {
             deck.reset();
         }
 
+        // 6. Pronti a raccogliere puntate: fase BETTING.
         state = GameState.BETTING;
 
-        // Bots bet immediately — betting phase only blocks on humans.
         for (int i = 0; i < players.size(); i++) {
             Player p = players.get(i);
             if (p.isBot() && !p.isSittingOut() && p.getStrategy() != null) {
@@ -176,7 +171,6 @@ public class GameManager {
 
         state = GameState.DEALING;
 
-        // Two cards each, player first, dealer last (standard blackjack order).
         for (int i = 0; i < 2; i++) {
             for (Player player : players) {
                 if (player.isSittingOut()) {
@@ -187,7 +181,6 @@ public class GameManager {
             dealer.getHand().addCard(deck.draw());
         }
 
-        // Dealer shows Ace → offer insurance to each player before peeking.
         if (dealer.showsAce()) {
             state = GameState.INSURANCE_OFFER;
             autoDecideBotInsurance();
@@ -201,7 +194,7 @@ public class GameManager {
         Card upcard = dealer.getHand().getCards().get(0);
         for (int i = 0; i < players.size(); i++) {
             if (state != GameState.INSURANCE_OFFER) {
-                return; // last bot's decision closed the phase
+                return;
             }
             Player p = players.get(i);
             if (!p.isBot() || p.isSittingOut() || p.getStrategy() == null) continue;
@@ -270,9 +263,9 @@ public class GameManager {
         if (insuranceDecisions.size() < activePlayerCount()) {
             return;
         }
-        // All active players have answered. Peek the hole card.
+
         if (dealer.getHand().isBlackJack()) {
-            // Insurance pays 2:1 to those who took it.
+
             for (Player player : players) {
                 if (player.isSittingOut()) continue;
                 PlayerHand mainHand = player.getHands().get(0);
@@ -281,15 +274,12 @@ public class GameManager {
                 }
             }
         }
-        // Insurance bets are not refunded if the dealer didn't have BJ — they are lost.
-        // (PlayerHand.placeInsuranceBet already debited the balance.)
 
         resolveNaturalBlackjacks();
     }
 
     private void resolveNaturalBlackjacks() {
-        // If the dealer has a natural blackjack, the round ends immediately:
-        // players with a blackjack push, everyone else loses.
+
         if (dealer.getHand().isBlackJack()) {
             dealer.setHandRevealed(true);
             for (Player player : players) {
@@ -310,7 +300,6 @@ public class GameManager {
             return;
         }
 
-        // Pay out any player blackjacks 3:2 and mark them as settled.
         for (Player player : players) {
             if (player.isSittingOut()) {
                 continue;
@@ -336,11 +325,11 @@ public class GameManager {
         current.getHand().addCard(deck.draw());
 
         if (current.getHand().isBusted()) {
-            // Bet was already subtracted at placeBet time: nothing more to do.
+
             current.setSettled(true);
             advanceToNextActiveHand();
         } else if (current.getHand().getScore() == 21) {
-            // 21: no further decision, auto-stand.
+
             currentHandIndex++;
             advanceToNextActiveHand();
         }
@@ -366,11 +355,6 @@ public class GameManager {
         resolveRound();
     }
 
-    /**
-     * Plays one step of the dealer's turn so the UI can animate between draws.
-     * @return true if the dealer drew a card and another step may follow;
-     *         false if the dealer is done (round has been resolved).
-     */
     public boolean dealerTakeTurnStep() {
         if (state != GameState.DEALER_TURN) {
             throw new IllegalStateException("Cannot play dealer in state " + state);
@@ -388,29 +372,37 @@ public class GameManager {
     }
 
     public void resolveRound() {
+        // 1. Validazione di stato: ci si arriva solo dopo il turno del dealer.
         if (state != GameState.RESOLVING) {
             throw new IllegalStateException("Cannot resolve round in state " + state);
         }
 
+        // 2. Calcolo una volta per tutte il punteggio finale del banco (usato in confronto con ogni player).
         final int dealerScore = dealer.getHand().getScore();
         final boolean dealerBust = dealer.getHand().isBusted();
 
+        // 3. Per ogni player non in sitting-out, e per ogni sua hand (dopo lo split possono essere 2):
         for (Player player : players) {
             if (player.isSittingOut()) {
                 continue;
             }
             for (PlayerHand ph : player.getHands()) {
+                // 3a. Outcome già deciso (es. blackjack istantaneo o bust durante player turn) → la salto.
                 if (ph.getOutcome() != null) {
-                    continue; // outcome already determined (natural BJ)
+                    continue;
                 }
+                // 3b. Player ha sballato → LOSE, niente payout (la puntata era già stata scalata).
                 if (ph.getHand().isBusted()) {
                     ph.setOutcome(HandOutcome.LOSE);
                     ph.setSettled(true);
                     recordRound(player, ph);
                     continue;
                 }
-                int playerScore = ph.getHand().getScore();
 
+                // 3c. Confronto col banco: dealer bust o player score più alto → WIN (paga 1:1).
+                //     Stessa cifra → PUSH (restituisce la puntata).
+                //     Player score inferiore → LOSE.
+                int playerScore = ph.getHand().getScore();
                 if (dealerBust || playerScore > dealerScore) {
                     ph.win(NORMAL_PAYOUT);
                     ph.setOutcome(HandOutcome.WIN);
@@ -418,7 +410,6 @@ public class GameManager {
                     ph.push();
                     ph.setOutcome(HandOutcome.PUSH);
                 } else {
-                    // dealer wins, bet is already lost
                     ph.setOutcome(HandOutcome.LOSE);
                 }
                 ph.setSettled(true);
@@ -426,12 +417,11 @@ public class GameManager {
             }
         }
 
+        // 4. Tutto settled: passiamo a ROUND_OVER, lo storico è già stato aggiornato via recordRound().
         state = GameState.ROUND_OVER;
     }
 
-    // --- Advanced actions: ---
-
-    public void doubleDown() { // (#7)
+    public void doubleDown() {
         if (!canDoubleDown()) {
             throw new IllegalStateException("Cannot double down in state " + state);
         }
@@ -442,12 +432,12 @@ public class GameManager {
         if (current.getHand().isBusted()) {
             current.setSettled(true);
         }
-        // Double-down always ends the hand: auto-stand on any non-bust result.
+
         currentHandIndex++;
         advanceToNextActiveHand();
     }
 
-    public void split() { // (#6)
+    public void split() {
         if (!canSplit()) {
             throw new IllegalStateException("Cannot split in state " + state);
         }
@@ -471,12 +461,11 @@ public class GameManager {
         newHand.getHand().addCard(deck.draw());
 
         if (wasAces) {
-            // Split aces get exactly one card each and cannot be hit further.
+
             currentHandIndex += 2;
             advanceToNextActiveHand();
         } else {
-            // Auto-stand any post-split 21 (consistent with hit's auto-21).
-            // Split 21 is not a natural blackjack — it still pays 1:1 at resolve.
+
             if (currentHand.getHand().getScore() == 21) {
                 currentHand.setSettled(true);
             }
@@ -523,8 +512,6 @@ public class GameManager {
         return Collections.unmodifiableList(roundHistory);
     }
 
-    // --- Queries ---
-
     public Player getCurrentPlayer() {
         if (state != GameState.PLAYER_TURN || currentPlayerIndex >= players.size()) {
             return null;
@@ -547,11 +534,6 @@ public class GameManager {
         return state;
     }
 
-    /**
-     * Index of the player who must place a bet next, or {@code -1} if the
-     * betting phase is complete (or the game is not in BETTING).
-     * Derived from state — no separate cursor to keep in sync.
-     */
     public int currentBettingPlayerIndex() {
         if (state != GameState.BETTING) {
             return -1;
@@ -565,10 +547,6 @@ public class GameManager {
         return -1;
     }
 
-    /**
-     * True if the player whose turn it is in PLAYER_TURN is a bot with a
-     * strategy attached. Used by the UI to schedule auto-play steps.
-     */
     public boolean isCurrentPlayerBot() {
         if (state != GameState.PLAYER_TURN) {
             return false;
@@ -577,12 +555,6 @@ public class GameManager {
         return p != null && p.isBot() && p.getStrategy() != null;
     }
 
-    /**
-     * Executes one decision for the current bot player (one hit, one stand,
-     * one double, etc.). Returns {@code true} if the bot still has more to do
-     * (turn is still PLAYER_TURN on a bot). Used by the UI Timeline to pace
-     * the animation.
-     */
     public boolean botStep() {
         if (!isCurrentPlayerBot()) {
             throw new IllegalStateException("Current player is not a bot in PLAYER_TURN");
@@ -602,15 +574,11 @@ public class GameManager {
                 if (canSplit()) split();
                 else stand();
             }
-            default -> stand(); // insurance actions don't apply here
+            default -> stand();
         }
         return isCurrentPlayerBot();
     }
 
-    /**
-     * Index of the player who must answer the insurance question next, or
-     * {@code -1} if the insurance phase is over (or not in INSURANCE_OFFER).
-     */
     public int currentInsurancePlayerIndex() {
         if (state != GameState.INSURANCE_OFFER) {
             return -1;
@@ -636,8 +604,6 @@ public class GameManager {
         return deck.remainingCards();
     }
 
-    // --- Internal helpers ---
-
     private PlayerHand currentPlayerHand() {
         return players.get(currentPlayerIndex).getHands().get(currentHandIndex);
     }
@@ -658,7 +624,7 @@ public class GameManager {
             Player p = players.get(currentPlayerIndex);
             while (currentHandIndex < p.getHands().size()) {
                 if (!p.getHands().get(currentHandIndex).isSettled()) {
-                    return; // found an active hand
+                    return;
                 }
                 currentHandIndex++;
             }
@@ -669,8 +635,7 @@ public class GameManager {
     }
 
     private void beginDealerTurn() {
-        // If no hand is still in contention (all already settled),
-        // the dealer does not draw — but still reveal the hole card.
+
         boolean anyInContention = false;
         outer:
         for (Player p : players) {
