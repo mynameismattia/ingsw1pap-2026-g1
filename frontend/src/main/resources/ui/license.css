@@ -1,0 +1,226 @@
+/*
+ * Stili specifici della schermata licenza.
+ * Card glassmorphism, input wrap con focus blu, status row con varianti error/ok, bottone Attiva con stati loading/success/error animati.
+ */
+
+.root-pane {
+    -fx-background-color: #070b14;
+    -fx-padding: 24;
+    -fx-font-family: "Inter Medium", "Inter", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+.nf-icon {
+    -fx-font-family: "JetBrainsMono NFM";
+}
+
+.card {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%,
+            rgba(18, 24, 38, 0.96) 0%,
+            rgba(28, 38, 58, 0.90) 100%);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(148, 189, 255, 0.22);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 60, 0.25, 0, 14);
+}
+
+.card-header {
+    -fx-background-color: transparent;
+}
+
+.app-icon {
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 22, 0.25, 0, 6);
+}
+
+.app-title {
+    -fx-text-fill: #f1f5ff;
+    -fx-font-family: "Manrope Bold", "Manrope", "Inter", sans-serif;
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.app-subtitle {
+    -fx-text-fill: #7a87a8;
+    -fx-font-size: 12.5px;
+}
+
+.divider {
+    -fx-min-height: 1;
+    -fx-pref-height: 1;
+    -fx-background-color: rgba(148, 189, 255, 0.14);
+}
+
+.card-body {
+    -fx-background-color: transparent;
+}
+
+.field-label {
+    -fx-text-fill: #7a87a8;
+    -fx-font-size: 10.5px;
+    -fx-font-weight: bold;
+}
+
+.input-wrap {
+    -fx-background-color: rgba(28, 38, 58, 0.62);
+    -fx-background-radius: 9;
+    -fx-border-color: rgba(148, 189, 255, 0.22);
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+    -fx-padding: 4 12 4 12;
+}
+
+.input-wrap:focus-within {
+    -fx-border-color: #60a5fa;
+    -fx-effect: dropshadow(gaussian, rgba(96, 165, 250, 0.35), 12, 0.35, 0, 0);
+}
+
+.input-icon {
+    -fx-text-fill: #60a5fa;
+    -fx-font-size: 14px;
+}
+
+.license-input {
+    -fx-background-color: transparent;
+    -fx-text-fill: #f1f5ff;
+    -fx-prompt-text-fill: #4d525d;
+    -fx-font-family: "JetBrains Mono Medium", "JetBrains Mono", "Consolas", "Menlo", monospace;
+    -fx-font-size: 13.5px;
+    -fx-padding: 8 0 8 0;
+    -fx-border-width: 0;
+}
+
+.license-input:focused {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+}
+
+.field-hint {
+    -fx-text-fill: #5a606b;
+    -fx-font-size: 11px;
+}
+
+.status-row {
+    -fx-background-color: rgba(28, 38, 58, 0.62);
+    -fx-background-radius: 9;
+    -fx-border-color: rgba(148, 189, 255, 0.22);
+    -fx-border-radius: 9;
+    -fx-border-width: 1;
+    -fx-padding: 10 12 10 12;
+}
+
+.status-neutral .status-icon { -fx-text-fill: #7a87a8; }
+.status-neutral .status-text { -fx-text-fill: #cbd6ee; }
+
+.status-error {
+    -fx-border-color: rgba(239, 68, 68, 0.55);
+    -fx-background-color: rgba(239, 68, 68, 0.10);
+}
+.status-error .status-icon { -fx-text-fill: #ff6b6b; }
+.status-error .status-text { -fx-text-fill: #fecaca; }
+
+.status-ok {
+    -fx-border-color: rgba(74, 222, 128, 0.55);
+    -fx-background-color: rgba(34, 197, 94, 0.10);
+}
+.status-ok .status-icon { -fx-text-fill: #4ade80; }
+.status-ok .status-text { -fx-text-fill: #bbf7d0; }
+
+.status-icon { -fx-font-size: 13px; }
+.status-text { -fx-font-size: 12px; }
+
+.remember-check {
+    -fx-text-fill: #cbd6ee;
+    -fx-font-size: 12px;
+}
+.remember-check .box {
+    -fx-background-color: rgba(28, 38, 58, 0.62);
+    -fx-border-color: rgba(148, 189, 255, 0.22);
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+.remember-check:selected .box {
+    -fx-background-color: #60a5fa;
+    -fx-border-color: #60a5fa;
+}
+.remember-check:selected .mark {
+    -fx-background-color: white;
+}
+
+.activate-button {
+    -fx-background-color:
+        linear-gradient(to bottom, rgba(255,255,255,0.18) 0%, transparent 30%),
+        linear-gradient(to bottom, #60a5fa 0%, #3b82f6 100%);
+    -fx-background-radius: 9;
+    -fx-background-insets: 0;
+    -fx-border-color: rgba(255, 255, 255, 0.28);
+    -fx-border-radius: 9;
+    -fx-border-width: 1.2;
+    -fx-text-fill: white;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 16 12 16;
+    -fx-cursor: hand;
+    -fx-graphic-text-gap: 10;
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.45), 14, 0.35, 0, 3);
+}
+
+.activate-button:hover {
+    -fx-background-color:
+        linear-gradient(to bottom, rgba(255,255,255,0.24) 0%, transparent 30%),
+        linear-gradient(to bottom, #7ab2fb 0%, #4a8fff 100%);
+    -fx-border-color: rgba(255, 255, 255, 0.55);
+    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.65), 18, 0.4, 0, 3);
+}
+
+.activate-button:pressed {
+    -fx-background-color: linear-gradient(to bottom, #3b82f6, #2563eb);
+    -fx-translate-y: 1;
+}
+
+.activate-button:disabled {
+    -fx-background-color: rgba(96, 165, 250, 0.18);
+    -fx-border-color: rgba(96, 165, 250, 0.30);
+    -fx-text-fill: rgba(255, 255, 255, 0.65);
+    -fx-opacity: 0.85;
+    -fx-effect: null;
+}
+
+.activate-button.loading,
+.activate-button.loading:disabled {
+    -fx-background-color: linear-gradient(to bottom, #4a8bff, #2563eb);
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.activate-button.success,
+.activate-button.success:disabled {
+    -fx-background-color: linear-gradient(to bottom, #22c55e, #16a34a);
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.activate-button.error,
+.activate-button.error:disabled {
+    -fx-background-color: linear-gradient(to bottom, #ef4444, #b91c1c);
+    -fx-text-fill: white;
+    -fx-opacity: 1;
+}
+
+.btn-icon {
+    -fx-text-fill: white;
+    -fx-font-size: 13.5px;
+    -fx-font-weight: bold;
+}
+
+.activate-button.success .btn-icon,
+.activate-button.error .btn-icon,
+.activate-button.loading .btn-icon {
+    -fx-text-fill: white;
+}
+
+.spinner-arc {
+    -fx-stroke: white;
+    -fx-stroke-width: 2.2;
+    -fx-fill: transparent;
+    -fx-stroke-line-cap: round;
+}

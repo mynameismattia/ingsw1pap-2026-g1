@@ -1,174 +1,166 @@
-# Blackjack – Boilerplate Project
-**Ingegneria e Sviluppo Software 1**  
-Java 21 · Maven Multi-Module · JavaFX  
+<div align="center">
+
+# ♠️ JUST21
+
+**Il classico gioco di carte, reinventato in Java.**
+
+![Java 21](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk)
+![JavaFX](https://img.shields.io/badge/JavaFX-21-blue?style=for-the-badge)
+![Maven](https://img.shields.io/badge/Maven-Multi--Module-red?style=for-the-badge&logo=apachemaven)
+![License](https://img.shields.io/badge/Licenza-Validazione_C_(JNI)-green?style=for-the-badge)
+
+*Blackjack multiplayer locale, regole complete, interfaccia JavaFX moderna.*
+
+</div>
 
 ---
 
-## Overview
+## Funzionalità
 
-This project is a minimal boilerplate for a multi-module Java application using:
-
-- Java 21  
-- Maven  
-- JavaFX  
-- Frontend / Backend separation
-- Fat JAR packaging  
-
-The current implementation demonstrates:
-
-- A simple JavaFX UI  
-- A TextArea  
-- A button that saves the content of the TextArea to a file  
-- Proper separation between frontend and backend modules  
-
-This boilerplate serves as the starting point for the Blackjack course project.
+| Funzionalità | Dettaglio |
+|---|---|
+| **Hit / Stand** | Le azioni base, il cuore del Blackjack |
+| **Split** | Fino a 4 mani, con resplit degli assi |
+| **Double Down** | Su qualsiasi mano, anche dopo lo split |
+| **Assicurazione** | Scommessa laterale 2:1 con regole classiche |
+| **Puntate** | Da 5 a 1.000 chips, payout Blackjack naturale 3:2 |
+| **Multiplayer locale** | Fino a 7 giocatori (umani e bot), turni sequenziali |
+| **Avversari CPU** | Bot con strategia automatica al tavolo |
+| **Salvataggio** | Autosave a fine round + 3 slot manuali (JSON) |
+| **Statistiche** | Storico mani, percentuale di vittoria, andamento del saldo |
+| **Lingue** | Italiano / Inglese, cambio a runtime |
+| **Audio** | Effetti e musica di sottofondo, con mixer nelle impostazioni |
+| **Licenza** | Validazione tramite modulo nativo in C (JNI) |
 
 ---
 
-## Project Structure
+## Tech Stack
 
 ```
-blackjack/
-│
-├── pom.xml               (parent / aggregator)
-├── backend/              (business logic & services)
-└── frontend/             (JavaFX UI)
+┌─────────────────────────────────────────────┐
+│              Frontend (JavaFX 21)            │
+│        Scene FXML · Controller · CSS         │
+├─────────────────────────────────────────────┤
+│              Backend (Java 21)               │
+│      Game logic · Model · i18n · Service     │
+├──────────────────────┬──────────────────────┤
+│     Persistenza      │     Modulo licenza    │
+│   JSON (Jackson)     │      C · JNI          │
+└──────────────────────┴──────────────────────┘
 ```
 
-### Backend Module
-
-Contains:
-- Application services
-- File persistence service (`FileService`)
-- Future Blackjack domain logic
-
-The backend does not contain UI code.
-
-### Frontend Module
-
-Contains:
-- JavaFX UI
-- FXML layout
-- Controllers
-
-The frontend depends on the backend as a Maven dependency.
+Progetto Maven multi-modulo (`backend` + `frontend`). Il modulo licenza è una
+libreria nativa scritta in C, invocata da Java via JNI: viene compilata da
+Maven con `gcc` durante la build e caricata a runtime tramite
+`System.loadLibrary`.
 
 ---
 
-## Requirements
+## Requisiti
 
-- Java 21  
-- Maven 3.9+  
+| | Versione | Note |
+|---|---|---|
+| **JDK** | 21 | Necessario per compilare ed eseguire |
+| **Maven** | 3.9+ | Oppure il Maven incluso in IntelliJ IDEA |
+| **gcc** | qualsiasi recente | Per compilare il modulo licenza nativo |
+| **`JAVA_HOME`** | → JDK 21 | **Obbligatorio**: serve a `gcc` per trovare `jni.h` |
 
-Verify installation:
+> ⚠️ Senza `JAVA_HOME` impostato la build fallisce con
+> `fatal error: jni.h: No such file or directory`, perché il compilatore C
+> non trova gli header JNI del JDK.
+
+---
+
+## Installazione
 
 ```bash
-java -version
-mvn -version
-```
+# 1. Clona il repository
+git clone https://github.com/mynameismattia/ingsw1pap-2026-g1.git
+cd ingsw1pap-2026-g1
 
----
+# 2. Imposta JAVA_HOME sul tuo JDK 21 (adatta il percorso al tuo sistema)
+export JAVA_HOME=/usr/lib/jvm/default        # Linux
+# export JAVA_HOME=$(/usr/libexec/java_home -v 21)   # macOS
+# set JAVA_HOME=C:\Program Files\Java\jdk-21          # Windows (cmd)
 
-## Build the Project
+# 3. Build completa: compila il codice Java, costruisce la libreria
+#    nativa C, esegue i test e installa il modulo backend nel
+#    repository Maven locale (necessario al passo successivo).
+mvn clean install
 
-From the root directory:
-
-```bash
-mvn clean package
-```
-
-This will:
-
-- Build the backend  
-- Build the frontend  
-- Produce a fat JAR inside:
-
-```
-frontend/target/frontend-1.0.0-SNAPSHOT-all.jar
-```
-
----
-
-## Run the Application
-
-### Option 1 – Run the Fat JAR
-
-```bash
-java -jar frontend/target/frontend-1.0.0-SNAPSHOT-all.jar
-```
-
-### Option 2 – Run in Development Mode (Recommended)
-
-```bash
+# 4. Avvia il gioco
 mvn -pl frontend javafx:run
 ```
 
-This ensures JavaFX modules are correctly loaded.
+### Cosa succede dietro le quinte
+
+- `mvn clean install` compila `gcc` la libreria nativa in
+  `backend/target/` con il nome corretto per il tuo sistema operativo
+  (`liblicensechecker.so` su Linux, `.dll` su Windows, `.dylib` su macOS).
+  Il sistema operativo viene rilevato automaticamente dai profili Maven.
+- Usa `install` (non solo `package`): il modulo `backend` deve trovarsi nel
+  repository locale perché `javafx:run` del frontend possa risolverlo.
+- `mvn -pl frontend javafx:run` imposta automaticamente
+  `-Djava.library.path=backend/target`, così la libreria nativa viene
+  trovata e la validazione della licenza funziona.
+
+### Chiave di licenza
+
+Al primo avvio l'app chiede una chiave di licenza nel formato
+`XXXXX-XXXXX-XXXXX-XXXXX`. Per provare il gioco puoi usare la chiave demo:
+
+```
+FELIC-EMATT-IA000-00000
+```
+
+Spuntando **"Ricordami"** la chiave viene salvata in `~/.blackjack/license`
+e non verrà più richiesta agli avvii successivi.
 
 ---
 
-## Running from IntelliJ IDEA
+## Test
 
-1. Open the root folder (`blackjack/`)
-2. Ensure Project SDK = Java 21
-3. Reload the Maven project
+I test (JUnit 5) coprono il modulo `backend` — modello, motore di gioco,
+persistenza e i18n:
 
-To run the application:
-
-- Open the Maven tool window  
-- Execute:
-
-```
-frontend → Plugins → javafx → javafx:run
+```bash
+mvn -pl backend test
 ```
 
-Avoid running `MainApp` directly unless JavaFX is properly configured.
+I test vengono eseguiti anche durante `mvn clean install`.
 
 ---
 
-## File Saving Example
-
-The boilerplate includes a simple persistence example.
-
-Backend service:
-
-```java
-public void saveUtf8(Path file, String content)
-```
-
-Frontend usage:
-
-```java
-fileService.saveUtf8(
-    Path.of("saved", "textarea.txt"),
-    textArea.getText()
-);
-```
-
-By default, the file will be created in:
+## Struttura del progetto
 
 ```
-saved/textarea.txt
+ingsw1pap-2026-g1/
+├── backend/                          # Logica, modello, persistenza, licenza
+│   ├── src/main/java/.../model       # Card, Deck, Hand, strategie del dealer
+│   ├── src/main/java/.../game        # Motore di gioco, regole, turni
+│   ├── src/main/java/.../service     # Persistenza JSON, slot di salvataggio
+│   ├── src/main/java/.../i18n        # MessageService (IT / EN)
+│   ├── src/main/java/.../license     # LicenseChecker (wrapper JNI)
+│   └── src/main/c/                   # LicenseChecker.c — modulo nativo
+├── frontend/                         # Interfaccia JavaFX
+│   ├── src/main/java/.../MainApp     # Punto di ingresso
+│   ├── src/main/java/.../controller  # Controller delle scene
+│   ├── src/main/java/.../service     # SoundManager
+│   └── src/main/resources/           # FXML, CSS, audio, font, bundle i18n
+└── pom.xml                           # Reactor multi-modulo
 ```
-
-(relative to the application working directory)
 
 ---
 
-## Educational Purpose
+## Team
 
-This boilerplate is intentionally minimal and designed to:
+| Nome | Ruolo |
+|---|---|
+| [@mynameismattia](https://github.com/mynameismattia) — Mattia Alongi | Game Logic & Architecture |
+| [@FeliceRossetti](https://github.com/FeliceRossetti) — Felice Rossetti | License Module & Domain Model |
 
-- Demonstrate proper separation of frontend and backend
-- Provide a working JavaFX + Maven structure
-- Offer a starting point for the Blackjack project
-- Serve as a base for adding:
-  - Game logic
-  - Serialization
-  - License validation in C
-  - Internationalization
-  - Unit testing
+<div align="center">
 
----
+*Progetto per Ingegneria e Sviluppo Software 1 — SUPSI DTI*
 
-Author: Edoardo Terzi
+</div>

@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Layout della schermata Profilo.
+  Avatar + nome + data, balance, ultimi giochi, badge vittorie, statistiche. Non più raggiungibile dal menu ma il file resta.
+-->
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="ch.supsi.dti.frontend.controller.ProfileController"
+           styleClass="root-pane"
+           stylesheets="@menu.css"
+           prefWidth="1100" prefHeight="680">
+
+    <VBox styleClass="card" spacing="0">
+
+        <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
+            <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
+            <Button fx:id="backBtn" text="%common.back" onAction="#onBack" styleClass="icon-button"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="%profile.title" styleClass="titlebar-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Region prefWidth="90"/>
+        </HBox>
+
+        <Region styleClass="divider"/>
+
+        <HBox VBox.vgrow="ALWAYS" spacing="0">
+
+            <VBox styleClass="hero-pane" alignment="CENTER" spacing="14" prefWidth="240" minWidth="240">
+                <padding><Insets top="32" right="24" bottom="32" left="24"/></padding>
+
+                <StackPane styleClass="avatar-circle">
+                    <Label text="A" styleClass="avatar-initial"/>
+                </StackPane>
+
+                <Label text="Alice" styleClass="profile-name"/>
+                <Label text="26 Gennaio 2026" styleClass="profile-date"/>
+
+                <HBox alignment="CENTER" spacing="8">
+                    <Label text="%profile.badge.pro" styleClass="badge-pro"/>
+                    <Label fx:id="winStreakBadge" text="" styleClass="badge-win"/>
+                </HBox>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <VBox alignment="CENTER" spacing="4">
+                    <Label text="%profile.balance" styleClass="field-label"/>
+                    <Label text="\$3.240" styleClass="profile-balance"/>
+                </VBox>
+
+                <Region prefHeight="8"/>
+
+                <VBox alignment="CENTER_LEFT" spacing="6" maxWidth="160">
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="%profile.wins" styleClass="field-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Label text="62.7%" styleClass="field-label"/>
+                    </HBox>
+                    <HBox styleClass="win-bar-track" prefHeight="6" maxWidth="Infinity">
+                        <Region styleClass="win-bar-fill" prefWidth="100" prefHeight="6"/>
+                    </HBox>
+                    <Label text="47V · 28P · 5 Pareggi" styleClass="profile-date"/>
+                </VBox>
+            </VBox>
+
+            <Region styleClass="vdivider"/>
+
+            <VBox HBox.hgrow="ALWAYS" spacing="0">
+                <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+
+                <Label text="%profile.statistics" styleClass="field-label"/>
+                <Region prefHeight="14"/>
+
+                <HBox styleClass="stat-row stat-row-alt" alignment="CENTER_LEFT">
+                    <Label text="%profile.stat.totalGames" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="80" styleClass="stat-value"/>
+                </HBox>
+                <HBox styleClass="stat-row" alignment="CENTER_LEFT">
+                    <Label text="%profile.stat.winsLosses" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="47 / 28" styleClass="stat-value"/>
+                </HBox>
+                <HBox styleClass="stat-row stat-row-alt" alignment="CENTER_LEFT">
+                    <Label text="%profile.stat.bestStreak" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="8" styleClass="stat-value stat-value-accent"/>
+                </HBox>
+                <HBox styleClass="stat-row" alignment="CENTER_LEFT">
+                    <Label text="%profile.stat.biggestWin" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="\$500" styleClass="stat-value stat-value-pos"/>
+                </HBox>
+                <HBox styleClass="stat-row stat-row-alt" alignment="CENTER_LEFT">
+                    <Label text="%profile.stat.biggestLoss" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="-\$200" styleClass="stat-value stat-value-neg"/>
+                </HBox>
+                <HBox styleClass="stat-row" alignment="CENTER_LEFT">
+                    <Label text="%profile.stat.blackjacks" styleClass="stat-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Label text="12" styleClass="stat-value"/>
+                </HBox>
+            </VBox>
+
+            <Region styleClass="vdivider"/>
+
+            <VBox prefWidth="260" minWidth="260" spacing="0">
+                <padding><Insets top="24" right="20" bottom="24" left="20"/></padding>
+
+                <Label text="%profile.lastGames" styleClass="field-label"/>
+                <Region prefHeight="14"/>
+
+                <HBox styleClass="game-row" alignment="CENTER_LEFT" spacing="10">
+                    <Region styleClass="game-dot game-dot-win"/>
+                    <VBox HBox.hgrow="ALWAYS">
+                        <Label text="vs CPU · B.J" styleClass="game-opponent"/>
+                        <Label text="Top 11%" styleClass="profile-date"/>
+                    </VBox>
+                    <Label text="+$150" styleClass="game-result game-result-pos"/>
+                </HBox>
+
+                <HBox styleClass="game-row" alignment="CENTER_LEFT" spacing="10">
+                    <Region styleClass="game-dot game-dot-loss"/>
+                    <VBox HBox.hgrow="ALWAYS">
+                        <Label text="vs Bob, Carlos" styleClass="game-opponent"/>
+                    </VBox>
+                    <Label text="-$50" styleClass="game-result game-result-neg"/>
+                </HBox>
+
+                <HBox styleClass="game-row" alignment="CENTER_LEFT" spacing="10">
+                    <Region styleClass="game-dot game-dot-push"/>
+                    <VBox HBox.hgrow="ALWAYS">
+                        <Label text="vs CPU · Pari" styleClass="game-opponent"/>
+                    </VBox>
+                    <Label text="+$0" styleClass="game-result"/>
+                </HBox>
+
+                <HBox styleClass="game-row" alignment="CENTER_LEFT" spacing="10">
+                    <Region styleClass="game-dot game-dot-win"/>
+                    <VBox HBox.hgrow="ALWAYS">
+                        <Label text="vs Bob" styleClass="game-opponent"/>
+                    </VBox>
+                    <Label text="+$75" styleClass="game-result game-result-pos"/>
+                </HBox>
+
+                <HBox styleClass="game-row" alignment="CENTER_LEFT" spacing="10">
+                    <Region styleClass="game-dot game-dot-loss"/>
+                    <VBox HBox.hgrow="ALWAYS">
+                        <Label text="vs CPU · Dario" styleClass="game-opponent"/>
+                    </VBox>
+                    <Label text="-$100" styleClass="game-result game-result-neg"/>
+                </HBox>
+            </VBox>
+
+        </HBox>
+
+    </VBox>
+
+</StackPane>

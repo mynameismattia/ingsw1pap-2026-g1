@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Layout della schermata Vedi Risultati.
+  Tre colonne: mano del banco + storico a sinistra, dealer banner + grafico + hero rows + others list al centro, saldi aggiornati a destra.
+-->
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="ch.supsi.dti.frontend.controller.RoundResultController"
+           styleClass="root-pane"
+           stylesheets="@menu.css, @game.css"
+           prefWidth="1100" prefHeight="680">
+
+    <VBox styleClass="card" spacing="0">
+
+        <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="10">
+            <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
+
+            <Label fx:id="titleLabel" text="" styleClass="titlebar-title"/>
+            <HBox fx:id="progressDots" alignment="CENTER_LEFT" spacing="5"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Label text="%roundresult.saved" styleClass="saved-pill"/>
+            <Button fx:id="saveBtn" onAction="#onSaveClicked" styleClass="icon-button"/>
+            <Button text="☰" onAction="#onBackToMenu" styleClass="icon-button"/>
+        </HBox>
+
+        <Region styleClass="divider"/>
+
+        <HBox styleClass="session-band" alignment="CENTER" spacing="10">
+            <padding><Insets top="8" right="14" bottom="8" left="14"/></padding>
+            <Label fx:id="sessionLabel" text="" styleClass="session-line"/>
+        </HBox>
+
+        <Region styleClass="divider"/>
+
+        <HBox VBox.vgrow="ALWAYS" spacing="0">
+
+            <VBox prefWidth="300" minWidth="300" spacing="10" HBox.hgrow="ALWAYS">
+                <padding><Insets top="22" right="20" bottom="22" left="20"/></padding>
+
+                <Label text="%roundresult.dealerHand" styleClass="field-label"/>
+
+                <HBox fx:id="dealerCardsBox" alignment="CENTER" spacing="6" minHeight="140"/>
+
+                <HBox alignment="CENTER">
+                    <Label fx:id="dealerScorePill" text="" styleClass="dealer-score-pill"/>
+                </HBox>
+
+                <Region prefHeight="12"/>
+
+                <Label fx:id="dealerHistoryHeader" text="%roundresult.dealer.history"
+                       styleClass="field-label"/>
+                <FlowPane fx:id="dealerHistoryList" styleClass="dealer-history-grid"
+                          hgap="6" vgap="6" prefWrapLength="260"/>
+
+                <Region VBox.vgrow="ALWAYS"/>
+            </VBox>
+
+            <Region styleClass="vdivider"/>
+
+            <VBox HBox.hgrow="ALWAYS" spacing="14" alignment="TOP_CENTER"
+                  maxWidth="760">
+                <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+
+                <Label fx:id="dealerBanner" text="" styleClass="dealer-banner"
+                       alignment="CENTER" maxWidth="Infinity"/>
+
+                <Label fx:id="roundMetaLabel" text="" styleClass="round-meta"/>
+
+                <StackPane fx:id="chartContainer" minHeight="220" prefHeight="240"
+                           styleClass="chart-container" VBox.vgrow="ALWAYS"/>
+
+                <VBox fx:id="heroBox" alignment="CENTER" spacing="12"/>
+
+                <Region prefHeight="6"/>
+
+                <Label fx:id="othersHeader" text="%roundresult.others" styleClass="field-label"/>
+                <VBox fx:id="othersList" spacing="6"/>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <Button fx:id="primaryActionBtn" text="%roundresult.action.newRound"
+                        onAction="#onNewRound" styleClass="primary-button"
+                        maxWidth="Infinity"/>
+            </VBox>
+
+            <Region styleClass="vdivider"/>
+
+            <VBox prefWidth="260" minWidth="260" spacing="10" HBox.hgrow="ALWAYS">
+                <padding><Insets top="22" right="20" bottom="22" left="20"/></padding>
+
+                <Label text="%roundresult.balancesUpdated" styleClass="field-label"/>
+
+                <VBox fx:id="balancesList" spacing="0"/>
+
+                <Region VBox.vgrow="ALWAYS"/>
+            </VBox>
+
+        </HBox>
+
+    </VBox>
+
+</StackPane>

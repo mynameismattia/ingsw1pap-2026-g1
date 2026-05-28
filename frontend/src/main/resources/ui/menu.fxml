@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.CheckBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Spinner?>
+<?import javafx.scene.control.Tooltip?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<!--
+  Layout del menu principale.
+  Titlebar in alto, hero a sinistra (logo + license pill), controlli a destra (mode pills, spinner setup giocatori e balance, bottoni start/continue).
+-->
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="ch.supsi.dti.frontend.controller.MenuController"
+           styleClass="root-pane"
+           stylesheets="@menu.css"
+           prefWidth="1100" prefHeight="680">
+
+    <VBox styleClass="card" minWidth="720" minHeight="520" spacing="0">
+
+        <HBox styleClass="card-titlebar" alignment="CENTER_LEFT" spacing="8">
+            <padding><Insets top="12" right="14" bottom="12" left="14"/></padding>
+
+            <Button styleClass="icon-button" text="%mainmenu.action.license" onAction="#onLicense">
+                <tooltip><Tooltip text="%mainmenu.tooltip.license"/></tooltip>
+            </Button>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button fx:id="settingsBtn" styleClass="icon-button" text="⚙" onAction="#onSettings">
+                <tooltip><Tooltip text="%mainmenu.tooltip.settings"/></tooltip>
+            </Button>
+        </HBox>
+
+        <Region styleClass="divider"/>
+
+        <HBox styleClass="card-body" spacing="0" VBox.vgrow="ALWAYS">
+
+            <VBox styleClass="hero-pane" alignment="CENTER" spacing="14" HBox.hgrow="ALWAYS">
+                <padding><Insets top="36" right="32" bottom="28" left="32"/></padding>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <ImageView fitWidth="110" fitHeight="110" preserveRatio="true" smooth="true" styleClass="app-icon">
+                    <image><Image url="@icon.png"/></image>
+                </ImageView>
+
+                <Label text="%mainmenu.hero.title" styleClass="hero-title"/>
+                <Label text="%mainmenu.hero.subtitle" styleClass="hero-subtitle"/>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <VBox styleClass="license-pill" alignment="CENTER" spacing="2">
+                    <padding><Insets top="10" right="18" bottom="10" left="18"/></padding>
+                    <HBox alignment="CENTER" spacing="8">
+                        <Label text="✓" styleClass="license-pill-icon"/>
+                        <Label text="%mainmenu.license.active" styleClass="license-pill-title"/>
+                    </HBox>
+                    <Label fx:id="licenseCodeLabel" text="XXXXX-XXXXX-XXXXX-XXXXX" styleClass="license-pill-code"/>
+                </VBox>
+            </VBox>
+
+            <Region styleClass="vdivider"/>
+
+            <VBox styleClass="controls-pane" spacing="14" prefWidth="320" minWidth="320">
+                <padding><Insets top="24" right="24" bottom="24" left="24"/></padding>
+
+                <Label text="%mainmenu.section.mode" styleClass="field-label"/>
+                <HBox styleClass="mode-pills" spacing="8">
+                    <Button fx:id="modeVsCpuBtn"    text="%mainmenu.mode.vsCpu"    onAction="#onModeVsCpu"    styleClass="mode-pill, mode-pill-active" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                        <tooltip><Tooltip text="%mainmenu.tooltip.mode.vsCpu"/></tooltip>
+                    </Button>
+                    <Button fx:id="modeMultiBtn"    text="%mainmenu.mode.multi"    onAction="#onModeMulti"    styleClass="mode-pill"                   maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                        <tooltip><Tooltip text="%mainmenu.tooltip.mode.multi"/></tooltip>
+                    </Button>
+                    <Button fx:id="modeTutorialBtn" text="%mainmenu.mode.tutorial" onAction="#onModeTutorial" styleClass="mode-pill"                   maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                        <tooltip><Tooltip text="%mainmenu.tooltip.mode.tutorial"/></tooltip>
+                    </Button>
+                </HBox>
+
+                <Region styleClass="spacer-sm"/>
+
+                <VBox fx:id="tableSection" spacing="14">
+                    <Label text="%mainmenu.section.table" styleClass="field-label"/>
+
+                    <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                        <Label text="%mainmenu.table.humans" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Spinner fx:id="humansSpinner" editable="true" styleClass="row-spinner" prefWidth="78"/>
+                    </HBox>
+
+                    <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                        <Label text="%mainmenu.table.cpus" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Spinner fx:id="cpusSpinner" editable="true" styleClass="row-spinner" prefWidth="78"/>
+                    </HBox>
+
+                    <HBox styleClass="row" alignment="CENTER_LEFT" spacing="10">
+                        <Label text="%mainmenu.table.balance" styleClass="row-label" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                        <Spinner fx:id="balanceSpinner" editable="true" styleClass="row-spinner" prefWidth="100"/>
+                    </HBox>
+
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <Button fx:id="startBtn" text="%mainmenu.action.start" onAction="#onStartGame" styleClass="primary-button" maxWidth="Infinity">
+                    <tooltip><Tooltip text="%mainmenu.tooltip.start"/></tooltip>
+                </Button>
+
+                <Button fx:id="continueBtn" text="%mainmenu.action.continue" onAction="#onContinue" styleClass="mode-pill" maxWidth="Infinity">
+                    <tooltip><Tooltip text="%mainmenu.tooltip.continue"/></tooltip>
+                </Button>
+            </VBox>
+
+        </HBox>
+
+    </VBox>
+
+</StackPane>
