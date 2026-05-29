@@ -24,7 +24,7 @@
 | **Double Down** | Su qualsiasi mano, anche dopo lo split |
 | **Assicurazione** | Scommessa laterale 2:1 con regole classiche |
 | **Puntate** | Da 5 a 1.000 chips, payout Blackjack naturale 3:2 |
-| **Multiplayer locale** | Fino a 7 giocatori (umani e bot), turni sequenziali |
+| **Multiplayer locale** | Fino a 4 giocatori (umani e bot), turni sequenziali |
 | **Avversari CPU** | Bot con strategia automatica al tavolo |
 | **Salvataggio** | Autosave a fine round + 3 slot manuali (JSON) |
 | **Statistiche** | Storico mani, percentuale di vittoria, andamento del saldo |
